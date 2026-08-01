@@ -1,0 +1,1833 @@
+/**
+ * ui.js — Renderização completa da interface do Sunflower Super App
+ * Todos os componentes visuais: home, farm, market, alerts, settings
+ */
+
+import Storage from './storage.js?v=54';
+import { NOTIF_TYPES } from './notifications.js?v=54';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=54';
+import { t } from './i18n.js?v=54';
+import Farm from './farm.js?v=54';
+
+// duplicate removed
+
+// =====================================================
+// ASSETS & CONFIG
+// =====================================================
+const ASSETS = {
+  SFL: 'https://sfl.world/img/Flower.png',
+  COINS: 'https://sfl.world/img/source/coins.png',
+  GEM: 'https://sfl.world/img/source/Gem.png',
+  VIP: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/vip.webp',
+  SUNFLOWER: 'https://sfl.world/img/source/Sunflower.png',
+  CHICKEN: 'https://sfl.world/img/source/Chicken.png',
+  ISLAND: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/island.png',
+  MARK: 'https://sfl.world/img/source/Mark.png',
+  APPLE: 'https://sfl.world/img/source/Apple.png'
+};
+
+// =====================================================
+// UTILITIES
+// =====================================================
+
+function formatNumber(n, decimals = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const num = Number(n);
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000)     return `${(num / 1_000).toFixed(1)}K`;
+  return parseFloat(num.toFixed(decimals)).toString();
+}
+
+function formatSfl(n) {
+  if (!n) return '0';
+  const num = Number(n);
+  if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
+  return parseFloat(num.toFixed(4)).toString();
+}
+
+function formatPrice(n) {
+  if (!n) return '0';
+  const num = Number(n);
+  if (num >= 10) return num.toFixed(2);
+  if (num >= 1)  return num.toFixed(3);
+  return parseFloat(num.toPrecision(3)).toString();
+}
+
+function timeAgo(ms) {
+  if (!ms) return '';
+  const diff = Date.now() - ms;
+  const s = Math.floor(diff / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  
+  const isPt = t('nav_farm') === 'Fazenda';
+  if (h > 0) return isPt ? `há ${h}h` : `${h}h ago`;
+  if (m > 0) return isPt ? `há ${m}m` : `${m}m ago`;
+  return isPt ? `agora` : `just now`;
+}
+
+const $ = (sel, ctx = document) => ctx.querySelector(sel);
+const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+
+function setHtml(selector, html) {
+  const el = $(selector);
+  if (el) el.innerHTML = html;
+}
+
+function setText(selector, text) {
+  const el = $(selector);
+  if (el) el.textContent = text;
+}
+
+// Skeleton HTML
+function skeletonList(count = 4) {
+  return Array(count).fill(0).map(() =>
+    `<div class="skeleton skeleton-card"></div>`
+  ).join('');
+}
+
+function renderLoadingState() {
+  setHtml('#home-farm-summary', `
+    <div class="stat-grid">
+      <div class="skeleton" style="height:90px"></div>
+      <div class="skeleton" style="height:90px"></div>
+      <div class="skeleton" style="height:90px"></div>
+      <div class="skeleton" style="height:90px"></div>
+    </div>
+  `);
+  setHtml('#home-upcoming', skeletonList(3));
+  setHtml('#farm-content', `
+    <div class="skeleton" style="height:120px;margin-bottom:16px"></div>
+    <div class="stat-grid mb-4">
+      <div class="skeleton" style="height:90px"></div>
+      <div class="skeleton" style="height:90px"></div>
+    </div>
+    ${skeletonList(4)}
+  `);
+  setHtml('#market-grid', `
+    <div class="skeleton" style="height:80px"></div>
+    <div class="skeleton" style="height:80px"></div>
+    <div class="skeleton" style="height:80px"></div>
+    <div class="skeleton" style="height:80px"></div>
+  `);
+}
+
+// =====================================================
+// PRICE STRIP (global header ticker)
+// =====================================================
+
+function renderPriceStrip(exchange) {
+  if (!exchange) return;
+
+  const sfl   = exchange.sfl?.usd   ?? 0;
+  const pol   = exchange.pol?.usd   ?? 0;
+  const gem   = exchange.gem?.usd   ?? 0;
+  const coins = exchange.coins?.usd ?? 0;
+
+  setHtml('#price-strip', `
+    <div class="price-strip-item">
+      <img src="${ASSETS.SFL}" class="price-token-icon" onerror="this.style.display='none'">
+      <span class="price-token-label">SFL</span>
+      <span class="price-token-value">$${sfl.toFixed(4)}</span>
+    </div>
+    <div class="price-strip-sep"></div>
+    <div class="price-strip-item">
+      <span class="price-token-label">POL</span>
+      <span class="price-token-value">$${pol.toFixed(4)}</span>
+    </div>
+    <div class="price-strip-sep"></div>
+    <div class="price-strip-item">
+      <span class="price-token-label">💎 GEM</span>
+      <span class="price-token-value">$${gem.toFixed(3)}</span>
+    </div>
+    <div class="price-strip-sep"></div>
+    <div class="price-strip-item">
+      <span class="price-token-label">🪙 COIN</span>
+      <span class="price-token-value">$${coins.toFixed(5)}</span>
+    </div>
+  `);
+}
+
+// =====================================================
+// HOME PAGE
+// =====================================================
+
+function renderHome(exchange, prices, parsedFarm) {
+  renderPriceStrip(exchange);
+
+  const sflUsd = exchange?.sfl?.usd ?? 0;
+  const sflBrl = exchange?.sfl?.brl ?? 0;
+
+  // SFL big display + Converter
+  setHtml('#home-sfl-card', `
+    <div class="card card--amber spring-in">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        
+        <!-- LEFT: Token Price -->
+        <div style="flex-shrink: 0;">
+          <div class="card-title" style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <img src="${ASSETS.SFL}" style="width:24px;height:24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+            Flower (SFL)
+          </div>
+          <div style="font-family:var(--font-mono);font-size:32px;font-weight:700;color:var(--amber-glow);line-height:1">
+            $${sflUsd.toFixed(4)}
+          </div>
+          <div style="font-family:var(--font-mono);font-size:16px;color:var(--text-secondary);font-weight:600;margin-top:6px">
+            R$ ${sflBrl.toFixed(4)}
+          </div>
+        </div>
+        
+        <!-- RIGHT: Currency Converter -->
+        <div style="flex:1; max-width:400px; margin-left:auto;">
+          <div class="currency-converter" style="padding:10px; gap:6px;">
+            <div class="converter-input-wrapper" style="flex: 1.2;">
+              <input type="number" class="converter-input" id="flw-converter-input" placeholder="0" oninput="window.__app.convertFlower(this.value, ${sflBrl}, ${sflUsd})" style="font-size:15px; padding:8px 10px; padding-right:40px;">
+              <span class="converter-label" style="right:10px; font-size:13px;">SFL</span>
+            </div>
+            <div class="converter-icon" style="width:24px; height:24px; font-size:14px;"><i class="bi bi-arrow-left-right"></i></div>
+            <div class="converter-result-wrapper" style="flex: 1.2; padding:6px 8px; min-height:38px; display:flex; flex-direction:column; justify-content:center;">
+              <div class="converter-result" id="flw-converter-result" style="font-size:16px; font-weight:600;">R$ 0.00 <span style="font-size:13px;color:var(--text-tertiary)">($0.00)</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `);
+
+  // Quick summary cards
+  if (parsedFarm) {
+    const farmId = parsedFarm.farmId || Storage.getActiveFarm();
+    const username = parsedFarm.username || 'Fazenda';
+    const level = parsedFarm.bumpkin?.level || parsedFarm.bumpkinLevel || 1;
+    const xp = parsedFarm.bumpkin?.xp || 0;
+    const xpProgress = parsedFarm.bumpkin?.xpProgress || 0;
+    
+    const maxHelps = 5 + (parsedFarm.socialFarming?.helpIncrease?.boughtAt?.length || 0);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const helpsToday = parsedFarm.socialFarming?.cheersGiven?.date === todayStr ? (parsedFarm.socialFarming?.cheersGiven?.farms?.length || 0) : 0;
+    const helpsLeft = Math.max(0, maxHelps - helpsToday);
+    const totalHelps = parsedFarm.socialFarming?.helpedForCompetition || 0;
+
+    const readyCrops    = parsedFarm.crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0);
+    const readyFruits   = parsedFarm.fruits ? parsedFarm.fruits.filter(f => f.status === 'ready').length : 0;
+    const readyAnimalsArr = parsedFarm.animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status));
+    const readyAnimals  = readyAnimalsArr.length;
+    const readyCooking  = parsedFarm.buildings.filter(b => b.status === 'ready').length;
+    const totalReady    = readyCrops + readyAnimals + readyCooking;
+
+    const nextCrop = parsedFarm.crops.filter(c => c.status !== 'ready').sort((a,b) => a.msLeft - b.msLeft)[0];
+    const nextFruit = parsedFarm.fruits ? parsedFarm.fruits.filter(f => f.status !== 'ready' && parseInt(f.harvestsLeft) > 0).sort((a,b) => a.msLeft - b.msLeft)[0] : null;
+
+    const animalTypes = readyAnimalsArr.reduce((acc, a) => {
+        acc[a.type] = (acc[a.type] || 0) + 1;
+        return acc;
+    }, {});
+    
+    let animalDetailsText = parsedFarm.isPartial ? '-' : `${parsedFarm.animals.length} ${t('home_total')}`;
+    if (!parsedFarm.isPartial && readyAnimals > 0) {
+        const details = [];
+        if (animalTypes['Chicken']) details.push(`🐔 ${animalTypes['Chicken']}`);
+        if (animalTypes['Cow']) details.push(`🐄 ${animalTypes['Cow']}`);
+        if (animalTypes['Sheep']) details.push(`🐑 ${animalTypes['Sheep']}`);
+        if (details.length > 0) {
+           animalDetailsText = details.join(' • ');
+        }
+    }
+
+    setHtml('#home-farm-summary', `
+      <div class="section-header">
+        <div class="section-title">🚜 ${t('home_farm_summary')}</div>
+        ${totalReady > 0 ? `<div class="section-badge coral">${totalReady}</div>` : `<div class="section-badge">${t('home_up_to_date')}</div>`}
+      </div>
+      
+      ${parsedFarm.isPartial ? `
+      <div style="background:rgba(245, 158, 11, 0.1);border:1px solid rgba(245, 158, 11, 0.2);padding:10px 14px;border-radius:var(--r2);margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:16px;line-height:1.2;">⚠️</span>
+        <div class="api-warning-content">
+          <div style="color:var(--amber-glow);font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:4px;">${t('api_warning')}</div>
+          <div style="color:var(--amber);font-size:13px;font-weight:500;line-height:1.4;">${t('api_warning_sub')}</div>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="stat-grid" style="gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <!-- SFL Balance -->
+        <div class="stat-card spring-in stagger-1" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_balance')}</div>
+            <div class="stat-value amber" style="font-size:20px; line-height:1;">${formatSfl(parsedFarm.balance)}</div>
+            <div class="stat-sub" style="margin-top:2px;">SFL</div>
+          </div>
+        </div>
+        <!-- Coins -->
+        <div class="stat-card spring-in stagger-2" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.COINS}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+            <span style="font-size:18px;display:none">🪙</span>
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_coins')}</div>
+            <div class="stat-value sky" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.coins, 0)}</div>
+            <div class="stat-sub" style="margin-top:2px;">${t('home_coins')}</div>
+          </div>
+        </div>
+        <!-- Gems -->
+        ${parsedFarm.gems !== undefined ? `
+        <div class="stat-card spring-in stagger-3" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.GEM}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">Diamantes</div>
+            <div class="stat-value" style="font-size:20px; line-height:1; color: #a855f7;">${formatNumber(parsedFarm.gems, 0)}</div>
+            <div class="stat-sub" style="margin-top:2px;">Gems</div>
+          </div>
+        </div>
+        ` : ''}
+        <!-- VIP -->
+        <div class="stat-card spring-in stagger-4" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.VIP}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">Status VIP</div>
+            <div class="stat-value ${parsedFarm.isVip ? 'amber' : ''}" style="font-size:18px; line-height:1;">
+              ${parsedFarm.isVip ? 'Ativo' : 'Inativo'}
+            </div>
+            <div class="stat-sub" style="margin-top:2px;">${!parsedFarm.isVip ? 'Sem passe' : (parsedFarm.vipLifetime ? 'Vitalício' : (parsedFarm.vipDaysLeft > 0 ? `Expira em ${parsedFarm.vipDaysLeft} dias` : 'Expirando...'))}</div>
+          </div>
+        </div>
+        <!-- Crops -->
+        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"'}>
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.SUNFLOWER}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_crops')}</div>
+            <div class="stat-value ${readyCrops > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
+                (readyCrops > 0 ? readyCrops + ' ' + t('home_ready') : (nextCrop ? nextCrop.countdown : t('home_growing')))}
+            </div>
+            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyCrops === 0 && nextCrop ? `às ${new Date(nextCrop.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots}` : `${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots} canteiros`)}</div>
+          </div>
+          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+        <!-- Fruits -->
+        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showFruitsModal && window.__app.showFruitsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"'}>
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.APPLE}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">FRUTAS</div>
+            <div class="stat-value ${readyFruits > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
+                (readyFruits > 0 ? readyFruits + ' ' + t('home_ready') : (nextFruit ? nextFruit.countdown : t('home_growing')))}
+            </div>
+            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `às ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.fruits.length} pés` : `${parsedFarm.fruits.length} plantadas`)}</div>
+          </div>
+          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+        <!-- Animals -->
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showAnimalsModal && window.__app.showAnimalsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes dos animais"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes dos animais"'}>
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.CHICKEN}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_animals')}</div>
+            <div class="stat-value ${readyAnimals > 0 ? 'coral' : ''}" style="font-size:18px; line-height:1;">
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
+                (readyAnimals > 0 ? readyAnimals + ' ' + t('home_need_attn') : parsedFarm.animals.length + ' ' + t('home_ok'))}
+            </div>
+            <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${animalDetailsText}</div>
+          </div>
+          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+        <!-- Expansion -->
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes de expansão">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃO</div>
+            <div class="stat-value emerald" style="font-size:20px; line-height:1;">${parsedFarm.level ?? 1}</div>
+            <div class="stat-sub" style="margin-top:2px;">Progresso</div>
+          </div>
+          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+          <!-- Player Profile -->
+          <div class="stat-card spring-in stagger-6-5" style="grid-column: 1 / -1; background: linear-gradient(145deg, var(--surface-2), var(--surface-1)); border: 1px solid var(--amber); border-radius: 20px; overflow: hidden; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.05); position: relative;">
+            <style>
+              @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+              .bpk-avatar-box { width: 90px; height: 90px; min-width: 90px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border-radius: 16px; border: 2px solid #f59e0b; padding: 4px; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(245,158,11,0.2); display: flex; align-items: center; justify-content: center; }
+              .bpk-name { margin:0; font-size:22px; font-weight:800; color:var(--text-primary); text-shadow: 0 2px 4px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+            </style>
+            
+            <div style="display: flex; gap: 20px; align-items: stretch; position: relative; z-index: 2;">
+              <div class="bpk-avatar-box">
+                <svg viewBox="0 0 100 100" width="100%" height="100%" style="opacity: 0.6; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                  <rect x="35" y="20" width="30" height="30" fill="#f59e0b" rx="4" />
+                  <rect x="25" y="55" width="50" height="40" fill="#d97706" rx="6" />
+                  <rect x="30" y="30" width="10" height="10" fill="#1e1e1e" />
+                  <rect x="60" y="30" width="10" height="10" fill="#1e1e1e" />
+                  <rect x="40" y="45" width="20" height="5" fill="#1e1e1e" />
+                </svg>
+                <img src="https://sunflower-land.com/play/bumpkins/${parsedFarm.bumpkin?.id || farmId}.png" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.src='https://images.bumpkins.io/bumpkins/${parsedFarm.bumpkin?.id || farmId}.png'; this.onerror=function(){this.style.display='none'; this.previousElementSibling.style.display='block';};" />
+              </div>
+              
+              <div style="flex:1; display:flex; flex-direction:column; justify-content:center; min-width:0;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                  <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <h2 class="bpk-name">${username === 'Fazenda' ? `Fazenda #${farmId}` : username}</h2>
+                      ${username !== 'Fazenda' ? `<span style="font-size:13px; color:var(--text-tertiary); font-family:monospace; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:6px; user-select:all; cursor:pointer; white-space:nowrap;" title="Clique para copiar" onclick="navigator.clipboard.writeText('https://sunflower-land.com/play/?farmId=${farmId}'); window.__app.showToast('Link copiado!'); event.stopPropagation();">#${farmId}</span>` : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                      ${parsedFarm.isVip ? `<span style="background:linear-gradient(135deg,#f59e0b,#ea580c); color:#000; font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; letter-spacing:0.5px; box-shadow: 0 2px 8px rgba(245,158,11,0.4); white-space:nowrap;"><i class="bi bi-star-fill"></i> VIP ${parsedFarm.vipLifetime ? '(Vitalício)' : (parsedFarm.vipDaysLeft > 0 ? `(${parsedFarm.vipDaysLeft} d)` : '')}</span>` : ''}
+                      <span style="background:rgba(255,255,255,0.1); color:var(--text-secondary); font-size:11px; font-weight:600; padding:2px 8px; border-radius:99px; border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(4px); white-space:nowrap;">${parsedFarm.islandType === 'desert' ? '🏜️ Deserto' : (parsedFarm.islandType === 'spring' ? '🌸 Primavera' : '🏝️ Básica')}</span>
+                    </div>
+                  </div>
+                  
+                  <div style="display:flex; flex-direction:column; gap:4px; text-align:right; border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;">
+                    <div style="font-size:12px; color:var(--text-secondary);">Ajudados: <b style="color:var(--text-primary); font-size:14px; margin-left:4px;">${totalHelps}</b></div>
+                    <div style="font-size:12px; color:var(--text-secondary);">Ajudas Hoje: <b style="color:${helpsLeft > 0 ? 'var(--emerald)' : 'var(--text-tertiary)'}; font-size:14px; margin-left:4px;">${helpsLeft} / ${maxHelps}</b></div>
+                  </div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px;">
+                  <span style="background:var(--surface-3); border:1px solid #f59e0b; color:#f59e0b; font-size:13px; font-weight:800; padding:2px 10px; border-radius:8px; box-shadow: 0 2px 10px rgba(245,158,11,0.2);"><i class="bi bi-trophy-fill" style="margin-right:4px;"></i> Nível ${level}</span>
+                  <span style="font-size:12px; font-weight:700; color:var(--text-secondary); text-align:right;">${(xp / 1000000).toFixed(1)}M XP</span>
+                </div>
+                
+                <div class="xp-bar-wrap" style="height:8px; background:rgba(0,0,0,0.5); border-radius:99px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); position:relative; width:100%; margin:0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+                  <div class="xp-bar-fill" style="height:100%; background:linear-gradient(90deg, #d97706, #fbbf24); border-radius:99px; width:${Math.min(100, Math.max(0, xpProgress * 100)).toFixed(1)}%; box-shadow: 0 0 10px rgba(251,191,36,0.6); position:relative;">
+                    <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Abstract background decoration -->
+            <div style="position:absolute; right:-20px; top:-20px; width:150px; height:150px; background:radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          </div>
+          <!-- Marks -->
+        ${parsedFarm.marks !== undefined && parsedFarm.marks > 0 ? `
+        <div class="stat-card spring-in stagger-7" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <span style="font-size:24px;line-height:1">🏵️</span>
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">MARCAS DA FACÇÃO</div>
+            <div class="stat-value coral" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.marks, 0)}</div>
+            <div class="stat-sub" style="margin-top:2px;">Marcas</div>
+          </div>
+        </div>
+        ` : ''}
+        <!-- Charm -->
+        ${parsedFarm.charm !== undefined && parsedFarm.charm > 0 ? `
+        <div class="stat-card spring-in stagger-8" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <span style="font-size:24px;line-height:1">✨</span>
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">ENCANTO</div>
+            <div class="stat-value sky" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.charm, 0)}</div>
+            <div class="stat-sub" style="margin-top:2px;">Pontos</div>
+          </div>
+        </div>
+        ` : ''}
+        <!-- Tax Free SFL -->
+        ${parsedFarm.taxFreeSFL !== undefined && parsedFarm.taxFreeSFL > 0 ? `
+        <div class="stat-card spring-in stagger-9" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:hue-rotate(90deg);" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">SFL LIVRE DE TAXA</div>
+            <div class="stat-value emerald" style="font-size:20px; line-height:1;">${formatSfl(parsedFarm.taxFreeSFL)}</div>
+            <div class="stat-sub" style="margin-top:2px;">SFL</div>
+          </div>
+        </div>
+        ` : ''}
+      </div>
+    `);
+
+    // Next events (top 5 upcoming)
+    const allEvents = [
+      ...parsedFarm.crops,
+      ...parsedFarm.fruits,
+      ...parsedFarm.animals.filter(a => a.msLeft > 0),
+      ...parsedFarm.buildings,
+    ].filter(e => e.msLeft > 0).sort((a, b) => a.msLeft - b.msLeft).slice(0, 5);
+
+    setHtml('#home-upcoming', allEvents.length > 0 ? `
+      <div class="section-header mb-3">
+        <div class="section-title">⏰ ${t('home_upcoming')}</div>
+      </div>
+      <div class="farm-items-list">
+        ${allEvents.map((e, i) => renderFarmItem(e, i)).join('')}
+      </div>
+    ` : '');
+
+  } else {
+    setHtml('#home-farm-summary', `
+      <div class="empty-state">
+        <span class="empty-state-icon">🌻</span>
+        <div class="empty-state-title">${t('home_no_farm')}</div>
+        <div class="empty-state-sub">${t('home_no_farm_sub')}</div>
+        <button class="btn-primary" style="margin-top:16px;padding:10px 24px;font-size:13px;" onclick="window.__app.switchTab('settings')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="m10 11 11 .9c.6 0 .9.5.8 1.1l-.8 5h-1"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h9l1 7.246"/><path d="M4 11V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="4"/></svg>
+          Conectar Fazenda
+        </button>
+      </div>
+    `);
+    setHtml('#home-upcoming', '');
+  }
+}
+
+function renderFarmPage(parsedFarm, farmId, exchange) {
+  // Render the Home widgets (price card, converter, farm summary grid)
+  renderHome(exchange, null, parsedFarm);
+
+  if (!parsedFarm) {
+    setHtml('#farm-content', `
+      <div class="empty-state">
+        <span class="empty-state-icon">🏡</span>
+        <div class="empty-state-title">${t('farm_enter_id')}</div>
+        <div class="empty-state-sub">${t('farm_enter_id_sub')}</div>
+      </div>
+    `);
+    return;
+  }
+
+  const { bumpkin, balance, coins, gems, crops, fruits, trees, rocks, animals,
+          beehives, buildings, greenhouse, oil, composting, chores, inventory, isPartial } = parsedFarm;
+
+  const readyCrops = crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0);
+  const attentionAnimalsArr = animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status));
+  const attentionAnimals = attentionAnimalsArr.length;
+  
+  let animalDetailsText = '-';
+  if (!isPartial) {
+      if (attentionAnimals > 0) {
+          const attentionAnimalTypes = {};
+          attentionAnimalsArr.forEach(a => { attentionAnimalTypes[a.type] = (attentionAnimalTypes[a.type] || 0) + 1; });
+          
+          let details = [];
+          if (attentionAnimalTypes['Chicken']) details.push(`🐔 ${attentionAnimalTypes['Chicken']}`);
+          if (attentionAnimalTypes['Cow']) details.push(`🐄 ${attentionAnimalTypes['Cow']}`);
+          if (attentionAnimalTypes['Sheep']) details.push(`🐑 ${attentionAnimalTypes['Sheep']}`);
+          if (details.length > 0) {
+              animalDetailsText = details.join(' • ');
+          }
+      } else {
+          animalDetailsText = `${animals.length} ${t('home_total')}`;
+      }
+  }
+
+  // SFL USD/BRL for converter
+  const sflUsd = exchange?.sfl?.usd ?? 0;
+  const sflBrl = exchange?.sfl?.brl ?? 0;
+
+  const partialNotice = isPartial ? `
+    <div class="card mb-4" style="padding:14px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); border:1px solid rgba(245,158,11,0.2);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="bi bi-exclamation-triangle-fill" style="color:var(--amber);font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">Modo de Leitura Básica</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.4;">Para ver timers reais e informações detalhadas em tempo real, use o <strong>start.bat</strong> (se estiver no PC) ou insira sua API Key nas Configurações.</div>
+        </div>
+        <button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="window.__app.switchTab('settings')">Configurar</button>
+      </div>
+    </div>
+  ` : '';
+
+
+
+  // Bumpkin card
+  const isVip = parsedFarm.isVip ?? false;
+  const islandType = parsedFarm.islandType ?? 'basic';
+  const islandLabels = {
+    basic: 'Básica', petal: 'Pétala', desert: 'Deserto', volcano: 'Vulcão', spring: 'Primavera'
+  };
+  const islandLabel = islandLabels[islandType] || islandType;
+
+  const bumpkinHtml = "";
+
+  // Skills
+  const skillsList = parsedFarm.skills ?? [];
+  const skillsHtml = skillsList.length > 0 ? `
+    <div class="mb-4">
+      <div class="section-header mb-3 mt-4">
+        <div class="section-title">🧠 ${t('farm_skills_title')}</div>
+        <div class="section-badge emerald">${skillsList.length} Ativas</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${skillsList.map(skill => {
+          const imgUrl = `https://sfl.world/img/source/${encodeURIComponent(skill)}.png`;
+          return `
+            <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:12px;font-size:12px;font-weight:600;color:var(--text-primary);box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+              <img src="${imgUrl}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.SFL}'">
+              ${skill}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const hasKey = !!Storage.getSettings().communityApiKey;
+
+  // Sections
+  const allSections = [
+    { id: 'crops', title: `🌾 ${t('farm_crops')}`, badge: crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0), items: crops, badgeClass: 'emerald' },
+    { id: 'fruits', title: `🍇 ${t('farm_fruits')}`, badge: fruits.filter(f => f.status === 'ready').length, items: fruits, badgeClass: 'emerald' },
+    { id: 'animals', title: `🐔 ${t('farm_animals')}`, badge: animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length, items: animals, badgeClass: 'coral' },
+    { id: 'trees', title: `🌲 Árvores & Madeira`, badge: trees.filter(t => t.status === 'ready').length, items: trees, badgeClass: 'emerald' },
+    { id: 'rocks', title: `⛏️ Minérios & Pedras`, badge: rocks.filter(r => r.status === 'ready').length, items: rocks, badgeClass: 'sky' },
+    { id: 'buildings', title: `🏠 ${t('farm_buildings')}`, badge: buildings.filter(b => b.status === 'ready').length, items: buildings, badgeClass: 'amber' },
+    { id: 'beehives', title: `🍯 Colmeias & Mel`, badge: beehives.filter(h => h.status === 'ready').length, items: beehives, badgeClass: 'amber' },
+    { id: 'greenhouse', title: `🏡 ${t('farm_greenhouse')}`, badge: greenhouse.filter(g => g.status === 'ready').length, items: greenhouse, badgeClass: 'emerald' },
+    { id: 'oil', title: `🛢️ Poços de Óleo`, badge: oil.filter(o => o.status === 'ready').length, items: oil, badgeClass: 'sky' },
+  ];
+
+  const settings = Storage.getSettings();
+  let order = settings.farmSectionOrder || [];
+  let collapsed = settings.farmSectionCollapsed || {};
+  
+  const sectionMap = {};
+  allSections.forEach(s => sectionMap[s.id] = s);
+  
+  const sortedSections = [];
+  order.forEach(id => {
+    if (sectionMap[id]) {
+       sortedSections.push(sectionMap[id]);
+       delete sectionMap[id];
+    }
+  });
+  Object.values(sectionMap).forEach(s => sortedSections.push(s));
+
+  const sectionsHtml = sortedSections.map((s, si) => {
+    const isCollapsed = !!collapsed[s.id];
+    return `
+      <div class="mb-4 spring-in farm-section-card" data-id="${s.id}" style="animation-delay:${si * 40}ms">
+        <div class="section-header mb-2 drag-handle" style="display:flex; justify-content:space-between; align-items:center; cursor: grab;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="bi bi-grip-vertical" style="color:var(--text-tertiary); margin-right:4px;"></i>
+            <div class="section-title">${s.title}</div>
+            ${s.badge > 0 ? `<div class="section-badge ${s.badgeClass}">${s.badge} ${t('home_ready')}</div>` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <button onclick="window.__app.toggleFarmSection('${s.id}')" style="background:var(--surface-3);border:1px solid var(--surface-border);color:var(--text-primary);cursor:pointer;padding:4px 8px;border-radius:6px;" title="Minimizar/Expandir"><i class="bi bi-chevron-${isCollapsed ? 'left' : 'down'}"></i></button>
+          </div>
+        </div>
+        
+        <div style="display: ${isCollapsed ? 'none' : 'block'};">
+          ${s.items.length > 0 ? `
+            <div class="farm-items-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));gap:10px;">
+              ${s.items.slice(0, 12).map((item, i) => renderFarmItem(item, i)).join('')}
+            </div>
+            ${s.items.length > 12 ? `<div style="text-align:center;font-family:var(--font-mono);font-size:13px;color:var(--text-tertiary);padding:8px">+${s.items.length - 12} ${t('market_all')}</div>` : ''}
+          ` : `
+            <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
+              ${isPartial ? (hasKey ? `
+                <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
+                <span>Execute o proxy (<strong>start.bat</strong>) para ver dados reais.</span>
+              ` : `
+                <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
+                <span>Insira sua <strong>API Key</strong> em Config para ver dados reais.</span>
+              `) : `
+                <span style="opacity:0.6;">Nenhum item em produ&ccedil;&atilde;o.</span>
+              `}
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Inventory
+  const resItems = inventory.resources ?? [];
+  const invHtml = `
+    <div class="mb-4">
+      <div class="section-header mb-2 mt-4">
+        <div class="section-title">🪵 Inventário de Recursos</div>
+        ${resItems.length > 0 ? `<div class="section-badge emerald">${resItems.length} Itens</div>` : ''}
+      </div>
+      ${resItems.length > 0 ? `
+        <div class="inventory-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));gap:10px;">
+          ${resItems.map(item => `
+            <div style="text-align:center;position:relative;">
+              <div style="width:52px;height:52px;margin:0 auto 6px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.15);">
+                <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                <span style="font-size:24px;line-height:1;display:none;">📦</span>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--text-primary);">${formatNumber(item.amount, 0)}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
+          ${isPartial ? (hasKey ? `
+            <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
+            <span>Execute o proxy (<strong>start.bat</strong>) para carregar o inventário.</span>
+          ` : `
+            <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
+            <span>Insira sua <strong>API Key</strong> em Config para carregar o inventário.</span>
+          `) : `
+            <span style="opacity:0.6;">Nenhum recurso.</span>
+          `}
+        </div>
+      `}
+    </div>
+  `;
+
+  // Chores
+  const choresHtml = chores.length > 0 ? `
+    <div class="mb-4">
+      <div class="section-header mb-3">
+        <div class="section-title">📋 ${t('farm_chores')}</div>
+        <div class="section-badge">${chores.length} ${t('home_active_plots')}</div>
+      </div>
+      <div class="card">
+        ${chores.slice(0, 10).map(c => `
+          <div class="chore-item">
+            <div class="chore-npc">${c.npc}</div>
+            <div class="chore-desc">${c.description}</div>
+            <div class="chore-reward">${c.reward?.coins ? `+${formatNumber(c.reward.coins, 0)} 🪙` : ''}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  setHtml('#farm-content', partialNotice + bumpkinHtml + skillsHtml + `<div id="farm-sections-container">${sectionsHtml}</div>` + invHtml + choresHtml);
+
+  // Inject CSS for drag states if not already present
+  if (!document.getElementById('sortable-styles')) {
+    const style = document.createElement('style');
+    style.id = 'sortable-styles';
+    style.innerHTML = `
+      .sortable-chosen { opacity: 0.9; cursor: grabbing !important; }
+      .sortable-ghost { opacity: 0.3; background: var(--surface-2); border: 2px dashed var(--text-tertiary); }
+      .drag-handle { cursor: grab; }
+      .drag-handle:active { cursor: grabbing; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Initialize Sortable JS
+  setTimeout(() => {
+    const el = document.getElementById('farm-sections-container');
+    if (el && window.Sortable) {
+      console.log('Initializing SortableJS on farm-sections-container with bulletproof config');
+      window.Sortable.create(el, {
+        animation: 150,
+        handle: '.drag-handle', // Drag instantly using the header
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function (evt) {
+          const newOrder = Array.from(el.children).map(child => child.dataset.id);
+          Storage.saveSettings({ farmSectionOrder: newOrder });
+          console.log('Saved new order:', newOrder);
+        }
+      });
+    } else {
+      console.error('Failed to initialize SortableJS', { el, sortable: window.Sortable });
+    }
+  }, 100);
+}
+
+// =====================================================
+// FARM ITEM COMPONENT
+// =====================================================
+
+function renderFarmItem(item, index) {
+  let iconName = item.name;
+  if (item.type === 'Chicken' || item.type === 'Cow' || item.type === 'Sheep') iconName = item.type;
+  if (item.type === 'building' && item.cooking && item.cooking !== 'Unknown') iconName = item.cooking;
+  if (item.type === 'cropMachine' && item.name.includes('(')) iconName = item.name.split('(')[1].replace(')', '');
+  
+  const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(iconName)}.png`;
+
+  return `
+    <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="animation-delay:${index * 30}ms">
+      <img src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" class="farm-item-icon">
+      <span style="font-size:24px;line-height:1;display:none" class="farm-item-emoji">${item.emoji || '🌱'}</span>
+      <div class="farm-item-info">
+        <div class="farm-item-name">${item.name}</div>
+        <div class="farm-item-sub">${item.type ?? ''} ${item.amount ? `x ${item.amount}` : ''}</div>
+      </div>
+      <div class="farm-item-timer ${item.status}">${item.countdown}</div>
+    </div>
+  `;
+}
+
+// =====================================================
+// MARKET PAGE
+// =====================================================
+
+const FALLBACK_PRICES = {
+  "Sunflower": 0.000405, "Potato": 0.000534, "Pumpkin": 0.001179, "Carrot": 0.002168, "Cabbage": 0.001795,
+  "Beetroot": 0.006218, "Cauliflower": 0.008788, "Parsnip": 0.013663, "Radish": 0.010318, "Wheat": 0.0152,
+  "Kale": 0.017698, "Apple": 0.0226, "Blueberry": 0.0183, "Orange": 0.017, "Eggplant": 0.010653,
+  "Corn": 0.013255, "Banana": 0.02251, "Soybean": 0.002281, "Grape": 0.236675, "Rice": 0.2931,
+  "Olive": 0.38828, "Tomato": 0.004972, "Lemon": 0.0093, "Barley": 0.026099, "Rhubarb": 0.000943,
+  "Zucchini": 0.000749, "Yam": 0.0031, "Broccoli": 0.004356, "Pepper": 0.006588, "Onion": 0.01279,
+  "Turnip": 0.013969, "Artichoke": 0.01217, "Wood": 0.012301, "Stone": 0.02599, "Iron": 0.1004,
+  "Gold": 0.34993, "Crimstone": 0.79923, "Obsidian": 20.0, "Egg": 0.02064, "Honey": 0.10267,
+  "Feather": 0.00874, "Wool": 0.04197, "Milk": 0.11099, "Leather": 0.0998
+};
+
+let _allPrices = {};
+let _sflUsd    = 0;
+
+function renderMarketPage(prices, exchange) {
+  _sflUsd = exchange?.sfl?.usd ?? 0.0065;
+  
+  let p2p = prices?.data?.p2p ?? prices?.p2p;
+  if (!p2p || Object.keys(p2p).length === 0) {
+    p2p = (Object.keys(_allPrices).length > 0) ? _allPrices : FALLBACK_PRICES;
+  }
+  _allPrices = p2p;
+
+  renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'all');
+
+  const settings = Storage.getSettings();
+  let settingsContainer = $('#market-settings-container');
+  if (!settingsContainer) {
+    settingsContainer = document.createElement('div');
+    settingsContainer.id = 'market-settings-container';
+    settingsContainer.className = 'mb-4';
+    const marketGrid = $('#market-grid');
+    if (marketGrid && marketGrid.parentNode) {
+      marketGrid.parentNode.insertBefore(settingsContainer, marketGrid);
+    }
+  }
+
+  settingsContainer.innerHTML = `
+    <div class="card" style="padding:12px; margin-bottom: 16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em">
+        Configurações de Taxa P2P
+      </div>
+      <div class="sett-row" style="margin-bottom: 12px;">
+        <div>
+          <div class="sett-row-label" style="font-size:13px">Tipo de Ilha</div>
+        </div>
+        <div class="sett-chip-group" id="market-chip-island">
+          <button class="sett-chip ${settings.island === 'basic' ? 'active' : ''}" data-val="basic">Básica</button>
+          <button class="sett-chip ${settings.island === 'petal' ? 'active' : ''}" data-val="petal">Petal</button>
+          <button class="sett-chip ${settings.island === 'desert' ? 'active' : ''}" data-val="desert">Desert</button>
+          <button class="sett-chip ${settings.island === 'volcano' ? 'active' : ''}" data-val="volcano">Volcano</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;">
+        <div class="sett-row" style="flex:1;background:var(--surface-1);padding:8px 12px;border-radius:8px;">
+          <div class="sett-row-label" style="font-size:13px">👑 VIP (-50%)</div>
+          <label class="toggle">
+            <input type="checkbox" id="market-toggle-vip" ${settings.isVip ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="sett-row" style="flex:1;background:var(--surface-1);padding:8px 12px;border-radius:8px;">
+          <div class="sett-row-label" style="font-size:13px">⛩ Shrine (-2.5%)</div>
+          <label class="toggle">
+            <input type="checkbox" id="market-toggle-shrine" ${settings.hasShrine ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Bind events
+  const saveMarketSettings = () => {
+    const islandEl = $('#market-chip-island .sett-chip.active');
+    Storage.saveSettings({
+      island:    islandEl?.dataset.val ?? 'volcano',
+      isVip:     !!$('#market-toggle-vip')?.checked,
+      hasShrine: !!$('#market-toggle-shrine')?.checked,
+    });
+    // Optional: trigger re-calc if modal is open, but simple save is fine
+  };
+
+  $$('#market-chip-island .sett-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $$('#market-chip-island .sett-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      saveMarketSettings();
+    });
+  });
+
+  $('#market-toggle-vip')?.addEventListener('change', saveMarketSettings);
+  $('#market-toggle-shrine')?.addEventListener('change', saveMarketSettings);
+}
+
+function renderMarketFiltered(search = '', filter = 'all') {
+  const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
+  let entries = Object.entries(p2p);
+
+  if (search) {
+    const q = search.toLowerCase();
+    entries = entries.filter(([name]) => name.toLowerCase().includes(q));
+  }
+
+  if (filter === 'crops') entries = entries.filter(([n]) => /Seed|Sunflower|Potato|Carrot|Cabbage|Parsnip|Radish|Wheat|Kale|Eggplant|Corn|Soybean|Barley|Rhubarb|Zucchini|Yam|Broccoli|Pepper|Onion|Turnip|Artichoke|Beetroot|Cauliflower|Pumpkin|Apple|Blueberry|Orange|Banana|Grape|Rice|Olive|Tomato|Lemon/.test(n));
+  if (filter === 'resources') entries = entries.filter(([n]) => /Wood|Stone|Iron|Gold|Crimstone|Obsidian|Honey|Egg|Feather|Wool|Leather|Milk|Oil|Salt/.test(n));
+  if (filter === 'fish') entries = entries.filter(([n]) => /fish|Fish|Tuna|Shark|Eel|Bass|Mahi|Salmon|Cod|Crab|Lobster|Mussel|Oyster|Shrimp|Bait/.test(n));
+
+  entries = entries.sort((a, b) => b[1] - a[1]);
+
+  setHtml('#market-grid', entries.length > 0 ? entries.slice(0, 100).map(([name, priceInSfl]) => {
+    const usdVal = priceInSfl * _sflUsd;
+    const safeName = name.replace(/'/g, "\\'");
+    return `
+      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${priceInSfl})" style="cursor:pointer">
+        <div style="width:48px;height:48px;margin:0 auto 10px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+          <span style="font-size:24px;line-height:1;display:none;">📦</span>
+        </div>
+        <div class="market-item-name">${name}</div>
+        <div class="market-item-price">${formatPrice(priceInSfl)} SFL</div>
+        <div class="market-item-usd">≈ $${usdVal.toFixed(4)}</div>
+      </div>
+    `;
+  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🔍</span><div class="empty-state-title">Nenhum item encontrado</div></div>`);
+}
+
+// =====================================================
+// P2P CALCULATOR & MODAL
+// =====================================================
+
+function showModal(title, html) {
+  const modal = $('#app-modal');
+  $('#modal-title').textContent = title;
+  $('#modal-body').innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+function hideModal() {
+  $('#app-modal').style.display = 'none';
+}
+
+function openP2pCalc(itemName, priceInSfl) {
+  const settings = Storage.getSettings();
+  // Correct tax rates per island type
+  // Source: sfl.world API returns taxResource as a decimal (e.g., 0.075 = 7.5%)
+  const taxRateMap = {
+    'basic':   0,      // No P2P market on basic island
+    'petal':   0.50,   // 50% tax (Petal Paradise)
+    'desert':  0.20,   // 20% tax (Desert)
+    'volcano': 0.15,   // 15% tax (Volcano)
+    'spring':  0.10,   // 10% tax
+  };
+  let taxRate = taxRateMap[settings.island] ?? 0.15;
+  if (settings.isVip)    taxRate = taxRate * 0.5;              // VIP: -50% tax
+  if (settings.hasShrine) taxRate = Math.max(0, taxRate - 0.025); // Shrine: -2.5%
+
+  showModal(`Calculator: ${itemName}`, `
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);margin-bottom:16px">
+      Floor Price: <strong style="color:var(--amber)">${priceInSfl} SFL</strong><br>
+      Island: <strong>${settings.island}</strong> | Tax: <strong>${(taxRate * 100).toFixed(1)}%</strong>
+      ${settings.isVip ? ' | <span style="color:var(--emerald)">VIP ✓</span>' : ''}
+      ${settings.hasShrine ? ' | <span style="color:var(--sky)">⛩ Shrine ✓</span>' : ''}
+    </div>
+    
+    <label style="font-size:12px;color:var(--text-tertiary);display:block;margin-bottom:4px"></label>
+    <input type="number" id="calc-qty" class="calc-input" value="10" min="1" oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate})">
+    
+    <div class="calc-row">
+      <span></span>
+      <span id="calc-gross">0 SFL</span>
+    </div>
+    <div class="calc-row">
+      <span>Tax (${(taxRate * 100).toFixed(1)}%)</span>
+      <span id="calc-tax" style="color:var(--coral)">- 0 SFL</span>
+    </div>
+    <div class="calc-row total">
+      <span></span>
+      <span id="calc-net">0 SFL</span>
+    </div>
+  `);
+  
+  // Trigger initial calculation immediately
+  setTimeout(() => window.__app.updateP2pCalc(priceInSfl, taxRate), 50);
+}
+
+function updateP2pCalc(price, taxRate) {
+  const qtyInput = $('#calc-qty');
+  if (!qtyInput) return;
+  
+  const qty = parseInt(qtyInput.value) || 0;
+  const gross = qty * price;
+  const tax = gross * taxRate;
+  const net = gross - tax;
+  
+  setText('#calc-gross', formatPrice(gross) + ' SFL');
+  setText('#calc-tax', '- ' + formatPrice(tax) + ' SFL');
+  setText('#calc-net', formatPrice(net) + ' SFL');
+}
+
+// =====================================================
+// TOOLS PAGE
+// =====================================================
+
+function renderToolsPage() {
+  setHtml('#tools-content', `
+    <div class="section-header mb-3">
+      <div class="section-title">🛠️ External Tools</div>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-card" onclick="window.open('https://sfl.world/util/p2p-calc', '_blank')">
+        <div class="tool-card-icon">🧮</div>
+        <div class="tool-card-title">P2P Calc (Full)</div>
+      </div>
+      <div class="tool-card" onclick="window.open('https://sfl.world/util/factions', '_blank')">
+        <div class="tool-card-icon">⚔️</div>
+        <div class="tool-card-title">Factions</div>
+      </div>
+      <div class="tool-card" onclick="window.open('https://sfl.world/tools/skills/', '_blank')">
+        <div class="tool-card-icon">🧠</div>
+        <div class="tool-card-title">Skill Trainer</div>
+      </div>
+      <div class="tool-card" onclick="window.open('https://sfl.world/tools/pet-feed-calc/', '_blank')">
+        <div class="tool-card-icon">🐶</div>
+        <div class="tool-card-title">Pet Feed Calc</div>
+      </div>
+      <div class="tool-card" onclick="window.open('https://sfl.world/tools/trade/', '_blank')">
+        <div class="tool-card-icon">📈</div>
+        <div class="tool-card-title">Price History</div>
+      </div>
+    </div>
+  `);
+}
+
+// =====================================================
+// ALERTS PAGE
+// =====================================================
+
+function renderAlertsPage() {
+  const log = Storage.getAlertLog();
+  if (log.length === 0) {
+    setHtml('#alerts-list', `
+      <div class="empty-state">
+        <span class="empty-state-icon">🔕</span>
+        <div class="empty-state-title">${t('alerts_empty_title')}</div>
+        <div class="empty-state-sub">${t('alerts_empty_sub')}</div>
+      </div>
+    `);
+    return;
+  }
+
+  setHtml('#alerts-list', log.map(a => `
+    <div class="alert-item">
+      <div class="alert-dot ${a.dot ?? 'amber'}"></div>
+      <div class="alert-content">
+        <div class="alert-title">${a.title}</div>
+        <div class="alert-time">${a.body ?? ''} · ${timeAgo(a.time)}</div>
+      </div>
+    </div>
+  `).join(''));
+}
+
+function updateAlertBadge() {
+  const log = Storage.getAlertLog();
+  const badge = $('#alert-nav-badge');
+  if (!badge) return;
+  if (log.length > 0) {
+    badge.style.display = 'flex';
+    badge.textContent   = log.length > 99 ? '99+' : log.length;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// =====================================================
+// NOTIFICATIONS SETTINGS PAGE
+// =====================================================
+
+function renderNotifSettings(notifPermission) {
+  const prefs = Storage.getNotifPrefs();
+
+  const permHtml = notifPermission !== 'granted' ? `
+    <div class="notif-permission-banner mb-4">
+      <span style="font-size:24px">🔕</span>
+      <div>
+        <p><strong style="color:var(--amber)">${t('notif_enable')}</strong><br>
+        ${t('notif_enable_desc')}</p>
+        <button id="btn-request-notif" class="btn-primary" style="margin-top:8px;font-size:12px;padding:6px 12px">
+          ${t('notif_enable')}
+        </button>
+      </div>
+    </div>
+  ` : `
+    <div class="notif-permission-banner mb-4" style="border-color:rgba(34,197,94,0.3)">
+      <span style="font-size:24px">🔔</span>
+      <p><strong style="color:var(--emerald)">${t('notif_status_granted')}</strong><br>${t('notif_status_granted_desc')}</p>
+    </div>
+  `;
+
+  const masterToggleHtml = `
+    <div class="settings-group">
+      <div class="settings-group-title">${t('alert_master')}</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">${t('alert_master_sub')}</div>
+          <div class="settings-row-sub">${t('alert_master_desc')}</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-notif-master" ${prefs.enabled ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  `;
+
+  const typeToggles = Object.values(NOTIF_TYPES).map(typeObj => `
+    <div class="notif-item">
+      <div class="notif-item-info">
+        <div class="notif-item-label">${typeObj.icon} ${t(typeObj.key) || typeObj.label}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" data-notif-key="${typeObj.key}" ${prefs[typeObj.key] !== false ? 'checked' : ''}>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  `).join('');
+
+  const settings = Storage.getSettings();
+  const priceAlertsHtml = `
+    <div class="settings-group mt-4">
+      <div class="settings-group-title">Alertas de Preço (SFL)</div>
+      <div class="card" style="padding:16px;">
+        <div class="sett-row" style="margin-bottom:12px;">
+          <div style="flex:1">
+            <div class="sett-row-label">📈 Alerta de Alta</div>
+            <div class="sett-row-sub">SFL subir acima (USD)</div>
+          </div>
+          <input
+            type="text"
+            id="alert-price-high"
+            inputmode="decimal"
+            placeholder="ex: 0.15"
+            value="${settings.sflPriceAlertHigh ?? ''}"
+            class="sett-price-input"
+            style="width:80px;text-align:right"
+          >
+        </div>
+        <div class="sett-row" style="border-top:1px solid var(--surface-border);padding-top:12px;">
+          <div style="flex:1">
+            <div class="sett-row-label">📉 Alerta de Baixa</div>
+            <div class="sett-row-sub">SFL cair abaixo (USD)</div>
+          </div>
+          <input
+            type="text"
+            id="alert-price-low"
+            inputmode="decimal"
+            placeholder="ex: 0.05"
+            value="${settings.sflPriceAlertLow ?? ''}"
+            class="sett-price-input"
+            style="width:80px;text-align:right"
+          >
+        </div>
+      </div>
+    </div>
+  `;
+
+  setHtml('#notif-settings-content', permHtml + masterToggleHtml + `
+    <div class="settings-group">
+      <div class="settings-group-title">${t('settings_saved_farms')}</div>
+      <div class="card" style="padding:0">
+        ${typeToggles}
+      </div>
+    </div>
+  ` + priceAlertsHtml);
+
+  bindNotifToggles();
+}
+
+function bindNotifToggles() {
+  const master = $('#toggle-notif-master');
+  if (master) {
+    master.addEventListener('change', () => {
+      Storage.saveNotifPrefs({ enabled: master.checked });
+    });
+  }
+
+  $$('[data-notif-key]').forEach(el => {
+    el.addEventListener('change', () => {
+      Storage.saveNotifPrefs({ [el.dataset.notifKey]: el.checked });
+    });
+  });
+
+  const savePriceAlerts = () => {
+    Storage.saveSettings({
+      sflPriceAlertHigh: parseFloat($('#alert-price-high')?.value) || null,
+      sflPriceAlertLow:  parseFloat($('#alert-price-low')?.value)  || null,
+    });
+  };
+  $('#alert-price-high')?.addEventListener('blur', savePriceAlerts);
+  $('#alert-price-low')?.addEventListener('blur', savePriceAlerts);
+
+  const requestBtn = $('#btn-request-notif');
+  if (requestBtn) {
+    requestBtn.addEventListener('click', async () => {
+      const { default: Notifications } = await import('./notifications.js');
+      const perm = await Notifications.requestPermission();
+      if (perm === 'granted') {
+        Storage.saveNotifPrefs({ enabled: true });
+        renderNotifSettings(perm);
+      }
+    });
+  }
+}
+
+// =====================================================
+// SETTINGS PAGE
+// =====================================================
+
+function renderSettingsPage() {
+  const settings = Storage.getSettings();
+  const currentFarmId = Storage.getActiveFarm();
+
+  setHtml('#settings-content', `
+
+    <!-- ① FARM ID CARD -->
+    <div class="sett-card sett-card--hero">
+      <div class="sett-card-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 11 11 .9c.6 0 .9.5.8 1.1l-.8 5h-1"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h9l1 7.246"/><path d="M4 11V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="4"/></svg>
+        Farm ID
+      </div>
+      <div class="sett-card-desc">Sua fazenda no Sunflower Land. Os dados serão carregados automaticamente.</div>
+      <div class="sett-farm-row">
+        <input
+          type="text"
+          id="settings-farm-input"
+          class="sett-farm-input"
+          placeholder="Ex: 123456"
+          value="${currentFarmId}"
+          inputmode="numeric"
+          pattern="[0-9]*"
+        >
+        <button class="sett-btn-enter" onclick="window.__app.saveAndGoToFarm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          Entrar
+        </button>
+      </div>
+    </div>
+
+    <!-- ② COMMUNITY API KEY -->
+    <div class="sett-section-title">Community API Key</div>
+
+    <div class="sett-card">
+      <div class="sett-card-desc" style="margin-bottom:10px">
+        Habilita dados completos (plantações, animais, inventário). Digite apenas uma vez e ela ficará salva automaticamente.<br>
+        Pegue no jogo: <strong style="color:var(--amber)">Settings → Developer Options → API Key</strong>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input
+          type="password"
+          id="input-api-key"
+          placeholder="Cole sua API Key aqui (sfl.Mj...)"
+          spellcheck="false"
+          value="${settings.communityApiKey ?? ''}"
+          style="flex:1;padding:10px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:var(--r2);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;box-sizing:border-box"
+        >
+        ${settings.communityApiKey ? '<span style="color:var(--emerald);font-size:18px;" title="Chave Salva">✅</span>' : ''}
+      </div>
+      ${settings.communityApiKey ? ((window.__app.State.hasKeyError || window.__app.State.proxyError) ? `
+        <div class="card error-box" style="margin-top: 15px; border-color: var(--error-color);">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <span style="font-size:16px;line-height:1">❌</span>
+            <div>
+              <strong>Erro de Conexão:</strong><br>
+              <span style="color: #ffaa99;">${window.__app.State.lastErrorMessage || 'O servidor oficial recusou a chave ou o proxy falhou.'}</span><br><br>
+              Se for erro de Proxy, certifique-se que o <strong>start.bat</strong> está rodando.<br>
+              Se for "Invalid API Key", gere uma nova no jogo e cole acima.
+            </div>
+          </div>
+        </div>
+      ` : '') : ''}
+    </div>
+
+    <div class="sett-footer">
+      🌻 Sunflower Super App v1.0 &nbsp;·&nbsp; Unofficial community tool
+    </div>
+  `);
+
+  bindSettingsEvents();
+}
+
+function bindSettingsEvents() {
+  const saveApiKey = async () => {
+    const keyInput = $('#input-api-key');
+    if (!keyInput) return;
+    const newKey = keyInput.value.trim();
+    const oldKey = Storage.getSettings().communityApiKey || '';
+    if (newKey !== oldKey) {
+      Storage.saveSettings({ communityApiKey: newKey });
+      if (newKey) {
+        showToast('Chave da API atualizada! Sincronizando...', 'success');
+        if (window.__app.State.farmId) {
+          await window.__app.refreshData(true);
+        }
+      }
+      renderSettingsPage(); // refresh to show checkmark
+    }
+  };
+
+  const apiKeyInput = $('#input-api-key');
+  if (apiKeyInput) {
+    apiKeyInput.addEventListener('blur', saveApiKey);
+    apiKeyInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') apiKeyInput.blur();
+    });
+  }
+
+  const farmInput = $('#settings-farm-input');
+  if (farmInput) {
+    farmInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') window.__app.saveAndGoToFarm();
+    });
+  }
+}
+
+// Handle search via input
+$('#search-input')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val && window.__app) window.__app.loadFarm(val);
+  }
+});
+
+// Global functions for inline event handlers
+window.__app = window.__app || {};
+
+window.__app.showExpansionModal = () => {
+  const parsed = window.__app?.State?.parsedFarm;
+  if (!parsed) return;
+
+  const level = parsed.level || 1;
+  const nextLevel = level + 1;
+  
+  const ISLAND_MAX_EXPANSION = {
+    basic: 9, spring: 16, desert: 25, volcano: 30, swamp: 42, spooky: 42, crystal: 42, galaxy: 42, marble: 42
+  };
+  const islandType = parsed.islandType || 'basic';
+  const maxExpansions = ISLAND_MAX_EXPANSION[islandType] || 9;
+  const expansoesFaltantes = Math.max(0, maxExpansions - level);
+  
+  // Base resources image URLs
+  const resourceIcons = {
+    'Wood': 'https://sfl.world/img/source/Wood.png',
+    'Stone': 'https://sfl.world/img/source/Stone.png',
+    'Iron': 'https://sfl.world/img/source/Iron.png',
+    'Gold': 'https://sfl.world/img/source/Gold.png',
+    'Crimstone': 'https://sfl.world/img/source/Crimstone.png',
+    'Oil': 'https://sfl.world/img/source/Oil.png',
+    'Gem': 'https://sfl.world/img/source/Gem.png',
+    'Block Buck': 'https://sfl.world/img/source/Block%20Buck.png',
+    'Coins': 'https://sfl.world/img/source/Coins.png',
+    'SFL': ASSETS.SFL
+  };
+  
+  // Estimated expansion requirements based on SFL progression logic
+  const getRequirements = (lvl) => {
+    const reqs = {};
+    if (lvl <= 2) { reqs['Wood'] = 10; }
+    else if (lvl <= 3) { reqs['Wood'] = 20; reqs['Stone'] = 5; }
+    else if (lvl <= 4) { reqs['Wood'] = 50; reqs['Stone'] = 10; reqs['Block Buck'] = 1; }
+    else if (lvl <= 5) { reqs['Wood'] = 100; reqs['Stone'] = 20; reqs['Iron'] = 5; reqs['Block Buck'] = 2; }
+    else if (lvl <= 6) { reqs['Wood'] = 200; reqs['Stone'] = 50; reqs['Iron'] = 10; reqs['Block Buck'] = 3; }
+    else if (lvl <= 7) { reqs['Wood'] = 300; reqs['Stone'] = 100; reqs['Iron'] = 25; reqs['Gold'] = 5; reqs['Block Buck'] = 5; }
+    else if (lvl <= 8) { reqs['Wood'] = 500; reqs['Stone'] = 200; reqs['Iron'] = 50; reqs['Gold'] = 10; reqs['Block Buck'] = 7; }
+    else if (lvl <= 9) { reqs['Wood'] = 800; reqs['Stone'] = 300; reqs['Iron'] = 100; reqs['Gold'] = 25; reqs['Block Buck'] = 10; }
+    else {
+      // Scaling for high levels
+      const scale = lvl - 9;
+      reqs['Wood'] = 800 + (scale * 200);
+      reqs['Stone'] = 300 + (scale * 100);
+      reqs['Iron'] = 100 + (scale * 50);
+      reqs['Gold'] = 25 + (scale * 15);
+      reqs['Block Buck'] = 10 + (scale * 2);
+    }
+    return reqs;
+  };
+
+  let reqs = {};
+  let reqCoins = 0;
+  const hardcodedReqs = EXPANSION_REQUIREMENTS[islandType]?.[nextLevel];
+  if (hardcodedReqs) {
+    reqs = { ...hardcodedReqs.resources };
+    reqCoins = hardcodedReqs.coins || 0;
+    
+    // Apply VIP discount to coins if applicable (20%)
+    if (parsed.isVip) {
+      reqCoins = Math.floor(reqCoins * 0.8);
+    }
+  } else {
+    // Fallback if missing
+    reqs = getRequirements(nextLevel);
+  }
+
+  const inventory = parsed.inventory.resources || {};
+  // Combine all items in inventory into a flat map for easy lookup
+  const invMap = {};
+  if (parsed.inventory.resources) parsed.inventory.resources.forEach(r => invMap[r.name] = r.qty);
+  if (parsed.inventory.crops) parsed.inventory.crops.forEach(c => invMap[c.name] = c.qty);
+  if (parsed.inventory.tools) parsed.inventory.tools.forEach(t => invMap[t.name] = t.qty);
+  if (parsed.inventory.food) parsed.inventory.food.forEach(f => invMap[f.name] = f.qty);
+  if (parsed.inventory.special) parsed.inventory.special.forEach(s => invMap[s.name] = s.qty);
+  invMap['SFL'] = parsed.balance;
+  invMap['Coins'] = parsed.coins || 0;
+  
+  if (reqCoins > 0) reqs['Coins'] = reqCoins;
+
+  let reqHtml = '';
+  for (const [resName, amountReq] of Object.entries(reqs)) {
+    const amountHas = invMap[resName] || 0;
+    const isMet = amountHas >= amountReq;
+    const icon = resourceIcons[resName] || '';
+    const progressPct = Math.min(100, Math.max(0, (amountHas / amountReq) * 100));
+
+    reqHtml += `
+      <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:32px; height:32px; background:var(--surface-3); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+              ${icon ? `<img src="${icon}" style="width:20px;height:20px;image-rendering:pixelated">` : '📦'}
+            </div>
+            <div>
+              <div style="font-size:13px; font-weight:600; color:var(--text-primary)">${resName}</div>
+              <div style="font-size:11px; color:var(--text-tertiary)">Falta: ${Math.max(0, amountReq - amountHas).toFixed(0)}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px; font-weight:700; color: ${isMet ? 'var(--emerald)' : 'var(--text-secondary)'}">
+              ${formatNumber(amountHas, 0)} / ${formatNumber(amountReq, 0)}
+            </div>
+            ${isMet ? `<div style="font-size:11px; color:var(--emerald)">Pronto! ✅</div>` : ''}
+          </div>
+        </div>
+        <!-- Progress Bar -->
+        <div style="height:6px; background:var(--surface-3); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:${progressPct}%; background: ${isMet ? 'var(--emerald)' : 'var(--amber)'}; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  const modalHtml = `
+    <div style="text-align:center; margin-bottom:16px;">
+      <div style="width:64px;height:64px;margin:0 auto 12px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 8px rgba(0,0,0,0.2);">
+        <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${islandType}.webp" style="width:40px;height:40px;image-rendering:pixelated" onerror="this.src='${ASSETS.ISLAND}'">
+      </div>
+      <h3 style="margin:0; font-size:18px; color:var(--text-primary)">Expansão ${level}/${maxExpansions}</h3>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Progresso atual para a Expansão ${nextLevel}</div>
+      <div style="font-size:13px; font-weight:bold; color:var(--emerald); margin-top:8px;">${expansoesFaltantes > 0 ? 'Faltam ' + expansoesFaltantes + ' expansões para concluir essa ilha.' : 'Ilha totalmente expandida!'}</div>
+    </div>
+    <div style="max-height: 400px; overflow-y:auto; padding-right:4px;">
+      ${reqHtml}
+    </div>
+  `;
+
+  showModal('Expansão de Terreno', modalHtml);
+};
+
+window.__app.showCropsModal = () => {
+  const parsed = window.__app.State.parsedFarm;
+  if (!parsed || !parsed.crops) return;
+
+  const crops = parsed.crops;
+  if (crops.length === 0 && crops.totalPlots === 0) {
+    showModal('Minhas Plantações', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">Você não possui plantações.</div>');
+    return;
+  }
+
+  const itemsHtml = crops.map((crop, i) => {
+    const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
+    let statusColor = 'var(--text-secondary)';
+    let statusBg = 'rgba(255,255,255,0.1)';
+    let statusText = 'Crescendo';
+    
+    if (crop.status === 'ready') {
+      statusColor = 'var(--emerald)';
+      statusBg = 'rgba(16, 185, 129, 0.1)';
+      statusText = 'Pronto para Colher!';
+    } else {
+      statusColor = 'var(--amber)';
+      statusBg = 'rgba(245, 158, 11, 0.1)';
+      statusText = crop.countdown;
+    }
+
+    return `
+      <div class="spring-in" style="background:var(--surface-3); border:1px solid var(--surface-border); border-radius:16px; margin-bottom:12px; animation-delay: ${i * 30}ms; padding:16px; display:flex; align-items:center; gap:16px;">
+        <div style="width:64px;height:64px;background:var(--surface-2);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--surface-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
+          <img src="${iconUrl}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+          <span style="font-size:32px;display:none">${crop.emoji || '🌱'}</span>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${crop.name}</div>
+          <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">
+            Quantidade: <strong style="color:var(--text-primary); font-size:14px;">${crop.amount}x</strong>
+          </div>
+          ${crop.fertiliser ? `<div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--emerald); margin-top:6px; font-weight:600;"><img src="https://sfl.world/img/source/${encodeURIComponent(crop.fertiliser)}.png" style="width:18px;height:18px;image-rendering:pixelated;" onerror="this.style.display='none'"> <span style="color:var(--text-primary);">${crop.fertiliser}</span></div>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px; font-weight:700; color:${statusColor}; background:${statusBg}; padding:6px 12px; border-radius:8px; border: 1px solid ${statusColor.replace('var(', 'rgba(').replace(')', ', 0.2)')}; white-space:nowrap;">
+            ${statusText}
+          </div>
+          ${crop.status !== 'ready' ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:6px; font-weight:600;">Termina às ${new Date(crop.readyAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const emptySlots = Math.max(0, crops.totalPlots - crops.totalPlanted);
+
+  const modalHtml = `
+    <div style="text-align:center; margin-bottom:16px;">
+      <div style="font-size:14px; color:var(--text-secondary); margin-bottom:8px;">Capacidade de Plantio:</div>
+      <div style="display:flex; justify-content:center; gap:16px;">
+        <div style="background:var(--surface-3); border:1px solid var(--surface-border); padding:8px 16px; border-radius:12px;">
+          <div style="font-size:24px; font-weight:800; color:var(--emerald); line-height:1;">${crops.totalPlanted}</div>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;">Plantados</div>
+        </div>
+        <div style="background:var(--surface-3); border:1px solid var(--surface-border); padding:8px 16px; border-radius:12px;">
+          <div style="font-size:24px; font-weight:800; color:var(--text-primary); line-height:1;">${crops.totalPlots}</div>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;">Slots Totais</div>
+        </div>
+        <div style="background:var(--surface-3); border:1px solid var(--surface-border); padding:8px 16px; border-radius:12px; ${emptySlots > 0 ? 'border-color:var(--amber);' : ''}">
+          <div style="font-size:24px; font-weight:800; color:${emptySlots > 0 ? 'var(--amber)' : 'var(--text-secondary)'}; line-height:1;">${emptySlots}</div>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;">Vazios</div>
+        </div>
+      </div>
+    </div>
+    <div style="max-height: 400px; overflow-y:auto; padding-right:4px;">
+      ${crops.length > 0 ? itemsHtml : '<div style="padding: 24px; text-align: center; color: var(--text-tertiary);">Nenhuma semente plantada no momento.</div>'}
+    </div>
+  `;
+
+  showModal('Minhas Plantações', modalHtml);
+};
+
+  window.__app.showFruitsModal = () => {
+    const parsed = window.__app.State.parsedFarm;
+    if (!parsed || !parsed.fruits) return;
+  
+    const fruits = parsed.fruits;
+    if (fruits.length === 0) {
+      showModal('🍇 Minhas Frutas', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">Você não possui frutas plantadas.</div>');
+      return;
+    }
+
+    const readyCount  = fruits.filter(f => f.status === 'ready').length;
+    const totalLeft   = fruits.reduce((sum, f) => sum + (parseInt(f.harvestsLeft) || 0), 0);
+
+    // Group by fruit name for summary
+    const byType = {};
+    fruits.forEach(f => { byType[f.name] = (byType[f.name] || 0) + 1; });
+    const typeChips = Object.entries(byType).map(([name, count]) => {
+      const icon = `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
+      return `<div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:4px 12px;">
+        <img src="${icon}" style="width:18px;height:18px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${count}x ${name}</span>
+      </div>`;
+    }).join('');
+
+    const itemsHtml = fruits.map((fruit, i) => {
+      const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
+      const isReady = fruit.status === 'ready';
+      const isEmpty = parseInt(fruit.harvestsLeft) === 0;
+
+      const statusBadge = isReady
+        ? `<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#4ade80;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap;">✅ Pronto!</span>`
+        : isEmpty
+          ? `<span style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#f87171;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">Esgotado</span>`
+          : `<span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:var(--amber-glow);font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">${fruit.countdown}</span>`;
+
+      const timeInfo = !isReady && !isEmpty
+        ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;">Pronto às ${new Date(fruit.readyAt).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</div>`
+        : '';
+
+      const harvestBar = parseInt(fruit.harvestsLeft) > 0
+        ? `<div style="display:flex;align-items:center;gap:4px;margin-top:5px;">
+            ${Array.from({length: Math.min(parseInt(fruit.harvestsLeft), 8)}).map(() =>
+              `<div style="width:6px;height:6px;border-radius:50%;background:var(--emerald);"></div>`
+            ).join('')}
+            ${parseInt(fruit.harvestsLeft) > 8 ? `<span style="font-size:10px;color:var(--text-tertiary);">+${parseInt(fruit.harvestsLeft)-8}</span>` : ''}
+          </div>`
+        : '';
+
+      return `
+        <div class="spring-in" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,${isReady ? '0.12' : '0.05'});border-radius:14px;margin-bottom:8px;animation-delay:${i*20}ms;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;${isReady ? 'box-shadow:0 0 0 1px rgba(74,222,128,0.15);' : ''}">
+          <div style="width:44px;height:44px;flex-shrink:0;background:rgba(0,0,0,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.08);">
+            <img src="${iconUrl}" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+            <span style="font-size:24px;display:none;">${fruit.emoji || '🍓'}</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);line-height:1;margin-bottom:4px;">${fruit.name}</div>
+            <div style="font-size:12px;color:var(--text-tertiary);">Colheitas: <strong style="color:${parseInt(fruit.harvestsLeft)>0?'var(--emerald)':'var(--text-tertiary)'}">${fruit.harvestsLeft}x restantes</strong></div>
+            ${harvestBar}
+            ${timeInfo}
+          </div>
+          <div style="flex-shrink:0;">
+            ${statusBadge}
+          </div>
+        </div>
+      `;
+    }).join('');
+  
+    const modalHtml = `
+      <!-- Stats Header -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+        <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:26px;font-weight:800;color:#4ade80;line-height:1;">${readyCount}</div>
+          <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Prontas</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:26px;font-weight:800;color:var(--text-primary);line-height:1;">${fruits.length}</div>
+          <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Pés</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:26px;font-weight:800;color:var(--amber-glow);line-height:1;">${totalLeft}</div>
+          <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Colheitas</div>
+        </div>
+      </div>
+      <!-- Fruit types chip row -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">${typeChips}</div>
+      <!-- Divider -->
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:14px;"></div>
+      <!-- List -->
+      <div class="hide-scrollbar" style="max-height:52vh;overflow-y:auto;">
+        ${itemsHtml}
+      </div>
+    `;
+  
+    showModal('🍇 Minhas Frutas', modalHtml);
+  };
+
+window.__app.moveFarmSectionUp = (id) => {
+  const settings = Storage.getSettings();
+  let order = settings.farmSectionOrder || ['crops', 'fruits', 'animals', 'trees', 'rocks', 'buildings', 'beehives', 'greenhouse', 'oil'];
+  const index = order.indexOf(id);
+  if (index > 0) {
+    const temp = order[index - 1];
+    order[index - 1] = id;
+    order[index] = temp;
+    Storage.saveSettings({ farmSectionOrder: order });
+    if (window.__app && window.__app.State) {
+      renderFarmPage(window.__app.State.parsedFarm, window.__app.State.farmId);
+    }
+  }
+};
+
+window.__app.moveFarmSectionDown = (id) => {
+  const settings = Storage.getSettings();
+  let order = settings.farmSectionOrder || ['crops', 'fruits', 'animals', 'trees', 'rocks', 'buildings', 'beehives', 'greenhouse', 'oil'];
+  const index = order.indexOf(id);
+  if (index >= 0 && index < order.length - 1) {
+    const temp = order[index + 1];
+    order[index + 1] = id;
+    order[index] = temp;
+    Storage.saveSettings({ farmSectionOrder: order });
+    if (window.__app && window.__app.State) {
+      renderFarmPage(window.__app.State.parsedFarm, window.__app.State.farmId);
+    }
+  }
+};
+
+window.__app.toggleFarmSection = (id) => {
+  const settings = Storage.getSettings();
+  let collapsed = settings.farmSectionCollapsed || {};
+  collapsed[id] = !collapsed[id];
+  Storage.saveSettings({ farmSectionCollapsed: collapsed });
+  if (window.__app && window.__app.State) {
+    renderFarmPage(window.__app.State.parsedFarm, window.__app.State.farmId);
+  }
+};
+
+window.__app.showAnimalsModal = () => {
+  const parsed = window.__app.State.parsedFarm;
+  if (!parsed || !parsed.animals) return;
+
+  const animals = parsed.animals;
+  if (animals.length === 0) {
+    showModal('Meus Animais', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">Você não possui animais.</div>');
+    return;
+  }
+
+  const groups = {};
+  animals.forEach(animal => {
+    if (!groups[animal.type]) {
+      groups[animal.type] = {
+        total: 0,
+        hungry: 0,
+        ready: 0,
+        sleeping: 0,
+        needsLove: 0,
+        sick: 0,
+        type: animal.type,
+        emoji: animal.emoji,
+        instances: []
+      };
+    }
+    groups[animal.type].total++;
+    groups[animal.type].instances.push(animal);
+
+    if (animal.status === 'ready') groups[animal.type].ready++;
+    else if (animal.status === 'needsLove') groups[animal.type].needsLove++;
+    else if (animal.status === 'sick') groups[animal.type].sick++;
+    else if (animal.status === 'soon') groups[animal.type].hungry++;
+    else groups[animal.type].sleeping++;
+  });
+
+  const itemsHtml = Object.values(groups).map((group, i) => {
+    let iconContent = '';
+    if (group.type === 'Chicken') {
+      iconContent = `<img src="${ASSETS.CHICKEN}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;">`;
+    } else if (group.type === 'Cow') {
+      iconContent = `<img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/sfts/baby_cow.webp" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;">`;
+    } else if (group.type === 'Sheep') {
+      iconContent = `<img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/sfts/baby_sheep.webp" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;">`;
+    } else {
+      iconContent = `<span style="font-size:32px;">${group.emoji}</span>`;
+    }
+    
+    const typeName = group.type === 'Chicken' ? 'Galinhas' : (group.type === 'Cow' ? 'Vacas' : (group.type === 'Sheep' ? 'Ovelhas' : group.type));
+
+    return `
+      <div class="spring-in" style="background:var(--surface-3); border:1px solid var(--surface-border); border-radius:16px; margin-bottom:12px; animation-delay: ${i * 30}ms; overflow:hidden;">
+        <div onclick="const dt = this.nextElementSibling; dt.style.display = dt.style.display === 'none' ? 'block' : 'none';" style="cursor:pointer; padding:16px; display:flex; align-items:center; gap:16px;">
+          <div style="width:64px;height:64px;background:var(--surface-2);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--surface-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
+            ${iconContent}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${typeName}</div>
+            <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">
+              Total na fazenda: <strong style="color:var(--text-primary); font-size:14px;">${group.total}</strong>
+            </div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">Clique para ver detalhes</div>
+          </div>
+          <div style="text-align:right; display:flex; flex-direction:column; gap:6px;">
+            ${group.ready > 0 ? `<div style="font-size:12px; font-weight:700; color:var(--emerald); background:rgba(16, 185, 129, 0.1); padding:4px 8px; border-radius:6px; border: 1px solid rgba(16, 185, 129, 0.2);">+ ${group.ready} p/ Coleta</div>` : ''}
+            ${group.sick > 0 ? `<div style="font-size:12px; font-weight:700; color:#ef4444; background:rgba(239, 68, 68, 0.1); padding:4px 8px; border-radius:6px; border: 1px solid rgba(239, 68, 68, 0.2);">${group.sick} Doentes</div>` : ''}
+            ${group.needsLove > 0 ? `<div style="font-size:12px; font-weight:700; color:#d946ef; background:rgba(217, 70, 239, 0.1); padding:4px 8px; border-radius:6px; border: 1px solid rgba(217, 70, 239, 0.2);">${group.needsLove} Querem Carinho</div>` : ''}
+            ${group.hungry > 0 ? `<div style="font-size:12px; font-weight:700; color:var(--coral); background:rgba(251, 146, 60, 0.1); padding:4px 8px; border-radius:6px; border: 1px solid rgba(251, 146, 60, 0.2);">${group.hungry} c/ Fome!</div>` : ''}
+            ${group.sleeping > 0 ? `<div style="font-size:12px; font-weight:700; color:var(--sky); background:rgba(14, 165, 233, 0.1); padding:4px 8px; border-radius:6px; border: 1px solid rgba(14, 165, 233, 0.2);">${group.sleeping} Dormindo</div>` : ''}
+          </div>
+        </div>
+        
+        <div style="display:none; background:var(--surface-2); border-top:1px solid var(--surface-border); padding: 8px 16px;">
+          ${group.instances.map((inst, idx) => {
+            let statusColor = 'var(--text-secondary)';
+            let statusText = 'Dormindo';
+            
+            if (inst.status === 'ready') {
+              statusColor = 'var(--emerald)';
+              statusText = 'Pronto para Coleta';
+            } else if (inst.status === 'needsLove') {
+              statusColor = '#d946ef'; // Magenta/Pink for love
+              statusText = 'Precisando de Carinho';
+            } else if (inst.status === 'sick') {
+              statusColor = '#ef4444'; // Red for sick
+              statusText = 'Doente (Precisa de Remédio)';
+            } else if (inst.status === 'soon') {
+              statusColor = 'var(--coral)'; // Orange for hungry
+              statusText = 'Com Fome';
+            } else {
+              statusColor = 'var(--text-secondary)';
+              statusText = 'Dormindo/Produzindo';
+            }
+
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                  <span style="font-weight:bold; color:var(--text-primary); font-size:14px;">#${idx + 1}</span>
+                  <span style="font-size:12px; font-weight:700; background:rgba(255,255,255,0.08); color:var(--text-primary); padding:3px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">Nível ${inst.level ?? 0}</span>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:13px; font-weight:700; color:${statusColor};">${statusText}</div>
+                  <div style="font-size:11px; color:var(--text-secondary); font-family:var(--font-mono); margin-top:2px;">${inst.countdown}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const modalHtml = `
+    <div style="padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--surface-border); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 14px; color: var(--text-secondary);">
+        Total de Animais: <strong style="color:white;">${animals.length}</strong>
+      </div>
+      <div style="font-size: 13px; color: var(--coral); font-weight: bold; background: rgba(251, 146, 60, 0.1); padding: 4px 8px; border-radius: 6px;">
+        ${animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length} precisando de atenção
+      </div>
+    </div>
+    <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
+      ${itemsHtml}
+    </div>
+  `;
+
+  showModal('Resumo dos Animais', modalHtml);
+};
+
+// =====================================================
+// TOAST
+// =====================================================
+
+function showToast(message, type = 'success') {
+  const existing = $('#toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.style.cssText = `
+    position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%);
+    background:${type === 'error' ? 'var(--coral)' : 'var(--emerald)'};
+    color:var(--obsidian-base);padding:10px 20px;border-radius:24px;
+    font-family:var(--font-display);font-size:13px;font-weight:700;
+    z-index:9999;animation:springIn 300ms cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);white-space:nowrap;max-width:90vw;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast?.remove(), 3000);
+}
+
+export default {
+  renderPriceStrip,
+  renderHome,
+  renderFarmPage,
+  renderFarmItem,
+  renderMarketPage,
+  renderMarketFiltered,
+  renderAlertsPage,
+  renderNotifSettings,
+  renderSettingsPage,
+  renderToolsPage,
+  renderLoadingState,
+  showModal,
+  hideModal,
+  openP2pCalc,
+  updateP2pCalc,
+  updateAlertBadge,
+  showToast,
+  formatNumber,
+  formatSfl,
+  formatPrice,
+};

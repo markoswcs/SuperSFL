@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <script>
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      alert('CRITICAL ERROR: ' + msg + '\nLine: ' + lineNo + '\nFile: ' + url);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      alert('PROMISE ERROR: ' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+    });
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#F59E0B">
+  <meta name="description" content="Dashboard completo para Sunflower Land">
+  
+  <title>Sunflower Super App</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css?v=4">
+  
+  <!-- Fallback icons -->
+  <link rel="icon" type="image/png" href="https://sfl.world/img/Flower.png">
+  <link rel="apple-touch-icon" href="https://sfl.world/img/Flower.png">
+</head>
+<body>
+  <div id="app">
+    
+    <!-- Top Global Header -->
+    <header class="top-header">
+      <div class="app-logo">
+        <img src="https://sfl.world/img/Flower.png" class="app-logo-img" alt="SFL" onerror="this.style.display='none'">
+        <div class="app-logo-text">SFL<span>HUB</span></div>
+      </div>
+        <div class="header-actions">
+          <span class="sync-time" id="sync-time">--:--</span>
+          <button class="btn-sync" id="btn-global-sync">
+            <svg class="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
+      </div>
+    </header>
+
+  
+    <!-- Main Content Area -->
+    <main class="page-content">
+      
+      <!-- FARM TAB -->
+      <section id="tab-farm" class="tab-page active">
+        <div id="home-sfl-card" class="mb-4"></div>
+        <div id="home-farm-summary" class="mb-4"></div>
+        <div id="home-upcoming" class="mb-4"></div>
+        <div id="farm-content"></div>
+      </section>
+
+      <!-- MARKET TAB -->
+      <section id="tab-market" class="tab-page">
+        <div class="search-bar">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="market-search" class="search-input" placeholder="Search resources..." data-i18n="market_search">
+        </div>
+        <div class="filter-chips" data-target="market" id="market-filter-active" data-filter="all">
+          <div class="chip active" data-filter="all" data-i18n="market_all">All</div>
+          <div class="chip" data-filter="crops" data-i18n="market_crops_seeds">Crops & Seeds</div>
+          <div class="chip" data-filter="resources" data-i18n="market_resources">Resources</div>
+          <div class="chip" data-filter="fish" data-i18n="market_fish">Fish</div>
+        </div>
+        <div id="market-grid" class="market-grid pb-5"></div>
+      </section>
+
+      <!-- ALERTS TAB -->
+      <section id="tab-alerts" class="tab-page">
+        <div id="notif-settings-content" class="mb-5"></div>
+        <div class="section-header mb-3 mt-4">
+          <div class="section-title" data-i18n="alerts_history">Alert History</div>
+        </div>
+        <div id="alerts-list" class="card" style="padding:0"></div>
+      </section>
+
+      <!-- TOOLS TAB -->
+      <section id="tab-tools" class="tab-page">
+        <div id="tools-content"></div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" class="tab-page">
+        <div id="settings-content"></div>
+      </section>
+
+    </main>
+
+    <!-- GLOBAL MODAL -->
+    <div id="app-modal" class="modal-backdrop" style="display:none">
+      <div class="modal-content spring-in">
+        <div class="modal-header">
+          <div class="modal-title" id="modal-title">Title</div>
+          <button class="modal-close" id="btn-modal-close">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="farm">
+        <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 11 11 .9c.6 0 .9.5.8 1.1l-.8 5h-1"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h9l1 7.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="4"/></svg></div>
+        <span class="nav-label" data-i18n="nav_farm">Farm</span>
+      </button>
+      <button class="nav-item" data-tab="market">
+        <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg></div>
+        <span class="nav-label" data-i18n="nav_market">Market</span>
+      </button>
+      <button class="nav-item" data-tab="tools">
+        <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <span class="nav-label" data-i18n="nav_tools">Tools</span>
+      </button>
+      <button class="nav-item" data-tab="alerts">
+        <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+        <span class="nav-label" data-i18n="nav_alerts">Alerts</span>
+        <div class="nav-badge" id="alert-nav-badge" style="display:none">0</div>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <span class="nav-label" data-i18n="nav_settings">Config</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Dependencies -->
+  <script src="js/Sortable.min.js"></script>
+
+  <!-- App Entry Point -->
+  <script type="module" src="js/app.js?v=54"></script>
+</body>
+</html>

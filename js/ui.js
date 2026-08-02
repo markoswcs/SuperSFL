@@ -698,7 +698,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
     </div>
   ` : '';
 
-  setHtml('#farm-content', partialNotice + bumpkinHtml + skillsHtml + `<div id="farm-sections-container">${sectionsHtml}</div>` + invHtml + choresHtml);
+  setHtml('#farm-content', partialNotice + bumpkinHtml + skillsHtml + choresHtml);
 
   // Inject CSS for drag states if not already present
   if (!document.getElementById('sortable-styles')) {

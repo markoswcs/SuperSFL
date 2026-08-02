@@ -352,21 +352,7 @@ function renderHome(exchange, prices, parsedFarm) {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
         </div>
-        <!-- Expansion -->
-        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes de expansão">
-          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
-          </div>
-          <div style="flex:1;">
-            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃO</div>
-            <div class="stat-value emerald" style="font-size:20px; line-height:1;">${parsedFarm.level ?? 1}</div>
-            <div class="stat-sub" style="margin-top:2px;">Progresso</div>
-          </div>
-          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
-        </div>
-          <!-- Player Profile -->
+        <!-- Player Profile -->
           <div class="stat-card spring-in stagger-6-5" style="grid-column: 1 / -1; background: linear-gradient(145deg, var(--surface-2), var(--surface-1)); border: 1px solid var(--amber); border-radius: 20px; overflow: hidden; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.05); position: relative;">
             <style>
               @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }

@@ -95,7 +95,7 @@ function renderLoadingState() {
       <div class="skeleton" style="height:90px"></div>
     </div>
   `);
-  setHtml('#home-upcoming', skeletonList(3));
+  setHtml('#home-upcoming', '');
   setHtml('#farm-content', `
     <div class="skeleton" style="height:120px;margin-bottom:16px"></div>
     <div class="stat-grid mb-4">
@@ -457,14 +457,7 @@ function renderHome(exchange, prices, parsedFarm) {
       ...parsedFarm.buildings,
     ].filter(e => e.msLeft > 0).sort((a, b) => a.msLeft - b.msLeft).slice(0, 5);
 
-    setHtml('#home-upcoming', allEvents.length > 0 ? `
-      <div class="section-header mb-3">
-        <div class="section-title">⏰ ${t('home_upcoming')}</div>
-      </div>
-      <div class="farm-items-list">
-        ${allEvents.map((e, i) => renderFarmItem(e, i)).join('')}
-      </div>
-    ` : '');
+    setHtml('#home-upcoming', '');
 
   } else {
     setHtml('#home-farm-summary', `

@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=54';
-import { NOTIF_TYPES } from './notifications.js?v=54';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=54';
-import { t } from './i18n.js?v=54';
-import Farm from './farm.js?v=54';
+import Storage from './storage.js?v=55';
+import { NOTIF_TYPES } from './notifications.js?v=55';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=55';
+import { t } from './i18n.js?v=55';
+import Farm from './farm.js?v=55';
 
 // duplicate removed
 

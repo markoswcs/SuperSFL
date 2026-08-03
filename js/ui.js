@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=59';
-import { NOTIF_TYPES } from './notifications.js?v=59';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=59';
-import { t } from './i18n.js?v=59';
-import Farm from './farm.js?v=59';
+import Storage from './storage.js?v=60';
+import { NOTIF_TYPES } from './notifications.js?v=60';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=60';
+import { t } from './i18n.js?v=60';
+import Farm from './farm.js?v=60';
 
 // duplicate removed
 
@@ -402,7 +402,7 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- Expansion -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes da expansão"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <img src="${ASSETS.ISLAND}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
           </div>
           <div style="flex:1;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃO</div>

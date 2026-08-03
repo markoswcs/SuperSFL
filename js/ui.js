@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=63';
-import { NOTIF_TYPES } from './notifications.js?v=63';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=63';
-import { t } from './i18n.js?v=63';
-import Farm from './farm.js?v=63';
+import Storage from './storage.js?v=64';
+import { NOTIF_TYPES } from './notifications.js?v=64';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=64';
+import { t } from './i18n.js?v=64';
+import Farm from './farm.js?v=64';
 
 // duplicate removed
 
@@ -217,8 +217,6 @@ function renderHome(exchange, prices, parsedFarm) {
     });
 
     const maxHelps = 5 + helpsBoughtToday + monumentHelps;
-    const helpsToday = parsedFarm.socialFarming?.cheersGiven?.date === todayStr ? (parsedFarm.socialFarming?.cheersGiven?.farms?.length || 0) : 0;
-    const helpsLeft = Math.max(0, maxHelps - helpsToday);
     const totalHelps = parsedFarm.socialFarming?.helpedForCompetition || 0;
 
     const readyCrops    = parsedFarm.crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0);
@@ -526,8 +524,8 @@ function renderHome(exchange, prices, parsedFarm) {
                     <div class="stats-text" title="Ajudas Diárias Disponíveis">Ajudas Diárias</div>
                     <div class="stats-val" style="display:flex; align-items:center; gap:6px; font-size:16px;">
                       <img src="https://sunflower-land.com/play/assets/help-B62n1f2T.webp" style="width:16px; height:16px; image-rendering:pixelated;" onerror="this.style.display='none'" />
-                      <span style="color: ${helpsLeft > 0 ? '#4ade80' : '#f87171'};">Restam ${helpsLeft}</span>
-                      <span style="color:rgba(255,255,255,0.3); font-size:14px;">de ${maxHelps}</span>
+                      <span style="color: #4ade80;">Limite: ${maxHelps}</span>
+                      <span style="color:rgba(255,255,255,0.3); font-size:14px;">por dia</span>
                     </div>
                   </div>
                 </div>

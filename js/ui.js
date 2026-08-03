@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=61';
-import { NOTIF_TYPES } from './notifications.js?v=61';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=61';
-import { t } from './i18n.js?v=61';
-import Farm from './farm.js?v=61';
+import Storage from './storage.js?v=62';
+import { NOTIF_TYPES } from './notifications.js?v=62';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=62';
+import { t } from './i18n.js?v=62';
+import Farm from './farm.js?v=62';
 
 // duplicate removed
 
@@ -161,7 +161,7 @@ function renderHome(exchange, prices, parsedFarm) {
   // SFL big display + Converter
   setHtml('#home-sfl-card', `
     <div class="card card--amber spring-in">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px; flex-wrap: wrap;">
         
         <!-- LEFT: Token Price -->
         <div style="flex-shrink: 0;">
@@ -178,7 +178,7 @@ function renderHome(exchange, prices, parsedFarm) {
         </div>
         
         <!-- RIGHT: Currency Converter -->
-        <div style="flex:1; max-width:400px; margin-left:auto;">
+        <div style="flex: 1 1 240px; max-width:400px; margin-left:auto;">
           <div class="currency-converter" style="padding:10px; gap:6px;">
             <div class="converter-input-wrapper" style="flex: 1.2;">
               <input type="number" class="converter-input" id="flw-converter-input" placeholder="0" oninput="window.__app.convertFlower(this.value, ${sflBrl}, ${sflUsd})" style="font-size:15px; padding:8px 10px; padding-right:40px;">

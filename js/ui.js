@@ -429,7 +429,7 @@ function renderHome(exchange, prices, parsedFarm) {
                     <path d="M25 90 Q50 50 75 90 Z" fill="rgba(255,255,255,0.2)"/>
                     <path d="M25 30 Q50 15 75 30 L85 35 L15 35 Z" fill="rgba(255,255,255,0.3)"/>
                   </svg>
-                  <img src="https://images.bumpkins.io/bumpkins/${parsedFarm.bumpkin?.id || farmId}.png" style="display:none; position:absolute; top:15px; width:140%; height:140%; object-fit:contain; object-position:top;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.onerror=null; this.src='https://sunflower-land.com/play/bumpkins/${parsedFarm.bumpkin?.id || farmId}.png'; this.onerror=function(){this.style.display='none'; this.previousElementSibling.style.display='block';};" />
+                  <img src="${parsedFarm.bumpkin?.id ? `https://images.bumpkins.io/bumpkins/${parsedFarm.bumpkin.id}.png` : 'https://sfl.world/img/source/bumpkin.png'}" style="display:none; position:absolute; top:15px; width:140%; height:140%; object-fit:contain; object-position:top;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.onerror=null; this.src='${parsedFarm.bumpkin?.id ? `https://sunflower-land.com/play/bumpkins/${parsedFarm.bumpkin.id}.png` : `https://sfl.world/img/source/bumpkin.png`}'; this.onerror=function(){this.src='https://sfl.world/img/source/bumpkin.png'; this.style.display='block'; this.previousElementSibling.style.display='none';};" />
                 </div>
                 
                 <!-- Name and Badges -->

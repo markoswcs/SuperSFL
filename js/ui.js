@@ -407,20 +407,7 @@ function renderHome(exchange, prices, parsedFarm) {
             <!-- Abstract background decoration -->
             <div style="position:absolute; right:-20px; top:-20px; width:150px; height:150px; background:radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
           </div>
-          <!-- Marks -->
-        ${parsedFarm.marks !== undefined && parsedFarm.marks > 0 ? `
-        <div class="stat-card spring-in stagger-7" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
-          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <span style="font-size:24px;line-height:1">🏵️</span>
-          </div>
-          <div style="flex:1;">
-            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">MARCAS DA FACÇÃO</div>
-            <div class="stat-value coral" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.marks, 0)}</div>
-            <div class="stat-sub" style="margin-top:2px;">Marcas</div>
-          </div>
-        </div>
-        ` : ''}
-        <!-- Charm -->
+          <!-- Charm -->
         ${parsedFarm.charm !== undefined && parsedFarm.charm > 0 ? `
         <div class="stat-card spring-in stagger-8" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">

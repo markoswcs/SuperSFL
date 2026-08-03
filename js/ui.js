@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=69';
-import { NOTIF_TYPES } from './notifications.js?v=69';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=69';
-import { t } from './i18n.js?v=69';
-import Farm from './farm.js?v=69';
+import Storage from './storage.js?v=70';
+import { NOTIF_TYPES } from './notifications.js?v=70';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=70';
+import { t } from './i18n.js?v=70';
+import Farm from './farm.js?v=70';
 
 // duplicate removed
 
@@ -387,7 +387,7 @@ function renderHome(exchange, prices, parsedFarm) {
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">COMPOSTEIRAS</div>
             <div class="stat-value ${readyCompost > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
-                (readyCompost > 0 ? readyCompost + (readyCompost > 1 ? ' prontos!' : ' pronto!') : (parsedFarm.composting.length > 0 ? 'Trabalhando...' : 'Nenhuma'))}
+                (readyCompost > 0 ? readyCompost + (readyCompost > 1 ? ' prontas!' : ' pronta!') : (parsedFarm.composting.some(c => c.status !== 'idle') ? 'Preparando...' : (parsedFarm.composting.length > 0 ? 'Vazias' : 'Nenhuma')))}
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${parsedFarm.isPartial ? '-' : `${parsedFarm.composting.length} Composteiras`}</div>
           </div>

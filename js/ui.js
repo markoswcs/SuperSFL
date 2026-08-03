@@ -203,8 +203,20 @@ function renderHome(exchange, prices, parsedFarm) {
     const xp = parsedFarm.bumpkin?.xp || 0;
     const xpProgress = parsedFarm.bumpkin?.xpProgress || 0;
     
-    const maxHelps = 5 + (parsedFarm.socialFarming?.helpIncrease?.boughtAt?.length || 0);
     const todayStr = new Date().toISOString().split('T')[0];
+    const helpsBoughtToday = parsedFarm.socialFarming?.helpIncrease?.boughtAt?.length || 0;
+    
+    let monumentHelps = 0;
+    const helpMonuments = ["Farmer's Monument", "Miner's Monument", "Woodcutter's Monument", "Teamwork Monument"];
+    helpMonuments.forEach(m => {
+      // SFL monuments are usually in collectibles, but check buildings as well just in case
+      if ((parsedFarm.rawCollectibles && parsedFarm.rawCollectibles[m] && parsedFarm.rawCollectibles[m].length > 0) ||
+          (parsedFarm.rawBuildings && parsedFarm.rawBuildings[m] && parsedFarm.rawBuildings[m].length > 0)) {
+        monumentHelps += 1;
+      }
+    });
+
+    const maxHelps = 5 + helpsBoughtToday + monumentHelps;
     const helpsToday = parsedFarm.socialFarming?.cheersGiven?.date === todayStr ? (parsedFarm.socialFarming?.cheersGiven?.farms?.length || 0) : 0;
     const helpsLeft = Math.max(0, maxHelps - helpsToday);
     const totalHelps = parsedFarm.socialFarming?.helpedForCompetition || 0;
@@ -218,6 +230,20 @@ function renderHome(exchange, prices, parsedFarm) {
 
     const nextCrop = parsedFarm.crops.filter(c => c.status !== 'ready').sort((a,b) => a.msLeft - b.msLeft)[0];
     const nextFruit = parsedFarm.fruits ? parsedFarm.fruits.filter(f => f.status !== 'ready' && parseInt(f.harvestsLeft) > 0).sort((a,b) => a.msLeft - b.msLeft)[0] : null;
+
+    let mainCropName = 'Sunflower';
+    if (parsedFarm.crops.length > 0) {
+      const activeCrop = parsedFarm.crops.find(c => c.status === 'ready') || nextCrop || parsedFarm.crops[0];
+      mainCropName = activeCrop.name;
+    }
+    const cropIconUrl = `https://sfl.world/img/source/${mainCropName.replace(/\s+/g, '')}.png`;
+
+    let mainFruitName = 'Apple';
+    if (parsedFarm.fruits && parsedFarm.fruits.length > 0) {
+      const activeFruit = parsedFarm.fruits.find(f => f.status === 'ready') || nextFruit || parsedFarm.fruits[0];
+      mainFruitName = activeFruit.name;
+    }
+    const fruitIconUrl = `https://sfl.world/img/source/${mainFruitName.replace(/\s+/g, '')}.png`;
 
     const animalTypes = readyAnimalsArr.reduce((acc, a) => {
         acc[a.type] = (acc[a.type] || 0) + 1;
@@ -304,13 +330,13 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- Crops -->
         <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <img src="${ASSETS.SUNFLOWER}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <img src="${cropIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
           </div>
           <div style="flex:1;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_crops')}</div>
             <div class="stat-value ${readyCrops > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
-                (readyCrops > 0 ? readyCrops + ' ' + t('home_ready') : (nextCrop ? nextCrop.countdown : t('home_growing')))}
+                (readyCrops > 0 ? readyCrops + (readyCrops > 1 ? ' prontos!' : ' pronto!') : (nextCrop ? nextCrop.countdown : t('home_growing')))}
             </div>
             <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyCrops === 0 && nextCrop ? `às ${new Date(nextCrop.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots}` : `${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots} canteiros`)}</div>
           </div>
@@ -321,15 +347,15 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- Fruits -->
         <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showFruitsModal && window.__app.showFruitsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <img src="${ASSETS.APPLE}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <img src="${fruitIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.APPLE">
           </div>
           <div style="flex:1;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">FRUTAS</div>
             <div class="stat-value ${readyFruits > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
-                (readyFruits > 0 ? readyFruits + ' ' + t('home_ready') : (nextFruit ? nextFruit.countdown : t('home_growing')))}
+                (readyFruits > 0 ? readyFruits + (readyFruits > 1 ? ' prontas!' : ' pronta!') : (nextFruit ? nextFruit.countdown : t('home_growing')))}
             </div>
-            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `às ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.fruits.length} pés` : `${parsedFarm.fruits.length} plantadas`)}</div>
+            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `às ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.fruits.length} pés` : `${parsedFarm.fruits.length} pés de fruta`)}</div>
           </div>
           <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -460,13 +486,12 @@ function renderHome(exchange, prices, parsedFarm) {
                 <!-- Helps Stats -->
                 <div style="display: flex; gap: 20px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 16px 24px; border-radius: 20px; min-width: max-content;">
                   <div class="stats-block">
-                    <div class="stats-text">Ajudados</div>
-                    <div class="stats-val">${formatNumber(totalHelps, 0)}</div>
-                  </div>
-                  <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
-                  <div class="stats-block">
-                    <div class="stats-text">Ajudas Hoje</div>
-                    <div class="stats-val" style="color: ${helpsLeft > 0 ? '#4ade80' : '#f87171'};">${helpsLeft} <span style="color:rgba(255,255,255,0.3); font-size:14px;">/ ${maxHelps}</span></div>
+                    <div class="stats-text" title="Ajudas Diárias Disponíveis">Ajudas Diárias</div>
+                    <div class="stats-val" style="display:flex; align-items:center; gap:6px; font-size:16px;">
+                      <img src="https://sunflower-land.com/play/assets/help-B62n1f2T.webp" style="width:16px; height:16px; image-rendering:pixelated;" onerror="this.style.display='none'" />
+                      <span style="color: ${helpsLeft > 0 ? '#4ade80' : '#f87171'};">Restam ${helpsLeft}</span>
+                      <span style="color:rgba(255,255,255,0.3); font-size:14px;">de ${maxHelps}</span>
+                    </div>
                   </div>
                 </div>
                 

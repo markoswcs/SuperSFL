@@ -225,8 +225,8 @@ function parseFruits(farm) {
     const { name, plantedAt, harvestsLeft, harvestedAt } = patch.fruit;
     let growMs  = FRUIT_GROW_MS[name] ?? 3 * 3600_000;
 
-    // Apply fertiliser boosts (Fruitful Blend cuts time in half)
-    if (patch.fertiliser && patch.fertiliser.name === 'Fruitful Blend') {
+    // Apply fertiliser boosts (Turbofruit Mix cuts time in half)
+    if (patch.fertiliser && patch.fertiliser.name === 'Turbofruit Mix') {
       growMs = growMs / 2;
     }
 
@@ -820,6 +820,8 @@ function parseFarm(farmData) {
     farmId:      farmData.id || farmData.farm?.id || 0,
     username:    farm.username || '',
     socialFarming: farm.socialFarming || {},
+    rawBuildings: farm.buildings || {},
+    rawCollectibles: farm.collectibles || {},
     level,
     bumpkinLevel,
     islandType,

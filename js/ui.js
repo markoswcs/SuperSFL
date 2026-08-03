@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=55';
-import { NOTIF_TYPES } from './notifications.js?v=55';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=55';
-import { t } from './i18n.js?v=55';
-import Farm from './farm.js?v=55';
+import Storage from './storage.js?v=56';
+import { NOTIF_TYPES } from './notifications.js?v=56';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=56';
+import { t } from './i18n.js?v=56';
+import Farm from './farm.js?v=56';
 
 // duplicate removed
 
@@ -223,8 +223,11 @@ function renderHome(exchange, prices, parsedFarm) {
 
     const readyCrops    = parsedFarm.crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0);
     const readyFruits   = parsedFarm.fruits ? parsedFarm.fruits.filter(f => f.status === 'ready').length : 0;
-    const readyAnimalsArr = parsedFarm.animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status));
-    const readyAnimals  = readyAnimalsArr.length;
+    const collectAnimalsArr = parsedFarm.animals.filter(a => a.status === 'ready');
+    const attnAnimalsArr = parsedFarm.animals.filter(a => ['soon', 'needsLove', 'sick'].includes(a.status));
+    const collectAnimals = collectAnimalsArr.length;
+    const attnAnimals = attnAnimalsArr.length;
+    const readyAnimals  = collectAnimals + attnAnimals;
     const readyCooking  = parsedFarm.buildings.filter(b => b.status === 'ready').length;
     const totalReady    = readyCrops + readyAnimals + readyCooking;
 
@@ -245,13 +248,14 @@ function renderHome(exchange, prices, parsedFarm) {
     }
     const fruitIconUrl = `https://sfl.world/img/source/${mainFruitName.replace(/\s+/g, '')}.png`;
 
-    const animalTypes = readyAnimalsArr.reduce((acc, a) => {
+    const activeAnimalsArr = readyAnimals > 0 ? [...collectAnimalsArr, ...attnAnimalsArr] : parsedFarm.animals;
+    const animalTypes = activeAnimalsArr.reduce((acc, a) => {
         acc[a.type] = (acc[a.type] || 0) + 1;
         return acc;
     }, {});
     
     let animalDetailsText = parsedFarm.isPartial ? '-' : `${parsedFarm.animals.length} ${t('home_total')}`;
-    if (!parsedFarm.isPartial && readyAnimals > 0) {
+    if (!parsedFarm.isPartial) {
         const details = [];
         if (animalTypes['Chicken']) details.push(`🐔 ${animalTypes['Chicken']}`);
         if (animalTypes['Cow']) details.push(`🐄 ${animalTypes['Cow']}`);
@@ -368,9 +372,9 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           <div style="flex:1;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_animals')}</div>
-            <div class="stat-value ${readyAnimals > 0 ? 'coral' : ''}" style="font-size:18px; line-height:1;">
+            <div class="stat-value ${collectAnimals > 0 ? 'emerald' : (attnAnimals > 0 ? 'coral' : '')}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
-                (readyAnimals > 0 ? readyAnimals + ' ' + t('home_need_attn') : parsedFarm.animals.length + ' ' + t('home_ok'))}
+                (collectAnimals > 0 ? collectAnimals + ' pronto!' : (attnAnimals > 0 ? attnAnimals + ' atenção' : parsedFarm.animals.length + ' ' + t('home_ok')))}
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${animalDetailsText}</div>
           </div>

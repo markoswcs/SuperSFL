@@ -470,7 +470,9 @@ function parseBuildings(farm) {
     if (!Array.isArray(instances)) return;
     instances.forEach((building, i) => {
       if (!building.crafting) return;
-      const { readyAt, amount, name: itemName } = building.crafting;
+      const craftingItem = Array.isArray(building.crafting) ? building.crafting[0] : building.crafting;
+      if (!craftingItem) return;
+      const { readyAt, amount, name: itemName } = craftingItem;
       const msLeft = (readyAt ?? 0) - now;
 
       items.push({
@@ -561,8 +563,15 @@ function parseComposting(farm) {
     const msLeft  = readyAt > 0 ? readyAt - now : -1;
     
     // Extract item and slot amount
-    const itemName = produce.name || bin.name || 'Fertilizante';
-    const amount = produce.amount || bin.amount || 1;
+    let itemName = produce.name || bin.name || 'Fertilizante';
+    let amount = produce.amount || bin.amount || 1;
+    if (produce.items) {
+      const keys = Object.keys(produce.items);
+      if (keys.length > 0) {
+        itemName = keys[0];
+        amount = produce.items[keys[0]];
+      }
+    }
 
     return {
       id,

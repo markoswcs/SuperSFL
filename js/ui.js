@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=62';
-import { NOTIF_TYPES } from './notifications.js?v=62';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=62';
-import { t } from './i18n.js?v=62';
-import Farm from './farm.js?v=62';
+import Storage from './storage.js?v=63';
+import { NOTIF_TYPES } from './notifications.js?v=63';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=63';
+import { t } from './i18n.js?v=63';
+import Farm from './farm.js?v=63';
 
 // duplicate removed
 
@@ -204,7 +204,7 @@ function renderHome(exchange, prices, parsedFarm) {
     const xpProgress = parsedFarm.bumpkin?.xpProgress || 0;
     
     const todayStr = new Date().toISOString().split('T')[0];
-    const helpsBoughtToday = parsedFarm.socialFarming?.helpIncrease?.boughtAt?.length || 0;
+    const helpsBoughtToday = (parsedFarm.socialFarming?.helpIncrease?.boughtAt || []).filter(date => new Date(date).toISOString().split('T')[0] === todayStr).length;
     
     let monumentHelps = 0;
     const helpMonuments = ["Farmer's Monument", "Miner's Monument", "Woodcutter's Monument", "Teamwork Monument"];

@@ -277,7 +277,7 @@ function renderHome(exchange, prices, parsedFarm) {
       </div>
       ` : ''}
 
-      <div class="stat-grid" style="gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+      <div class="stat-grid" style="gap: 12px;">
         <!-- SFL Balance -->
         <div class="stat-card spring-in stagger-1" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">

@@ -784,7 +784,7 @@ function parseLandInfo(landInfo) {
     flowers:     [],
     cropMachine: [],
     inventory:   { crops: [], resources: [], tools: [], food: [], special: [] },
-    chores:      [],
+    chores:      { active: [], skipped: 0, completed: 0 },
     _isLandInfoOnly: true,
   };
 }

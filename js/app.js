@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=68';
-import API from './api.js?v=68';
-import Farm from './farm.js?v=68';
-import UI from './ui.js?v=68';
-import Notifications from './notifications.js?v=68';
-import i18n from './i18n.js?v=68';
+import Storage from './storage.js?v=69';
+import API from './api.js?v=69';
+import Farm from './farm.js?v=69';
+import UI from './ui.js?v=69';
+import Notifications from './notifications.js?v=69';
+import i18n from './i18n.js?v=69';
 
 // --- State ---
 const State = {
@@ -214,7 +214,7 @@ async function refreshData(force = false) {
     if (force) UI.showToast('Data synced! ✅');
   } catch (err) {
     console.error('Refresh Error:', err);
-    if (force) UI.showToast('Failed to sync data.', 'error');
+    if (force) UI.showToast(`Sync Failed: ${err.message}`, 'error');
   } finally {
     State.isRefreshing = false;
     updateSyncBadge();

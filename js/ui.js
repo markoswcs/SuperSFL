@@ -424,12 +424,11 @@ function renderHome(exchange, prices, parsedFarm) {
                 <!-- Avatar -->
                 <div class="profile-avatar-container">
                   <!-- Fallback SVG -->
-                  <svg viewBox="0 0 100 100" width="80%" height="80%" style="position:absolute; opacity:0.6; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                    <circle cx="50" cy="35" r="16" fill="rgba(255,255,255,0.2)"/>
-                    <path d="M25 90 Q50 50 75 90 Z" fill="rgba(255,255,255,0.2)"/>
-                    <path d="M25 30 Q50 15 75 30 L85 35 L15 35 Z" fill="rgba(255,255,255,0.3)"/>
-                  </svg>
-                  <img src="${parsedFarm.bumpkin?.id ? `https://images.bumpkins.io/bumpkins/${parsedFarm.bumpkin.id}.png` : 'https://sfl.world/img/source/bumpkin.png'}" style="display:none; position:absolute; top:15px; width:140%; height:140%; object-fit:contain; object-position:top;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.onerror=null; this.src='${parsedFarm.bumpkin?.id ? `https://sunflower-land.com/play/bumpkins/${parsedFarm.bumpkin.id}.png` : `https://sfl.world/img/source/bumpkin.png`}'; this.onerror=function(){this.src='https://sfl.world/img/source/bumpkin.png'; this.style.display='block'; this.previousElementSibling.style.display='none';};" />
+                  <div class="bumpkin-loader spinner" style="width:20px; height:20px; border:2px solid rgba(255,255,255,0.1); border-top-color:rgba(255,255,255,0.5); border-radius:50%; animation:spin 1s linear infinite;"></div>
+                  <img src="${parsedFarm.bumpkin?.id ? `https://images.bumpkins.io/bumpkins/${parsedFarm.bumpkin.id}.png` : 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/npcs/snorkel_bumpkin.png'}" 
+                       style="display:none; position:absolute; top:15px; width:140%; height:140%; object-fit:contain; object-position:top; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));" 
+                       onload="this.style.display='block'; this.previousElementSibling.style.display='none';" 
+                       onerror="this.onerror=null; this.src='${parsedFarm.bumpkin?.id ? `https://sunflower-land.com/play/bumpkins/${parsedFarm.bumpkin.id}.png` : `https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/npcs/snorkel_bumpkin.png`}'; this.onerror=function(){this.src='https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/npcs/snorkel_bumpkin.png'; this.style.display='block'; this.previousElementSibling.style.display='none';};" />
                 </div>
                 
                 <!-- Name and Badges -->

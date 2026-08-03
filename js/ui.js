@@ -1,13 +1,15 @@
+const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405,22905,27905,33655,40155,47405,55405,64155,73905,84655,96405,109155,122905,137405,152905,169405,186905,205405,225405,246905,269905,294405,320405,348405,378405,410405,444405,480405,518905,559905,603405,649405,697905,749405,803905,861405,921905,985405,1053905,1127405,1205905,1289405,1377905,1476405,1584905,1703405,1831905,1970405,2128905,2287405,2485905,2704405,2942905,3221405,3539905,3898405,4296905,4735405,5233905,5743905,6263905,6793905,7333905,7883905,8443905,9013905,9593905,10183905,10783905,11393905,12013905,12643905,13283905,13933905,14593905,15263905,15943905,16633905,17333905,18043905,18763905,19493905,20233905,20983905,21743905,22513905,23293905,24083905,24893905,25723905,26573905,27443905,28333905,29243905,30173905,31123905,32093905,33083905,34093905,35123905,36173905,37243905,38333905,39443905,40573905,41723905,42893905,44083905,45293905,46523905,47773905,49043905,50333905,51653905,53003905,54383905,55793905,57233905,58708905,60218905,61763905,63343905,64958905,66613905,68308905,70043905,71818905,73633905,75493905,77398905,79348905,81343905,83383905,85473905,87613905,89803905,92043905,94333905,95662605,97031166,98440783,99892688,101388150,102928475,104515009,106149139,107832292,109565939,111351595,113190820,115085221,117036454,119046223,121116285,123248448,125444575,127706585,130036455,132436221,134907979,137453889,140076176,142777131,145559114,148424556,151375961,154415908,157547053,160772132,164093963,167515448,171039577,174669429,178408176,182259085,186225521,190310950,194518941,198853171,203317427,207915610,212651738,217529949,222554506,227729799,233060350,238550817,244206000];
+
 /**
  * ui.js — Renderização completa da interface do Sunflower Super App
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=65';
-import { NOTIF_TYPES } from './notifications.js?v=65';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=65';
-import { t } from './i18n.js?v=65';
-import Farm from './farm.js?v=65';
+import Storage from './storage.js?v=66';
+import { NOTIF_TYPES } from './notifications.js?v=66';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=66';
+import { t } from './i18n.js?v=66';
+import Farm from './farm.js?v=66';
 
 // duplicate removed
 
@@ -507,15 +509,30 @@ function renderHome(exchange, prices, parsedFarm) {
               
               <!-- Bottom Row: Level & Progress -->
               <div style="background: rgba(0,0,0,0.15); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                  <div class="level-text">Bumpkin Nível ${level}</div>
-                  <div style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); font-family: 'SF Mono', Consolas, monospace;">
-                    <span style="color: #fff;">${formatNumber(xp, 1)}</span> XP
-                  </div>
-                </div>
-                <div class="xp-bar-container">
-                  <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, xpProgress * 100))}%;"></div>
-                </div>
+                ${(() => {
+                  const currentXpStr = Math.floor(xp).toLocaleString('pt-BR');
+                  const nextLevel = level + 1;
+                  const nextLevelXpRequired = typeof BUMPKIN_EXP !== 'undefined' ? (BUMPKIN_EXP[nextLevel] || BUMPKIN_EXP[BUMPKIN_EXP.length - 1]) : 0;
+                  const currentLevelXpRequired = typeof BUMPKIN_EXP !== 'undefined' ? (BUMPKIN_EXP[level] || 0) : 0;
+                  const missingXp = Math.max(0, nextLevelXpRequired - xp);
+                  const missingXpStr = Math.floor(missingXp).toLocaleString('pt-BR');
+                  const computedProgress = nextLevelXpRequired > currentLevelXpRequired ? (xp - currentLevelXpRequired) / (nextLevelXpRequired - currentLevelXpRequired) : xpProgress;
+                  
+                  return `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                      <div class="level-text">Bumpkin Nível ${level}</div>
+                      <div style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); font-family: 'SF Mono', Consolas, monospace;">
+                        <span style="color: #fff;">${currentXpStr}</span> XP
+                      </div>
+                    </div>
+                    <div class="xp-bar-container">
+                      <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, computedProgress * 100))}%;"></div>
+                    </div>
+                    <div style="text-align: right; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.5); font-family: 'SF Mono', Consolas, monospace;">
+                      Faltam <span style="color: #60a5fa; font-weight: bold;">${missingXpStr} XP</span> para Nível ${nextLevel}
+                    </div>
+                  `;
+                })()}
               </div>
               
             </div>

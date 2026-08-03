@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=56';
-import { NOTIF_TYPES } from './notifications.js?v=56';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=56';
-import { t } from './i18n.js?v=56';
-import Farm from './farm.js?v=56';
+import Storage from './storage.js?v=57';
+import { NOTIF_TYPES } from './notifications.js?v=57';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=57';
+import { t } from './i18n.js?v=57';
+import Farm from './farm.js?v=57';
 
 // duplicate removed
 
@@ -383,7 +383,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
         </div>
         <!-- Player Profile -->
-          <div class="stat-card spring-in stagger-6-5" style="grid-column: 1 / -1; background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
+          <div class="stat-card spring-in stagger-6-5" style="flex: 1 1 100%; background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
             <!-- Background Glow -->
             <div style="position:absolute; top:-50%; left:-10%; width:150%; height:150%; background: radial-gradient(circle at 10% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%); pointer-events: none;"></div>
             

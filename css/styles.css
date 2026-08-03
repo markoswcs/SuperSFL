@@ -436,10 +436,13 @@ body::before {
    ============================================================= */
 
 .stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--s3);
   margin-bottom: var(--s4);
+}
+.stat-grid > * {
+  flex: 1 1 150px;
 }
 
 .stat-card {

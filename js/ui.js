@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=57';
-import { NOTIF_TYPES } from './notifications.js?v=57';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=57';
-import { t } from './i18n.js?v=57';
-import Farm from './farm.js?v=57';
+import Storage from './storage.js?v=58';
+import { NOTIF_TYPES } from './notifications.js?v=58';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=58';
+import { t } from './i18n.js?v=58';
+import Farm from './farm.js?v=58';
 
 // duplicate removed
 
@@ -265,6 +265,23 @@ function renderHome(exchange, prices, parsedFarm) {
         }
     }
 
+    let expansionValue = `Ilha ${parsedFarm.level}`;
+    let expansionClass = "";
+    let expansionSub = parsedFarm.isPartial ? '-' : "Nenhuma obra";
+    
+    if (!parsedFarm.isPartial && parsedFarm.expansionConstruction && parsedFarm.expansionConstruction.readyAt) {
+      const msLeft = parsedFarm.expansionConstruction.readyAt - Date.now();
+      if (msLeft <= 0) {
+        expansionValue = "Pronta!";
+        expansionClass = "emerald";
+        expansionSub = `Expansão ${parsedFarm.level + 1}`;
+      } else {
+        expansionValue = Farm.formatCountdown ? Farm.formatCountdown(msLeft) : "Em obra";
+        expansionClass = "amber";
+        expansionSub = `Expansão ${parsedFarm.level + 1}`;
+      }
+    }
+
     setHtml('#home-farm-summary', `
       <div class="section-header">
         <div class="section-title">🚜 ${t('home_farm_summary')}</div>
@@ -380,6 +397,19 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+        <!-- Expansion -->
+        <div class="stat-card spring-in stagger-6" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;"'}>
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
+            <img src="${ASSETS.ISLAND}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃO</div>
+            <div class="stat-value ${expansionClass}" style="font-size:18px; line-height:1;">
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : expansionValue}
+            </div>
+            <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${expansionSub}</div>
           </div>
         </div>
         <!-- Player Profile -->

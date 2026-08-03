@@ -436,7 +436,7 @@ function renderHome(exchange, prices, parsedFarm) {
                 <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 8px;">
                   <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <h2 class="profile-name">${username === 'Fazenda' ? `Fazenda #${farmId}` : username}</h2>
-                    ${username !== 'Fazenda' ? `<div class="profile-id-badge" title="Clique para copiar ID" onclick="navigator.clipboard.writeText('${farmId}'); window.__app.showToast('ID Copiada!'); event.stopPropagation();">#${farmId}</div>` : ''}
+                    ${username !== 'Fazenda' ? `<div class="profile-id-badge" title="Visitar Fazenda" onclick="window.open('https://sunflower-land.com/play/?farmId=${farmId}', '_blank'); window.__app.showToast('Abrindo Fazenda...'); event.stopPropagation();">#${farmId} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-left:2px; opacity:0.7;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></div>` : ''}
                   </div>
                   
                   <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">

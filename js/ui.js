@@ -3,11 +3,11 @@
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=64';
-import { NOTIF_TYPES } from './notifications.js?v=64';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=64';
-import { t } from './i18n.js?v=64';
-import Farm from './farm.js?v=64';
+import Storage from './storage.js?v=65';
+import { NOTIF_TYPES } from './notifications.js?v=65';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=65';
+import { t } from './i18n.js?v=65';
+import Farm from './farm.js?v=65';
 
 // duplicate removed
 
@@ -202,21 +202,6 @@ function renderHome(exchange, prices, parsedFarm) {
     const level = parsedFarm.bumpkin?.level || parsedFarm.bumpkinLevel || 1;
     const xp = parsedFarm.bumpkin?.xp || 0;
     const xpProgress = parsedFarm.bumpkin?.xpProgress || 0;
-    
-    const todayStr = new Date().toISOString().split('T')[0];
-    const helpsBoughtToday = (parsedFarm.socialFarming?.helpIncrease?.boughtAt || []).filter(date => new Date(date).toISOString().split('T')[0] === todayStr).length;
-    
-    let monumentHelps = 0;
-    const helpMonuments = ["Farmer's Monument", "Miner's Monument", "Woodcutter's Monument", "Teamwork Monument"];
-    helpMonuments.forEach(m => {
-      // SFL monuments are usually in collectibles, but check buildings as well just in case
-      if ((parsedFarm.rawCollectibles && parsedFarm.rawCollectibles[m] && parsedFarm.rawCollectibles[m].length > 0) ||
-          (parsedFarm.rawBuildings && parsedFarm.rawBuildings[m] && parsedFarm.rawBuildings[m].length > 0)) {
-        monumentHelps += 1;
-      }
-    });
-
-    const maxHelps = 5 + helpsBoughtToday + monumentHelps;
     const totalHelps = parsedFarm.socialFarming?.helpedForCompetition || 0;
 
     const readyCrops    = parsedFarm.crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0);
@@ -514,18 +499,6 @@ function renderHome(exchange, prices, parsedFarm) {
                     <div class="profile-tag tag-island" style="display:flex; align-items:center; gap:6px;">
                       <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="height:14px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));" onerror="this.src='https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/island.png'" />
                       ${parsedFarm.islandType === 'desert' ? 'Deserto' : (parsedFarm.islandType === 'spring' ? 'Primavera' : 'Básica')}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Helps Stats -->
-                <div style="display: flex; gap: 20px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 16px 24px; border-radius: 20px; min-width: max-content;">
-                  <div class="stats-block">
-                    <div class="stats-text" title="Ajudas Diárias Disponíveis">Ajudas Diárias</div>
-                    <div class="stats-val" style="display:flex; align-items:center; gap:6px; font-size:16px;">
-                      <img src="https://sunflower-land.com/play/assets/help-B62n1f2T.webp" style="width:16px; height:16px; image-rendering:pixelated;" onerror="this.style.display='none'" />
-                      <span style="color: #4ade80;">Limite: ${maxHelps}</span>
-                      <span style="color:rgba(255,255,255,0.3); font-size:14px;">por dia</span>
                     </div>
                   </div>
                 </div>

@@ -476,13 +476,13 @@ function renderHome(exchange, prices, parsedFarm) {
               <!-- Bottom Row: Level & Progress -->
               <div style="background: rgba(0,0,0,0.15); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                  <div class="level-text">Ilha Nível ${parsedFarm.level || 1}</div>
+                  <div class="level-text">Bumpkin Nível ${level}</div>
                   <div style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); font-family: 'SF Mono', Consolas, monospace;">
-                    <span style="color: #fff;">${formatNumber(parsedFarm.experience || 0, 1)}</span> XP
+                    <span style="color: #fff;">${formatNumber(xp, 1)}</span> XP
                   </div>
                 </div>
                 <div class="xp-bar-container">
-                  <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, ((parsedFarm.experience || 0) / (parsedFarm.nextLevelExp || 1000000)) * 100))}%;"></div>
+                  <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, xpProgress * 100))}%;"></div>
                 </div>
               </div>
               

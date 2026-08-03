@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=67';
-import API from './api.js?v=67';
-import Farm from './farm.js?v=67';
-import UI from './ui.js?v=67';
-import Notifications from './notifications.js?v=67';
-import i18n from './i18n.js?v=67';
+import Storage from './storage.js?v=68';
+import API from './api.js?v=68';
+import Farm from './farm.js?v=68';
+import UI from './ui.js?v=68';
+import Notifications from './notifications.js?v=68';
+import i18n from './i18n.js?v=68';
 
 // --- State ---
 const State = {
@@ -183,12 +183,6 @@ async function refreshData(force = false) {
       if (hasKeyError) {
         UI.showToast('Chave de API Inválida ou Expirada!', 'error');
         State.lastErrorMessage = 'API Key invalid/expired';
-      } else if (State.proxyError) {
-        UI.showToast('Não foi possível conectar ao Proxy Local.', 'error');
-        State.lastErrorMessage = 'Failed to fetch (Proxy não está rodando?)';
-      } else if (!farmData && !landInfo && State.farmId) {
-        UI.showToast('Could not load Farm data. Check ID or Proxies.', 'error');
-        State.lastErrorMessage = 'Could not load Farm data';
       }
     }
 

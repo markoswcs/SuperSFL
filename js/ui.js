@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=67';
-import { NOTIF_TYPES } from './notifications.js?v=67';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=67';
-import { t } from './i18n.js?v=67';
-import Farm from './farm.js?v=67';
+import Storage from './storage.js?v=68';
+import { NOTIF_TYPES } from './notifications.js?v=68';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=68';
+import { t } from './i18n.js?v=68';
+import Farm from './farm.js?v=68';
 
 // duplicate removed
 
@@ -276,16 +276,6 @@ function renderHome(exchange, prices, parsedFarm) {
         ${totalReady > 0 ? `<div class="section-badge coral">${totalReady}</div>` : `<div class="section-badge">${t('home_up_to_date')}</div>`}
       </div>
       
-      ${parsedFarm.isPartial ? `
-      <div style="background:rgba(245, 158, 11, 0.1);border:1px solid rgba(245, 158, 11, 0.2);padding:10px 14px;border-radius:var(--r2);margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
-        <span style="font-size:16px;line-height:1.2;">⚠️</span>
-        <div class="api-warning-content">
-          <div style="color:var(--amber-glow);font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:4px;">${t('api_warning')}</div>
-          <div style="color:var(--amber);font-size:13px;font-weight:500;line-height:1.4;">${t('api_warning_sub')}</div>
-        </div>
-      </div>
-      ` : ''}
-
       <div class="stat-grid" style="gap: 12px;">
         <!-- SFL Balance -->
         <div class="stat-card spring-in stagger-1" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
@@ -667,18 +657,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   const sflUsd = exchange?.sfl?.usd ?? 0;
   const sflBrl = exchange?.sfl?.brl ?? 0;
 
-  const partialNotice = isPartial ? `
-    <div class="card mb-4" style="padding:14px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); border:1px solid rgba(245,158,11,0.2);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <i class="bi bi-exclamation-triangle-fill" style="color:var(--amber);font-size:20px;"></i>
-        <div style="flex:1;">
-          <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">Modo de Leitura Básica</div>
-          <div style="font-size:13px;color:var(--text-secondary);line-height:1.4;">Para ver timers reais e informações detalhadas em tempo real, use o <strong>start.bat</strong> (se estiver no PC) ou insira sua API Key nas Configurações.</div>
-        </div>
-        <button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="window.__app.switchTab('settings')">Configurar</button>
-      </div>
-    </div>
-  ` : '';
+  const partialNotice = '';
 
 
 
@@ -694,25 +673,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
 
   // Skills
   const skillsList = parsedFarm.skills ?? [];
-  const skillsHtml = skillsList.length > 0 ? `
-    <div class="mb-4">
-      <div class="section-header mb-3 mt-4">
-        <div class="section-title">🧠 ${t('farm_skills_title')}</div>
-        <div class="section-badge emerald">${skillsList.length} Ativas</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${skillsList.map(skill => {
-          const imgUrl = `https://sfl.world/img/source/${encodeURIComponent(skill)}.png`;
-          return `
-            <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:12px;font-size:12px;font-weight:600;color:var(--text-primary);box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-              <img src="${imgUrl}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.SFL}'">
-              ${skill}
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  ` : '';
+  const skillsHtml = '';
 
   const hasKey = !!Storage.getSettings().communityApiKey;
 
@@ -770,7 +731,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
             <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
               ${isPartial ? (hasKey ? `
                 <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-                <span>Execute o proxy (<strong>start.bat</strong>) para ver dados reais.</span>
+                
               ` : `
                 <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
                 <span>Insira sua <strong>API Key</strong> em Config para ver dados reais.</span>
@@ -808,7 +769,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
         <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
           ${isPartial ? (hasKey ? `
             <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-            <span>Execute o proxy (<strong>start.bat</strong>) para carregar o inventário.</span>
+            
           ` : `
             <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
             <span>Insira sua <strong>API Key</strong> em Config para carregar o inventário.</span>
@@ -1380,7 +1341,7 @@ function renderSettingsPage() {
             <div>
               <strong>Erro de Conexão:</strong><br>
               <span style="color: #ffaa99;">${window.__app.State.lastErrorMessage || 'O servidor oficial recusou a chave ou o proxy falhou.'}</span><br><br>
-              Se for erro de Proxy, certifique-se que o <strong>start.bat</strong> está rodando.<br>
+              
               Se for "Invalid API Key", gere uma nova no jogo e cole acima.
             </div>
           </div>

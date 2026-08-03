@@ -451,8 +451,9 @@ function renderHome(exchange, prices, parsedFarm) {
                       <i class="bi bi-star-fill" style="font-size:10px;"></i> 
                       VIP ${parsedFarm.vipLifetime ? '(Vitalício)' : (parsedFarm.vipDaysLeft > 0 ? `(${parsedFarm.vipDaysLeft}d)` : '')}
                     </div>` : ''}
-                    <div class="profile-tag tag-island">
-                      ${parsedFarm.islandType === 'desert' ? '🏜️ Deserto' : (parsedFarm.islandType === 'spring' ? '🌸 Primavera' : '🏝️ Básica')}
+                    <div class="profile-tag tag-island" style="display:flex; align-items:center; gap:6px;">
+                      <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="height:14px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));" onerror="this.src='https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/island.png'" />
+                      ${parsedFarm.islandType === 'desert' ? 'Deserto' : (parsedFarm.islandType === 'spring' ? 'Primavera' : 'Básica')}
                     </div>
                   </div>
                 </div>
@@ -475,13 +476,13 @@ function renderHome(exchange, prices, parsedFarm) {
               <!-- Bottom Row: Level & Progress -->
               <div style="background: rgba(0,0,0,0.15); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                  <div class="level-text">Nível ${level}</div>
+                  <div class="level-text">Ilha Nível ${parsedFarm.level || 1}</div>
                   <div style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); font-family: 'SF Mono', Consolas, monospace;">
-                    <span style="color: #fff;">${formatNumber(xp, 1)}</span> XP
+                    <span style="color: #fff;">${formatNumber(parsedFarm.experience || 0, 1)}</span> XP
                   </div>
                 </div>
                 <div class="xp-bar-container">
-                  <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, xpProgress * 100))}%;"></div>
+                  <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, ((parsedFarm.experience || 0) / (parsedFarm.nextLevelExp || 1000000)) * 100))}%;"></div>
                 </div>
               </div>
               

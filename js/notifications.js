@@ -3,7 +3,7 @@
  * Detecta eventos da fazenda e dispara notificações nativas do navegador
  */
 
-import Storage from './storage.js?v=27';
+import Storage from './storage.js?v=28';
 
 // --- Notification categories ---
 const NOTIF_TYPES = {

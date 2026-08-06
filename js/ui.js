@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=70';
-import { NOTIF_TYPES } from './notifications.js?v=70';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=70';
-import { t } from './i18n.js?v=70';
-import Farm from './farm.js?v=70';
+import Storage from './storage.js?v=71';
+import { NOTIF_TYPES } from './notifications.js?v=71';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=71';
+import { t } from './i18n.js?v=71';
+import Farm from './farm.js?v=71';
 
 // duplicate removed
 
@@ -951,34 +951,85 @@ function renderMarketPage(prices, exchange) {
 
 function renderMarketFiltered(search = '', filter = 'all') {
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
-  let entries = Object.entries(p2p);
+  let history = {};
+  try {
+    history = JSON.parse(localStorage.getItem('prices_history') || '{}');
+  } catch(e) {}
+
+  let entries = [];
+  
+  // 1. Fetch exactly what the user has in their inventory
+  if (State.parsedFarm && State.parsedFarm.inventory) {
+    const inv = State.parsedFarm.inventory;
+    const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
+    
+    allOwned.forEach(item => {
+      const priceInSfl = p2p[item.name];
+      if (priceInSfl && item.qty > 0) {
+        entries.push({
+          name: item.name,
+          qty: item.qty,
+          priceInSfl: priceInSfl
+        });
+      }
+    });
+  }
+
+  // If no farm data, show warning
+  if (!State.parsedFarm || !State.parsedFarm.inventory || State.parsedFarm.isPartial) {
+    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">Inventário não encontrado</div><div class="empty-state-sub" style="margin-top:8px;">Conecte sua API Key na aba Ajustes para ver as suas crops e recursos no Mercado.</div></div>');
+    return;
+  }
 
   if (search) {
     const q = search.toLowerCase();
-    entries = entries.filter(([name]) => name.toLowerCase().includes(q));
+    entries = entries.filter(e => e.name.toLowerCase().includes(q));
   }
 
-  if (filter === 'crops') entries = entries.filter(([n]) => /Seed|Sunflower|Potato|Carrot|Cabbage|Parsnip|Radish|Wheat|Kale|Eggplant|Corn|Soybean|Barley|Rhubarb|Zucchini|Yam|Broccoli|Pepper|Onion|Turnip|Artichoke|Beetroot|Cauliflower|Pumpkin|Apple|Blueberry|Orange|Banana|Grape|Rice|Olive|Tomato|Lemon/.test(n));
-  if (filter === 'resources') entries = entries.filter(([n]) => /Wood|Stone|Iron|Gold|Crimstone|Obsidian|Honey|Egg|Feather|Wool|Leather|Milk|Oil|Salt/.test(n));
-  if (filter === 'fish') entries = entries.filter(([n]) => /fish|Fish|Tuna|Shark|Eel|Bass|Mahi|Salmon|Cod|Crab|Lobster|Mussel|Oyster|Shrimp|Bait/.test(n));
+  if (filter === 'crops') entries = entries.filter(e => /Seed|Sunflower|Potato|Carrot|Cabbage|Parsnip|Radish|Wheat|Kale|Eggplant|Corn|Soybean|Barley|Rhubarb|Zucchini|Yam|Broccoli|Pepper|Onion|Turnip|Artichoke|Beetroot|Cauliflower|Pumpkin|Apple|Blueberry|Orange|Banana|Grape|Rice|Olive|Tomato|Lemon/.test(e.name));
+  if (filter === 'resources') entries = entries.filter(e => /Wood|Stone|Iron|Gold|Crimstone|Obsidian|Honey|Egg|Feather|Wool|Leather|Milk|Oil|Salt/.test(e.name));
+  if (filter === 'fish') entries = entries.filter(e => /fish|Fish|Tuna|Shark|Eel|Bass|Mahi|Salmon|Cod|Crab|Lobster|Mussel|Oyster|Shrimp|Bait/.test(e.name));
 
-  entries = entries.sort((a, b) => b[1] - a[1]);
+  // Sort by Total Value (Qty * Price)
+  entries = entries.sort((a, b) => (b.qty * b.priceInSfl) - (a.qty * a.priceInSfl));
 
-  setHtml('#market-grid', entries.length > 0 ? entries.slice(0, 100).map(([name, priceInSfl]) => {
-    const usdVal = priceInSfl * _sflUsd;
-    const safeName = name.replace(/'/g, "\\'");
+  setHtml('#market-grid', entries.length > 0 ? entries.map(item => {
+    const totalSfl = item.qty * item.priceInSfl;
+    const safeName = item.name.replace(/'/g, "\\'");
+    
+    let trendHtml = '';
+    if (history[item.name]) {
+      const h = history[item.name];
+      if (h.trend === 'up') trendHtml = '<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲</span>';
+      else if (h.trend === 'down') trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
+    }
+
     return `
-      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${priceInSfl})" style="cursor:pointer">
-        <div style="width:48px;height:48px;margin:0 auto 10px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-          <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-          <span style="font-size:24px;line-height:1;display:none;">📦</span>
+      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})" style="cursor:pointer; display:flex; flex-direction:column; padding:12px; height:auto; gap:8px; align-items:flex-start;">
+        <div style="display:flex; width:100%; gap:12px; align-items:center;">
+          <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);flex-shrink:0;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+            <span style="font-size:24px;line-height:1;display:none;">📦</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px; font-weight:800; color:var(--text-primary); margin-bottom:2px;">${item.name}</div>
+            <div style="font-size:12px; font-weight:700; color:var(--text-secondary); background:var(--surface-3); display:inline-block; padding:2px 6px; border-radius:4px;">Estoque: <span style="color:var(--text-primary)">${formatNumber(item.qty)}</span></div>
+          </div>
         </div>
-        <div class="market-item-name">${name}</div>
-        <div class="market-item-price">${formatPrice(priceInSfl)} SFL</div>
-        <div class="market-item-usd">≈ $${usdVal.toFixed(4)}</div>
+        
+        <div style="display:flex; width:100%; justify-content:space-between; align-items:flex-end; margin-top:4px;">
+          <div>
+            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px;">Unidade</div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL${trendHtml}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px;">Total (Estimado)</div>
+            <div style="font-size:15px; font-weight:800; color:var(--emerald);">${formatPrice(totalSfl)} SFL</div>
+          </div>
+        </div>
       </div>
     `;
-  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🔍</span><div class="empty-state-title">Nenhum item encontrado</div></div>`);
+  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🤷</span><div class="empty-state-title">Nada no Estoque</div><div class="empty-state-sub" style="margin-top:8px;">Você não tem itens nesta categoria com preços no mercado, ou o seu estoque está zerado.</div></div>`);
 }
 
 // =====================================================
@@ -996,7 +1047,7 @@ function hideModal() {
   $('#app-modal').style.display = 'none';
 }
 
-function openP2pCalc(itemName, priceInSfl) {
+function openP2pCalc(itemName, priceInSfl, defaultQty = 10) {
   const settings = Storage.getSettings();
   // Correct tax rates per island type
   // Source: sfl.world API returns taxResource as a decimal (e.g., 0.075 = 7.5%)
@@ -1020,7 +1071,7 @@ function openP2pCalc(itemName, priceInSfl) {
     </div>
     
     <label style="font-size:12px;color:var(--text-tertiary);display:block;margin-bottom:4px"></label>
-    <input type="number" id="calc-qty" class="calc-input" value="10" min="1" oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate})">
+    <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1" oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate})">
     
     <div class="calc-row">
       <span></span>

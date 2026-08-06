@@ -6,7 +6,7 @@
  * CORS fallback chain: direct → corsproxy.io → allorigins
  */
 
-import Storage from './storage.js?v=27';
+import Storage from './storage.js?v=28';
 
 const ENDPOINTS = {
   EXCHANGE:   'https://sfl.world/api/v1.1/exchange',
@@ -93,11 +93,32 @@ async function getExchange(forceRefresh = false) {
 // Response shape: { data: { p2p: { [itemName]: priceInSfl } }, updatedAt }
 async function getPrices(forceRefresh = false) {
   const CACHE_KEY = 'prices';
-  if (!forceRefresh) {
-    const cached = Storage.getCache(CACHE_KEY);
-    if (cached) return cached;
+  const HISTORY_KEY = 'prices_history';
+
+  let cached = Storage.getCache(CACHE_KEY);
+  if (!forceRefresh && cached) {
+    return cached;
   }
+
   const data = await fetchJson(ENDPOINTS.PRICES);
+  const currentPrices = data?.data?.p2p || data?.p2p || {};
+  
+  // Track history
+  if (Object.keys(currentPrices).length > 0) {
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}');
+    let oldPrices = cached?.data?.p2p || cached?.p2p || {};
+    
+    for (const [item, newPrice] of Object.entries(currentPrices)) {
+      if (oldPrices[item] && oldPrices[item] !== newPrice) {
+        history[item] = {
+          prev: oldPrices[item],
+          trend: newPrice > oldPrices[item] ? 'up' : 'down'
+        };
+      }
+    }
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }
+
   Storage.setCache(CACHE_KEY, data, 900_000); // 15min TTL (API updates every 15min)
   return data;
 }

@@ -2,7 +2,7 @@
  * i18n.js — Sistema de tradução Vanilla JS
  */
 
-import Storage from './storage.js?v=27';
+import Storage from './storage.js?v=28';
 
 const translations = {
   pt: {

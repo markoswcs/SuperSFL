@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=71';
-import { NOTIF_TYPES } from './notifications.js?v=71';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=71';
-import { t } from './i18n.js?v=71';
-import Farm from './farm.js?v=71';
+import Storage from './storage.js?v=72';
+import { NOTIF_TYPES } from './notifications.js?v=72';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=72';
+import { t } from './i18n.js?v=72';
+import Farm from './farm.js?v=72';
 
 // duplicate removed
 
@@ -1085,6 +1085,27 @@ function openP2pCalc(itemName, priceInSfl, defaultQty = 10) {
       <span></span>
       <span id="calc-net">0 SFL</span>
     </div>
+
+    <!-- Price Alerts for this item -->
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--surface-border);">
+      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🎯 Alertas de Preço</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="number" id="alert-up-val" step="0.0001" placeholder="Avisar se subir acima de..."
+          style="flex:1;padding:8px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:8px;color:var(--text-primary);font-size:12px;outline:none;">
+        <button onclick="window.__app.addPriceAlert('${itemName.replace(/'/g,"\\'")}', 'up', parseFloat(document.getElementById('alert-up-val').value))"
+          style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--emerald);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;">
+          ▲ Alta
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="alert-down-val" step="0.0001" placeholder="Avisar se cair abaixo de..."
+          style="flex:1;padding:8px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:8px;color:var(--text-primary);font-size:12px;outline:none;">
+        <button onclick="window.__app.addPriceAlert('${itemName.replace(/'/g,"\\'")}', 'down', parseFloat(document.getElementById('alert-down-val').value))"
+          style="background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.3);color:var(--coral);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;">
+          ▼ Baixa
+        </button>
+      </div>
+    </div>
   `);
   
   // Trigger initial calculation immediately
@@ -1103,6 +1124,174 @@ function updateP2pCalc(price, taxRate) {
   setText('#calc-gross', formatPrice(gross) + ' SFL');
   setText('#calc-tax', '- ' + formatPrice(tax) + ' SFL');
   setText('#calc-net', formatPrice(net) + ' SFL');
+}
+
+// =====================================================
+// DELIVERIES PAGE
+// =====================================================
+
+function renderDeliveriesPage() {
+  const el = $('#deliveries-content');
+  if (!el) return;
+
+  const farm = State.parsedFarm;
+
+  if (!farm) {
+    el.innerHTML = `
+      <div class="empty-state" style="margin-top:48px">
+        <span class="empty-state-icon">🏚️</span>
+        <div class="empty-state-title">Fazenda não carregada</div>
+        <div class="empty-state-sub">Configure o Farm ID na aba Ajustes.</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (farm.isPartial || !farm.chores) {
+    el.innerHTML = `
+      <div class="empty-state" style="margin-top:48px">
+        <span class="empty-state-icon">🔒</span>
+        <div class="empty-state-title">API Key necessária</div>
+        <div class="empty-state-sub">Para ver entregas e tarefas, conecte sua API Key na aba Ajustes.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const chores = Array.isArray(farm.chores) ? farm.chores : farm.chores?.active || [];
+  const deliveries = chores.filter(c => c.type === 'delivery');
+  const tasks = chores.filter(c => c.type === 'chore');
+
+  // Get current inventory for cross-reference
+  const inv = farm.inventory || {};
+  const allOwned = {};
+  [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])].forEach(item => {
+    allOwned[item.name] = item.qty;
+  });
+
+  function itemRow(name, required) {
+    const have = allOwned[name] ?? 0;
+    const pct = Math.min(100, (have / required) * 100);
+    const done = have >= required;
+    return `
+      <div style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png"
+               style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;"
+               onerror="this.style.display='none'">
+          <span style="font-size:13px; font-weight:700; color:var(--text-primary);">${name}</span>
+          <span style="font-size:12px; margin-left:auto; font-weight:700; color:${done ? 'var(--emerald)' : 'var(--coral)'};">${have}/${required}</span>
+          ${done ? '<span style="font-size:14px;">✅</span>' : ''}
+        </div>
+        <div style="background:var(--surface-3);border-radius:100px;height:5px;overflow:hidden;">
+          <div style="height:100%;border-radius:100px;width:${pct}%;background:${done ? 'var(--emerald)' : 'linear-gradient(90deg, var(--coral), var(--amber))'};transition:width 0.5s ease;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function deliveryCard(d, idx) {
+    const itemsHtml = Object.entries(d.items || {}).map(([name, qty]) => itemRow(name, qty)).join('');
+    const rewardText = [];
+    if (d.rewardSfl) rewardText.push(`${formatSfl(d.rewardSfl)} SFL`);
+    if (d.rewardCoins) rewardText.push(`${formatNumber(d.rewardCoins)} Coins`);
+    if (d.rewardMarks) rewardText.push(`${d.rewardMarks} Marks`);
+    if (d.rewardItems) Object.entries(d.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
+
+    const npcImg = `https://sfl.world/img/source/${encodeURIComponent(d.npc)}.png`;
+
+    return `
+      <div class="spring-in" style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;padding:16px;margin-bottom:12px;animation-delay:${idx * 40}ms;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:44px;height:44px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            <img src="${npcImg}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.textContent='📦';this.style.display='none';this.nextElementSibling.style.display='block'">
+            <span style="font-size:24px;display:none;">📦</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${d.npc}</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">📦 Entrega</div>
+          </div>
+          ${rewardText.length ? `
+            <div style="text-align:right;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:6px 10px;">
+              <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;">Recompensa</div>
+              <div style="font-size:13px;font-weight:800;color:var(--emerald);">${rewardText.join(' + ')}</div>
+            </div>
+          ` : ''}
+        </div>
+        <div>${itemsHtml}</div>
+      </div>
+    `;
+  }
+
+  function choreCard(c, idx) {
+    const rewardText = [];
+    if (c.rewardSfl) rewardText.push(`${formatSfl(c.rewardSfl)} SFL`);
+    if (c.rewardItems) Object.entries(c.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
+    const pct = c.requirement > 0 ? Math.min(100, (c.progress / c.requirement) * 100) : 0;
+
+    return `
+      <div class="spring-in" style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;padding:16px;margin-bottom:12px;animation-delay:${idx * 40}ms;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:44px;height:44px;background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(234,179,8,0.05));border:1px solid rgba(251,191,36,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">⭐</div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${c.npc}</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${c.description || c.activity || ''}</div>
+          </div>
+          ${rewardText.length ? `
+            <div style="text-align:right;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:6px 10px;">
+              <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;">Recompensa</div>
+              <div style="font-size:13px;font-weight:800;color:var(--amber);">${rewardText.join(' + ')}</div>
+            </div>
+          ` : ''}
+        </div>
+        ${c.requirement > 0 ? `
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">
+              <span>${c.activity || ''}</span>
+              <span>${c.progress} / ${c.requirement}</span>
+            </div>
+            <div style="background:var(--surface-2);border-radius:100px;height:6px;overflow:hidden;">
+              <div style="height:100%;border-radius:100px;width:${pct}%;background:linear-gradient(90deg, var(--amber), var(--emerald));transition:width 0.5s ease;"></div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  const deliveriesHtml = deliveries.length > 0
+    ? deliveries.map((d, i) => deliveryCard(d, i)).join('')
+    : `<div style="text-align:center;padding:24px;color:var(--text-tertiary);font-size:14px;">Nenhuma entrega ativa 🎉</div>`;
+
+  const choresHtml = tasks.length > 0
+    ? tasks.map((c, i) => choreCard(c, i)).join('')
+    : `<div style="text-align:center;padding:24px;color:var(--text-tertiary);font-size:14px;">Nenhuma tarefa ativa 🎉</div>`;
+
+  el.innerHTML = `
+    <div style="padding-bottom:8px;">
+
+      <!-- Summary Bar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+        <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;padding:14px;text-align:center;">
+          <div style="font-size:28px;font-weight:900;color:var(--sky);">${deliveries.length}</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Entregas</div>
+        </div>
+        <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;padding:14px;text-align:center;">
+          <div style="font-size:28px;font-weight:900;color:var(--amber);">${tasks.length}</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Tarefas</div>
+        </div>
+      </div>
+
+      <!-- Deliveries Section -->
+      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">📦 Pedidos de Entrega</div>
+      ${deliveriesHtml}
+
+      <!-- Chores Section -->
+      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-top:20px;margin-bottom:10px;">⭐ Tarefas do Quadro</div>
+      ${choresHtml}
+
+    </div>
+  `;
 }
 
 // =====================================================
@@ -1145,26 +1334,71 @@ function renderToolsPage() {
 
 function renderAlertsPage() {
   const log = Storage.getAlertLog();
-  if (log.length === 0) {
-    setHtml('#alerts-list', `
-      <div class="empty-state">
-        <span class="empty-state-icon">🔕</span>
-        <div class="empty-state-title">${t('alerts_empty_title')}</div>
-        <div class="empty-state-sub">${t('alerts_empty_sub')}</div>
-      </div>
-    `);
-    return;
-  }
+  const priceAlerts = Storage.getPriceAlerts ? Storage.getPriceAlerts() : [];
 
-  setHtml('#alerts-list', log.map(a => `
-    <div class="alert-item">
-      <div class="alert-dot ${a.dot ?? 'amber'}"></div>
-      <div class="alert-content">
-        <div class="alert-title">${a.title}</div>
-        <div class="alert-time">${a.body ?? ''} · ${timeAgo(a.time)}</div>
+  // --- Per-Item Price Alerts Section ---
+  const alertsHtml = priceAlerts.length > 0
+    ? priceAlerts.map(a => `
+      <div class="spring-in" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--surface-border);">
+        <img src="https://sfl.world/img/source/${encodeURIComponent(a.item)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;color:var(--text-primary);">${a.item}</div>
+          <div style="font-size:11px;color:${a.type === 'up' ? 'var(--emerald)' : 'var(--coral)'};font-weight:700;margin-top:1px;">
+            ${a.type === 'up' ? '▲ Avisar se subir acima de' : '▼ Avisar se cair abaixo de'} ${formatPrice(a.threshold)} SFL
+          </div>
+        </div>
+        <button onclick="window.__app.deletePriceAlert('${a.item.replace(/'/g,"\\'")}', '${a.type}')"
+          style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:700;">
+          ✕
+        </button>
+      </div>
+    `).join('')
+    : `<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:13px;">Nenhum alerta de preço configurado.<br>Clique em um item no <strong>Mercado</strong> e adicione um alerta!</div>`;
+
+  const priceAlertSection = `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">🎯 Alertas de Preço por Item</div>
+      <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;overflow:hidden;">
+        ${alertsHtml}
       </div>
     </div>
-  `).join(''));
+  `;
+
+  // Inject price alert section into alerts-list
+  const listEl = $('#alerts-list');
+  if (listEl) {
+    if (log.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-state-icon">🔕</span>
+          <div class="empty-state-title">${t('alerts_empty_title')}</div>
+          <div class="empty-state-sub">${t('alerts_empty_sub')}</div>
+        </div>
+      `;
+    } else {
+      listEl.innerHTML = log.map(a => `
+        <div class="alert-item">
+          <div class="alert-dot ${a.dot ?? 'amber'}"></div>
+          <div class="alert-content">
+            <div class="alert-title">${a.title}</div>
+            <div class="alert-time">${a.body ?? ''} · ${timeAgo(a.time)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Inject price alert management section before the history
+  const historyHeader = document.querySelector('#tab-alerts .section-header');
+  let priceAlertContainer = $('#price-alerts-container');
+  if (!priceAlertContainer) {
+    priceAlertContainer = document.createElement('div');
+    priceAlertContainer.id = 'price-alerts-container';
+    if (historyHeader) {
+      historyHeader.parentNode.insertBefore(priceAlertContainer, historyHeader);
+    }
+  }
+  priceAlertContainer.innerHTML = priceAlertSection;
 }
 
 function updateAlertBadge() {
@@ -1946,6 +2180,7 @@ export default {
   renderNotifSettings,
   renderSettingsPage,
   renderToolsPage,
+  renderDeliveriesPage,
   renderLoadingState,
   showModal,
   hideModal,

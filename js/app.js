@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=71';
-import API from './api.js?v=71';
-import Farm from './farm.js?v=71';
-import UI from './ui.js?v=71';
-import Notifications from './notifications.js?v=71';
-import i18n from './i18n.js?v=71';
+import Storage from './storage.js?v=72';
+import API from './api.js?v=72';
+import Farm from './farm.js?v=72';
+import UI from './ui.js?v=72';
+import Notifications from './notifications.js?v=72';
+import i18n from './i18n.js?v=72';
 
 // --- State ---
 const State = {
@@ -93,7 +93,23 @@ async function init() {
       const resUsd = num * rateUsd;
       const el = document.getElementById('flw-converter-result');
       if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)} <span style="font-size:11px;color:var(--text-tertiary)">($${resUsd.toFixed(2)})</span>`;
-    }
+    },
+    addPriceAlert: (item, type, threshold) => {
+      if (!item || !type || isNaN(threshold) || threshold <= 0) {
+        UI.showToast('Insira um valor válido para o alerta!', 'error');
+        return;
+      }
+      Storage.savePriceAlert({ item, type, threshold });
+      UI.showToast(`Alerta salvo: ${item} ${type === 'up' ? '▲' : '▼'} ${threshold} SFL ✅`);
+      UI.hideModal();
+      if (State.currentTab === 'alerts') UI.renderAlertsPage();
+    },
+    deletePriceAlert: (item, type) => {
+      Storage.deletePriceAlert(item, type);
+      UI.renderAlertsPage();
+      UI.showToast('Alerta removido.');
+    },
+    State,
   };
 
   // Unregister Service Workers to prevent caching bugs during dev
@@ -300,6 +316,9 @@ function renderCurrentTab() {
       break;
     case 'market':
       UI.renderMarketPage(State.prices, State.exchange);
+      break;
+    case 'deliveries':
+      UI.renderDeliveriesPage();
       break;
     case 'tools':
       UI.renderToolsPage();

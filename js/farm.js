@@ -749,13 +749,48 @@ function getGenericEmoji(name) {
  * Parse chores board
  */
 function parseChores(farm) {
-  if (!farm?.choreBoard?.chores) return [];
-  return Object.entries(farm.choreBoard.chores).map(([npc, chore]) => ({
-    npc,
-    description: chore.name,
-    reward: chore.reward,
-    progress: chore.initialProgress,
-  }));
+  const active = [];
+
+  // Parse choreBoard chores (NPC tasks)
+  if (farm?.choreBoard?.chores) {
+    Object.entries(farm.choreBoard.chores).forEach(([npc, chore]) => {
+      if (chore.completedAt || chore.skippedAt) return; // skip completed
+      active.push({
+        type: 'chore',
+        npc,
+        description: chore.description || chore.name || `Task for ${npc}`,
+        activity: chore.activity || '',
+        requirement: chore.requirement || 0,
+        progress: chore.initialProgress || 0,
+        reward: chore.reward || {},
+        rewardSfl: chore.reward?.sfl || 0,
+        rewardItems: chore.reward?.items || {},
+      });
+    });
+  }
+
+  // Parse delivery orders (order board)
+  if (farm?.delivery?.orders) {
+    farm.delivery.orders.forEach((order) => {
+      if (order.completedAt) return; // skip completed
+      const items = order.items || {};
+      active.push({
+        type: 'delivery',
+        npc: order.from || 'Villager',
+        description: `Delivery to ${order.from || 'Villager'}`,
+        items,
+        reward: order.reward || {},
+        rewardSfl: order.reward?.sfl || 0,
+        rewardItems: order.reward?.items || {},
+        rewardCoins: order.reward?.coins || 0,
+        rewardMarks: order.reward?.marks || 0,
+        expiresAt: order.readyAt || 0,
+        id: order.id || '',
+      });
+    });
+  }
+
+  return active;
 }
 
 /**

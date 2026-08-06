@@ -11,6 +11,7 @@ const Storage = (() => {
     NOTIF_PREFS:   'sfl_notif_prefs',
     CACHE_PREFIX:  'sfl_cache_',
     ALERT_LOG:     'sfl_alert_log',
+    PRICE_ALERTS:  'sfl_price_alerts',
   };
 
   // --- Farm IDs ---
@@ -156,6 +157,30 @@ const Storage = (() => {
     localStorage.removeItem(KEYS.ALERT_LOG);
   }
 
+  // --- Price Alerts ---
+
+  function getPriceAlerts() {
+    try {
+      return JSON.parse(localStorage.getItem(KEYS.PRICE_ALERTS) || '[]');
+    } catch { return []; }
+  }
+
+  function savePriceAlert(alert) {
+    const alerts = getPriceAlerts();
+    const existing = alerts.findIndex(a => a.item === alert.item && a.type === alert.type);
+    if (existing >= 0) {
+      alerts[existing] = alert;
+    } else {
+      alerts.push(alert);
+    }
+    localStorage.setItem(KEYS.PRICE_ALERTS, JSON.stringify(alerts));
+  }
+
+  function deletePriceAlert(item, type) {
+    const alerts = getPriceAlerts().filter(a => !(a.item === item && a.type === type));
+    localStorage.setItem(KEYS.PRICE_ALERTS, JSON.stringify(alerts));
+  }
+
   return {
     getFarmIds,
     addFarmId,
@@ -171,6 +196,9 @@ const Storage = (() => {
     addAlertLog,
     getAlertLog,
     clearAlertLog,
+    getPriceAlerts,
+    savePriceAlert,
+    deletePriceAlert,
   };
 })();
 

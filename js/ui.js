@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=79';
-import { NOTIF_TYPES } from './notifications.js?v=79';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=79';
-import { t } from './i18n.js?v=79';
-import Farm from './farm.js?v=79';
+import Storage from './storage.js?v=80';
+import { NOTIF_TYPES } from './notifications.js?v=80';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=80';
+import { t } from './i18n.js?v=80';
+import Farm from './farm.js?v=80';
 
 // duplicate removed
 
@@ -879,74 +879,10 @@ function renderMarketPage(prices, exchange) {
 
   renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'all');
 
-  const settings = Storage.getSettings();
-  let settingsContainer = $('#market-settings-container');
-  if (!settingsContainer) {
-    settingsContainer = document.createElement('div');
-    settingsContainer.id = 'market-settings-container';
-    settingsContainer.className = 'mb-4';
-    const marketGrid = $('#market-grid');
-    if (marketGrid && marketGrid.parentNode) {
-      marketGrid.parentNode.insertBefore(settingsContainer, marketGrid);
-    }
+  const settingsContainer = $('#market-settings-container');
+  if (settingsContainer) {
+    settingsContainer.remove();
   }
-
-  settingsContainer.innerHTML = `
-    <div class="card" style="padding:12px; margin-bottom: 16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em">
-        Configurações de Taxa P2P
-      </div>
-      <div class="sett-row" style="margin-bottom: 12px;">
-        <div>
-          <div class="sett-row-label" style="font-size:13px">Tipo de Ilha</div>
-        </div>
-        <div class="sett-chip-group" id="market-chip-island">
-          <button class="sett-chip ${settings.island === 'basic' ? 'active' : ''}" data-val="basic">Básica</button>
-          <button class="sett-chip ${settings.island === 'petal' ? 'active' : ''}" data-val="petal">Petal</button>
-          <button class="sett-chip ${settings.island === 'desert' ? 'active' : ''}" data-val="desert">Desert</button>
-          <button class="sett-chip ${settings.island === 'volcano' ? 'active' : ''}" data-val="volcano">Volcano</button>
-        </div>
-      </div>
-      <div style="display:flex;gap:16px;">
-        <div class="sett-row" style="flex:1;background:var(--surface-1);padding:8px 12px;border-radius:8px;">
-          <div class="sett-row-label" style="font-size:13px">👑 VIP (-50%)</div>
-          <label class="toggle">
-            <input type="checkbox" id="market-toggle-vip" ${settings.isVip ? 'checked' : ''}>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="sett-row" style="flex:1;background:var(--surface-1);padding:8px 12px;border-radius:8px;">
-          <div class="sett-row-label" style="font-size:13px">⛩ Shrine (-2.5%)</div>
-          <label class="toggle">
-            <input type="checkbox" id="market-toggle-shrine" ${settings.hasShrine ? 'checked' : ''}>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Bind events
-  const saveMarketSettings = () => {
-    const islandEl = $('#market-chip-island .sett-chip.active');
-    Storage.saveSettings({
-      island:    islandEl?.dataset.val ?? 'volcano',
-      isVip:     !!$('#market-toggle-vip')?.checked,
-      hasShrine: !!$('#market-toggle-shrine')?.checked,
-    });
-    // Optional: trigger re-calc if modal is open, but simple save is fine
-  };
-
-  $$('#market-chip-island .sett-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      $$('#market-chip-island .sett-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      saveMarketSettings();
-    });
-  });
-
-  $('#market-toggle-vip')?.addEventListener('change', saveMarketSettings);
-  $('#market-toggle-shrine')?.addEventListener('change', saveMarketSettings);
 }
 
 function renderMarketFiltered(search = '', filter = 'all') {

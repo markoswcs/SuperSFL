@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=78';
-import { NOTIF_TYPES } from './notifications.js?v=78';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=78';
-import { t } from './i18n.js?v=78';
-import Farm from './farm.js?v=78';
+import Storage from './storage.js?v=79';
+import { NOTIF_TYPES } from './notifications.js?v=79';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=79';
+import { t } from './i18n.js?v=79';
+import Farm from './farm.js?v=79';
 
 // duplicate removed
 
@@ -1000,10 +1000,16 @@ function renderMarketFiltered(search = '', filter = 'all') {
     const safeName = item.name.replace(/'/g, "\\'");
     
     let trendHtml = '';
+    let priceColor = 'var(--text-secondary)';
     if (history[item.name]) {
       const h = history[item.name];
-      if (h.trend === 'up') trendHtml = '<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲</span>';
-      else if (h.trend === 'down') trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
+      if (h.trend === 'up') {
+        trendHtml = '<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲</span>';
+        priceColor = 'var(--emerald)';
+      } else if (h.trend === 'down') {
+        trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
+        priceColor = 'var(--coral)';
+      }
     }
 
     const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
@@ -1032,7 +1038,7 @@ function renderMarketFiltered(search = '', filter = 'all') {
             
             <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
               <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:14px; font-weight:700; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL</span>
+                <span style="font-size:14px; font-weight:700; color:${priceColor};">${formatPrice(item.priceInSfl)} SFL</span>
                 ${trendHtml}
               </div>
               <div style="font-size:15px; font-weight:900; color:var(--emerald);">= ${formatPrice(totalSfl)} SFL</div>

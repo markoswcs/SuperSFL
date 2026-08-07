@@ -115,11 +115,16 @@ async function getPrices(forceRefresh = false) {
     let oldPrices = cached?.data?.p2p || cached?.p2p || {};
     
     for (const [item, newPrice] of Object.entries(currentPrices)) {
+      if (!history[item]) history[item] = {};
+      
+      // Update max historical price
+      if (!history[item].max || newPrice > history[item].max) {
+        history[item].max = newPrice;
+      }
+
       if (oldPrices[item] && oldPrices[item] !== newPrice) {
-        history[item] = {
-          prev: oldPrices[item],
-          trend: newPrice > oldPrices[item] ? 'up' : 'down'
-        };
+        history[item].prev = oldPrices[item];
+        history[item].trend = newPrice > oldPrices[item] ? 'up' : 'down';
       }
     }
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));

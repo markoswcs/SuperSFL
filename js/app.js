@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=78';
-import API from './api.js?v=78';
-import Farm from './farm.js?v=78';
-import UI from './ui.js?v=78';
-import Notifications from './notifications.js?v=78';
-import i18n from './i18n.js?v=78';
+import Storage from './storage.js?v=79';
+import API from './api.js?v=79';
+import Farm from './farm.js?v=79';
+import UI from './ui.js?v=79';
+import Notifications from './notifications.js?v=79';
+import i18n from './i18n.js?v=79';
 
 // --- State ---
 const State = {
@@ -95,20 +95,39 @@ async function init() {
       if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)} <span style="font-size:11px;color:var(--text-tertiary)">($${resUsd.toFixed(2)})</span>`;
     },
     promptPriceAlert: (item, currentPrice) => {
+      let history = {};
+      try { history = JSON.parse(localStorage.getItem('prices_history') || '{}'); } catch(e) {}
+      const maxPrice = history[item]?.max;
+      const autoPrice = maxPrice ? Math.max(maxPrice, currentPrice * 1.05).toFixed(4) : (currentPrice * 1.15).toFixed(4);
+
       const html = `
         <div style="padding:16px;">
           <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preço alvo (SFL) para vender <b>${item}</b>. O card ficará destacado quando o mercado atingir este valor.</div>
-          <div style="font-size:12px;margin-bottom:16px;">Preço atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></div>
-          <input type="number" id="prompt-alert-input" step="0.0001" placeholder="Ex: ${(currentPrice * 1.2).toFixed(4)}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);margin-bottom:16px;">
-          <button id="prompt-alert-save" class="btn btn-primary" style="width:100%; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Salvar Alvo</button>
+          <div style="font-size:12px;margin-bottom:16px; display:flex; justify-content:space-between;">
+            <span>Preço atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></span>
+            ${maxPrice ? `<span>Máx Histórico: <span style="color:var(--emerald);font-weight:700;">${maxPrice} SFL</span></span>` : ''}
+          </div>
+          <input type="number" id="prompt-alert-input" step="0.0001" placeholder="Ex: ${autoPrice}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);margin-bottom:16px;">
+          <div style="display:flex; gap:8px;">
+            <button id="prompt-alert-auto" class="btn" style="flex:1; border:1px solid var(--emerald); border-radius:8px; background:transparent; color:var(--emerald); padding:12px; font-weight:700; cursor:pointer;">Auto (${autoPrice})</button>
+            <button id="prompt-alert-save" class="btn btn-primary" style="flex:1; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Salvar Alvo</button>
+          </div>
         </div>
       `;
       UI.showModal('🎯 Alvo de Venda', html);
       setTimeout(() => {
-        const btn = document.getElementById('prompt-alert-save');
-        if (btn) {
-          btn.onclick = () => {
-            const val = parseFloat(document.getElementById('prompt-alert-input').value);
+        const btnSave = document.getElementById('prompt-alert-save');
+        const btnAuto = document.getElementById('prompt-alert-auto');
+        const input = document.getElementById('prompt-alert-input');
+        
+        if (btnAuto) {
+          btnAuto.onclick = () => {
+            input.value = autoPrice;
+          };
+        }
+        if (btnSave) {
+          btnSave.onclick = () => {
+            const val = parseFloat(input.value);
             if (val > 0) {
               window.__app.addPriceAlert(item, 'up', val);
               if (State.currentTab === 'market') {

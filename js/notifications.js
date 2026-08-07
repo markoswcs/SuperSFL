@@ -60,15 +60,20 @@ function sendNotification(title, body, options = {}) {
   const typeKey = options.typeKey;
   if (typeKey && prefs[typeKey] === false) return;
 
-  const notif = new Notification(title, {
-    body,
-    icon:  '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    tag:   options.tag ?? title,
-    renotify: options.renotify ?? false,
-    silent: false,
-    ...options,
-  });
+  let notif = null;
+  try {
+    notif = new Notification(title, {
+      body,
+      icon:  '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag:   options.tag ?? title,
+      renotify: options.renotify ?? false,
+      silent: false,
+      ...options,
+    });
+  } catch (e) {
+    console.warn('Browser blocks direct Notification constructor (common on mobile). Falling back to in-app log only.', e);
+  }
 
   // Log to history
   Storage.addAlertLog({

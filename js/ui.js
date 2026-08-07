@@ -2456,49 +2456,49 @@ window.__app.showIslandResourcesModal = () => {
 
   const resourceGroups = [
     {
-      label: '🪵 Madeira',
+      label: 'Madeira',
       img: 'Wood',
       items: (farm.trees || []),
       regrow: '2h',
     },
     {
-      label: '🪨 Pedra',
+      label: 'Pedra',
       img: 'Stone',
       items: (farm.rocks || []).filter(r => r.name === 'Stone Rock'),
       regrow: '4h',
     },
     {
-      label: '🔩 Ferro',
+      label: 'Ferro',
       img: 'Iron',
       items: (farm.rocks || []).filter(r => r.name === 'Iron Rock'),
       regrow: '8h',
     },
     {
-      label: '🥇 Ouro',
+      label: 'Ouro',
       img: 'Gold',
       items: (farm.rocks || []).filter(r => r.name === 'Gold Rock'),
       regrow: '24h',
     },
     {
-      label: '💎 Crimstone',
+      label: 'Crimstone',
       img: 'Crimstone',
       items: (farm.rocks || []).filter(r => r.name === 'Crimstone'),
       regrow: '24h',
     },
     {
-      label: '🌟 Sunstone',
+      label: 'Sunstone',
       img: 'Sunstone',
       items: (farm.rocks || []).filter(r => r.name === 'Sunstone'),
       regrow: '24h',
     },
     {
-      label: '🍄 Cogumelos',
+      label: 'Cogumelos',
       img: 'Wild Mushroom',
       items: (farm.mushrooms || []),
       regrow: '16h',
     },
     {
-      label: '🛢 Petróleo',
+      label: 'Petróleo',
       img: 'Oil',
       items: (farm.oil || []),
       regrow: '24h',

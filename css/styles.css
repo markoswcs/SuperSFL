@@ -799,7 +799,7 @@ body::before {
 
 .market-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--s2);
 }
 
@@ -1715,7 +1715,6 @@ body::before {
     border-right: 1px solid var(--surface-border);
   }
 
-  .market-grid { grid-template-columns: repeat(3, 1fr); }
   .inventory-grid { grid-template-columns: repeat(4, 1fr); }
 }
 

@@ -2536,12 +2536,23 @@ window.__app.showIslandResourcesModal = () => {
       return a.msLeft - b.msLeft;
     });
 
-    const itemsGrid = sortedItems.map((item, idx) => {
-      if(item.status === 'ready') {
-        return `<div style="background:rgba(16,185,129,0.15); color:var(--emerald); border:1px solid rgba(16,185,129,0.3); font-size:10px; padding:3px 6px; border-radius:6px; font-weight:700;">#${idx+1} Pronto</div>`;
-      }
-      return `<div style="background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.1); font-size:10px; padding:3px 6px; border-radius:6px; font-family:monospace;">${item.countdown}</div>`;
+
+    const readyItems = g.items.filter(i => i.status === 'ready');
+    const recoveringItems = g.items.filter(i => i.status !== 'ready').sort((a,b) => a.msLeft - b.msLeft);
+    
+    let itemsGrid = '';
+    
+    // 1. Render a single summary tag for all READY items
+    if (readyItems.length > 0) {
+      const totalYield = readyItems.reduce((acc, i) => acc + (i.amount || 1), 0);
+      itemsGrid += `<div style="background:rgba(16,185,129,0.15); color:var(--emerald); border:1px solid rgba(16,185,129,0.3); font-size:11px; padding:4px 8px; border-radius:6px; font-weight:800; display:flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Rende +${totalYield}</div>`;
+    }
+    
+    // 2. Render individual tags ONLY for recovering items
+    itemsGrid += recoveringItems.map(item => {
+      return `<div style="background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.1); font-size:10px; padding:4px 6px; border-radius:6px; font-family:monospace; display:flex; align-items:center;">${item.countdown}</div>`;
     }).join('');
+
 
     return `
       <div style="padding:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:10px;">

@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=83';
-import API from './api.js?v=83';
-import Farm from './farm.js?v=83';
-import UI from './ui.js?v=83';
-import Notifications from './notifications.js?v=83';
-import i18n from './i18n.js?v=83';
+import Storage from './storage.js?v=84';
+import API from './api.js?v=84';
+import Farm from './farm.js?v=84';
+import UI from './ui.js?v=84';
+import Notifications from './notifications.js?v=84';
+import i18n from './i18n.js?v=84';
 
 // --- State ---
 const State = {

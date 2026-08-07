@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=83';
-import { NOTIF_TYPES } from './notifications.js?v=83';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=83';
-import { t } from './i18n.js?v=83';
-import Farm from './farm.js?v=83';
+import Storage from './storage.js?v=84';
+import { NOTIF_TYPES } from './notifications.js?v=84';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=84';
+import { t } from './i18n.js?v=84';
+import Farm from './farm.js?v=84';
 
 // duplicate removed
 
@@ -278,7 +278,7 @@ function renderHome(exchange, prices, parsedFarm) {
       
       <div class="stat-grid" style="gap: 12px;">
         <!-- SFL Balance -->
-        <div class="stat-card spring-in stagger-1" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-1" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
@@ -289,7 +289,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
         </div>
         <!-- Coins -->
-        <div class="stat-card spring-in stagger-2" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-2" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.COINS}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
             <span style="font-size:18px;display:none">🪙</span>
@@ -302,7 +302,7 @@ function renderHome(exchange, prices, parsedFarm) {
         </div>
         <!-- Gems -->
         ${parsedFarm.gems !== undefined ? `
-        <div class="stat-card spring-in stagger-3" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-3" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.GEM}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
@@ -314,7 +314,7 @@ function renderHome(exchange, prices, parsedFarm) {
         </div>
         ` : ''}
         <!-- VIP -->
-        <div class="stat-card spring-in stagger-4" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-4" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.VIP}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
@@ -327,7 +327,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
         </div>
         <!-- Crops -->
-        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes das plantações"'}>
+        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantações"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantações"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${cropIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
           </div>
@@ -339,12 +339,10 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyCrops === 0 && nextCrop ? `às ${new Date(nextCrop.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots}` : `${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots} canteiros`)}</div>
           </div>
-          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
+          
         </div>
         <!-- Fruits -->
-        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showFruitsModal && window.__app.showFruitsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver frutas"'}>
+        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showFruitsModal && window.__app.showFruitsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver frutas"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver frutas"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${fruitIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.APPLE">
           </div>
@@ -356,12 +354,10 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `às ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${parsedFarm.fruits.length} pés` : `${parsedFarm.fruits.length} pés de fruta`)}</div>
           </div>
-          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
+          
         </div>
         <!-- Animals -->
-        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showAnimalsModal && window.__app.showAnimalsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes dos animais"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes dos animais"'}>
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showAnimalsModal && window.__app.showAnimalsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.CHICKEN}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
@@ -373,13 +369,11 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${animalDetailsText}</div>
           </div>
-          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
+          
         </div>
 
         <!-- Composting -->
-        <div class="stat-card spring-in stagger-6" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;"'} title="Composteiras">
+        <div class="stat-card spring-in stagger-6" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;"'} title="Composteiras">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <span style="font-size:24px;line-height:1">♻️</span>
           </div>
@@ -393,7 +387,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
         </div>
         <!-- Expansion -->
-        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px; cursor:pointer;" title="Ver detalhes da expansão"'}>
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="grid-column: 1 / -1; opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
           </div>
@@ -404,12 +398,10 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${expansionSub}</div>
           </div>
-          <div style="display:flex; align-items:center; color:var(--text-tertiary); opacity:0.6;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
+          
         </div>
         <!-- Player Profile -->
-          <div class="stat-card spring-in stagger-6-5" style="flex: 1 1 100%; background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
+          <div class="stat-card spring-in stagger-6-5" style="grid-column: 1 / -1; flex: 1 1 100%; background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
             <!-- Background Glow -->
             <div style="position:absolute; top:-50%; left:-10%; width:150%; height:150%; background: radial-gradient(circle at 10% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%); pointer-events: none;"></div>
             
@@ -547,7 +539,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           <!-- Charm -->
         ${parsedFarm.charm !== undefined && parsedFarm.charm > 0 ? `
-        <div class="stat-card spring-in stagger-8" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-8" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <span style="font-size:24px;line-height:1">✨</span>
           </div>
@@ -560,7 +552,7 @@ function renderHome(exchange, prices, parsedFarm) {
         ` : ''}
         <!-- Tax Free SFL -->
         ${parsedFarm.taxFreeSFL !== undefined && parsedFarm.taxFreeSFL > 0 ? `
-        <div class="stat-card spring-in stagger-9" style="display:flex; flex-direction:row; align-items:center; gap:12px; padding: 16px;">
+        <div class="stat-card spring-in stagger-9" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:hue-rotate(90deg);" onerror="this.style.display='none'">
           </div>

@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=81';
-import API from './api.js?v=81';
-import Farm from './farm.js?v=81';
-import UI from './ui.js?v=81';
-import Notifications from './notifications.js?v=81';
-import i18n from './i18n.js?v=81';
+import Storage from './storage.js?v=82';
+import API from './api.js?v=82';
+import Farm from './farm.js?v=82';
+import UI from './ui.js?v=82';
+import Notifications from './notifications.js?v=82';
+import i18n from './i18n.js?v=82';
 
 // --- State ---
 const State = {
@@ -117,7 +117,7 @@ async function init() {
       if (!inv) return;
       const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
       
-      const prices = (Object.keys(State.prices?.p2p || {}).length > 0) ? State.prices.p2p : (Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES);
+      const prices = State.prices?.p2p || State.prices?.data?.p2p || {};
       
       let count = 0;
       allOwned.forEach(item => {

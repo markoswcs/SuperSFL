@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=91';
-import { NOTIF_TYPES } from './notifications.js?v=91';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=91';
-import { t } from './i18n.js?v=91';
-import Farm from './farm.js?v=91';
+import Storage from './storage.js?v=92';
+import { NOTIF_TYPES } from './notifications.js?v=92';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=92';
+import { t } from './i18n.js?v=92';
+import Farm from './farm.js?v=92';
 
 // duplicate removed
 
@@ -1262,7 +1262,10 @@ function renderDeliveriesPage() {
         <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--emerald-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
         
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1;">
-          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase;">${d.npc.charAt(0)}</div>
+          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; position:relative;">
+            <img src="https://sunflower-land.com/play/assets/sunnyside/npcs/${d.npc}.gif" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;" onerror="this.onerror=null; this.src='https://sunflower-land.com/play/assets/sunnyside/npcs/${d.npc}.png'; this.onerror=function(){ this.style.display='none'; };" />
+            <span style="z-index:-1;">${d.npc.charAt(0)}</span>
+          </div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
             <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
@@ -1360,7 +1363,7 @@ function renderDeliveriesPage() {
           if (f === 'SEASONAL') label = 'TICKETS';
           if (f === 'COINS') label = 'MOEDAS';
           
-          return `<button onclick="window.__app.State.deliveriesFilter='${f}'; window.__app.renderDeliveriesPage();" 
+          return `<button onclick="window.__app.State.deliveriesFilter='${f}'; window.__app.UI.renderDeliveriesPage();" 
                   style="background:${bg}; border:1px solid ${border}; color:${color}; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer;">${label}</button>`;
         }).join('')}
       </div>

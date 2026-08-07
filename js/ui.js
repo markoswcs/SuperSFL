@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=75';
-import { NOTIF_TYPES } from './notifications.js?v=75';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=75';
-import { t } from './i18n.js?v=75';
-import Farm from './farm.js?v=75';
+import Storage from './storage.js?v=76';
+import { NOTIF_TYPES } from './notifications.js?v=76';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=76';
+import { t } from './i18n.js?v=76';
+import Farm from './farm.js?v=76';
 
 // duplicate removed
 
@@ -1005,26 +1005,25 @@ function renderMarketFiltered(search = '', filter = 'all') {
     }
 
     return `
-      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})" style="cursor:pointer; display:flex; flex-direction:column; padding:12px; height:auto; gap:8px; align-items:flex-start;">
-        <div style="display:flex; width:100%; gap:12px; align-items:center;">
-          <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);flex-shrink:0;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-            <span style="font-size:24px;line-height:1;display:none;">📦</span>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:14px; font-weight:800; color:var(--text-primary); margin-bottom:2px;">${item.name}</div>
-            <div style="font-size:12px; font-weight:700; color:var(--text-secondary); background:var(--surface-3); display:inline-block; padding:2px 6px; border-radius:4px;">Estoque: <span style="color:var(--text-primary)">${formatNumber(item.qty)}</span></div>
-          </div>
+      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})" style="cursor:pointer; display:flex; padding:12px; height:auto; gap:12px; align-items:center; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; right:0; width:64px; height:64px; background:radial-gradient(circle at top right, var(--amber-subtle), transparent 70%); opacity:0.5; pointer-events:none;"></div>
+        
+        <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);flex-shrink:0; z-index:1;">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';">
         </div>
         
-        <div style="display:flex; width:100%; justify-content:space-between; align-items:flex-end; margin-top:4px;">
-          <div>
-            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px;">Unidade</div>
-            <div style="font-size:13px; font-weight:700; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL${trendHtml}</div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:2px; z-index:1;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:15px; font-weight:800; color:var(--text-primary); letter-spacing:-0.2px;">${item.name}</div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:var(--surface-3); padding:2px 6px; border-radius:8px;">Estoque: <span style="color:var(--text-secondary)">${formatNumber(item.qty)}</span></div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px;">Total (Estimado)</div>
-            <div style="font-size:15px; font-weight:800; color:var(--emerald);">${formatPrice(totalSfl)} SFL</div>
+          
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:2px;">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-size:13px; font-weight:600; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL</span>
+              ${trendHtml}
+            </div>
+            <div style="font-size:14px; font-weight:800; color:var(--emerald);">= ${formatPrice(totalSfl)} SFL</div>
           </div>
         </div>
       </div>
@@ -1174,17 +1173,22 @@ function renderDeliveriesPage() {
     const pct = Math.min(100, (have / required) * 100);
     const done = have >= required;
     return `
-      <div style="margin-bottom:10px;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-          <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png"
-               style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;"
-               onerror="this.style.display='none'">
-          <span style="font-size:13px; font-weight:700; color:var(--text-primary);">${name}</span>
-          <span style="font-size:12px; margin-left:auto; font-weight:700; color:${done ? 'var(--emerald)' : 'var(--coral)'};">${have}/${required}</span>
-          ${done ? '<span style="font-size:14px;">✅</span>' : ''}
+      <div style="margin-bottom:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <div style="width:28px; height:28px; background:rgba(255,255,255,0.05); border-radius:6px; display:flex; align-items:center; justify-content:center;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png"
+                 style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;"
+                 onerror="this.style.display='none'">
+          </div>
+          <span style="font-size:14px; font-weight:700; color:var(--text-primary);">${name}</span>
+          <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+            <span style="font-size:13px; font-weight:800; color:${done ? 'var(--emerald)' : 'var(--amber)'};">${formatNumber(have)}</span>
+            <span style="font-size:12px; font-weight:600; color:var(--text-tertiary);">/ ${formatNumber(required)}</span>
+            ${done ? '<span style="font-size:14px;">✅</span>' : ''}
+          </div>
         </div>
-        <div style="background:var(--surface-3);border-radius:100px;height:5px;overflow:hidden;">
-          <div style="height:100%;border-radius:100px;width:${pct}%;background:${done ? 'var(--emerald)' : 'linear-gradient(90deg, var(--coral), var(--amber))'};transition:width 0.5s ease;"></div>
+        <div style="background:var(--surface-border);border-radius:100px;height:4px;overflow:hidden;width:100%;">
+          <div style="height:100%;border-radius:100px;width:${pct}%;background:${done ? 'var(--emerald)' : 'var(--amber)'};transition:width 0.5s ease; box-shadow:0 0 8px ${done ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
         </div>
       </div>
     `;
@@ -1201,24 +1205,26 @@ function renderDeliveriesPage() {
     const npcImg = `https://sfl.world/img/source/${encodeURIComponent(d.npc)}.png`;
 
     return `
-      <div class="spring-in" style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;padding:16px;margin-bottom:12px;animation-delay:${idx * 40}ms;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-          <div style="width:44px;height:44px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-            <img src="${npcImg}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.textContent='📦';this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="spring-in" style="background:var(--surface-2);border:1px solid var(--surface-border);border-radius:20px;padding:16px;margin-bottom:16px;animation-delay:${idx * 40}ms;box-shadow:var(--shadow-md);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--emerald-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
+        
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1;">
+          <div style="width:48px;height:48px;background:var(--surface-3);border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);">
+            <img src="${npcImg}" style="width:38px;height:38px;object-fit:contain;image-rendering:pixelated;" onerror="this.textContent='📦';this.style.display='none';this.nextElementSibling.style.display='block'">
             <span style="font-size:24px;display:none;">📦</span>
           </div>
           <div style="flex:1;">
-            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${d.npc}</div>
-            <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">📦 Entrega</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
           </div>
           ${rewardText.length ? `
-            <div style="text-align:right;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:6px 10px;">
-              <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;">Recompensa</div>
-              <div style="font-size:13px;font-weight:800;color:var(--emerald);">${rewardText.join(' + ')}</div>
+            <div style="text-align:right;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(16,185,129,0.1);">
+              <div style="font-size:9px;color:var(--emerald);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:2px;">Recompensa</div>
+              <div style="font-size:14px;font-weight:900;color:var(--emerald);">${rewardText.join(' + ')}</div>
             </div>
           ` : ''}
         </div>
-        <div>${itemsHtml}</div>
+        <div style="position:relative;z-index:1;">${itemsHtml}</div>
       </div>
     `;
   }
@@ -1228,30 +1234,37 @@ function renderDeliveriesPage() {
     if (c.rewardSfl) rewardText.push(`${formatSfl(c.rewardSfl)} SFL`);
     if (c.rewardItems) Object.entries(c.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
     const pct = c.requirement > 0 ? Math.min(100, (c.progress / c.requirement) * 100) : 0;
+    const done = c.progress >= c.requirement;
 
     return `
-      <div class="spring-in" style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;padding:16px;margin-bottom:12px;animation-delay:${idx * 40}ms;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:44px;height:44px;background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(234,179,8,0.05));border:1px solid rgba(251,191,36,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">⭐</div>
+      <div class="spring-in" style="background:var(--surface-2);border:1px solid var(--surface-border);border-radius:20px;padding:16px;margin-bottom:16px;animation-delay:${idx * 40}ms;box-shadow:var(--shadow-md);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--amber-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
+        
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;position:relative;z-index:1;">
+          <div style="width:48px;height:48px;background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(234,179,8,0.05));border:2px solid rgba(251,191,36,0.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);">⭐</div>
           <div style="flex:1;">
-            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${c.npc}</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${c.npc}</div>
             <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${c.description || c.activity || ''}</div>
           </div>
           ${rewardText.length ? `
-            <div style="text-align:right;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:6px 10px;">
-              <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;">Recompensa</div>
-              <div style="font-size:13px;font-weight:800;color:var(--amber);">${rewardText.join(' + ')}</div>
+            <div style="text-align:right;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(251,191,36,0.1);">
+              <div style="font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:2px;">Recompensa</div>
+              <div style="font-size:14px;font-weight:900;color:var(--amber);">${rewardText.join(' + ')}</div>
             </div>
           ` : ''}
         </div>
         ${c.requirement > 0 ? `
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">
-              <span>${c.activity || ''}</span>
-              <span>${c.progress} / ${c.requirement}</span>
+          <div style="position:relative;z-index:1;background:rgba(0,0,0,0.2);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">${c.activity || ''}</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:13px;font-weight:800;color:${done ? 'var(--emerald)' : 'var(--amber)'};">${formatNumber(c.progress)}</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-tertiary);">/ ${formatNumber(c.requirement)}</span>
+                ${done ? '<span style="font-size:14px;">✅</span>' : ''}
+              </div>
             </div>
-            <div style="background:var(--surface-2);border-radius:100px;height:6px;overflow:hidden;">
-              <div style="height:100%;border-radius:100px;width:${pct}%;background:linear-gradient(90deg, var(--amber), var(--emerald));transition:width 0.5s ease;"></div>
+            <div style="background:var(--surface-border);border-radius:100px;height:4px;overflow:hidden;width:100%;">
+              <div style="height:100%;border-radius:100px;width:${pct}%;background:${done ? 'var(--emerald)' : 'linear-gradient(90deg, var(--amber), var(--emerald))'};transition:width 0.5s ease;box-shadow:0 0 8px ${done ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
             </div>
           </div>
         ` : ''}

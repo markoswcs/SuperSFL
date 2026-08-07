@@ -1,29 +1,72 @@
 const fs = require('fs');
 let ui = fs.readFileSync('js/ui.js', 'utf8');
 
-// 1. Remove the chevron arrows entirely to save horizontal space (they are visual fluff and take up 24px)
-ui = ui.replace(/<div style=\"display:flex; align-items:center; color:var\(--text-tertiary\); opacity:0.6;\">\s*<svg xmlns=\"http:\/\/www.w3.org\/2000\/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"9 18 15 12 9 6\"><\/polyline><\/svg>\s*<\/div>/g, '');
+// 1. Add filter logic
+const filterLogic = `  const chores = Array.isArray(farm.chores) ? farm.chores : farm.chores?.active || [];
+  let deliveries = chores.filter(c => c.type === 'delivery');
+  const tasks = chores.filter(c => c.type === 'chore');
 
-// 2. Reduce padding from 16px to 12px and gap from 12px to 8px in all stat-cards
-ui = ui.replace(/gap:12px; padding: 16px/g, 'gap:8px; padding: 12px');
-ui = ui.replace(/gap: 12px; padding: 16px/g, 'gap: 8px; padding: 12px');
+  // --- FILTER LOGIC ---
+  window.__app.State.deliveriesFilter = window.__app.State.deliveriesFilter || 'ALL';
+  const activeFilter = window.__app.State.deliveriesFilter;
 
-// 3. Make Expansion card full width (grid-column: 1 / -1) by finding its class
-// We only want the specific expansion one, which has title="Ver detalhes da expansão" or similar
-// Let's just do a string replacement on the exact line.
-let targetExpansion = `<div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" \${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"'}>`;
-let replacementExpansion = `<div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" \${parsedFarm.isPartial ? 'style="grid-column: 1 / -1; opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"'}>`;
-ui = ui.replace(targetExpansion, replacementExpansion);
+  // Evaluate if delivery is 'sent' (done)
+  function isDeliveryDone(d) {
+    if (!d.items) return false;
+    const inv = farm.inventory || {};
+    const allOwned = {};
+    [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])].forEach(item => {
+      allOwned[item.name] = item.qty;
+    });
+    let done = true;
+    for (let [name, qty] of Object.entries(d.items)) {
+      if ((allOwned[name] ?? 0) < qty) done = false;
+    }
+    return done;
+  }
 
-// 4. Make Player Profile full width
-let targetProfile = `<div class="stat-card spring-in stagger-6-5" style="flex: 1 1 100%;`;
-let replacementProfile = `<div class="stat-card spring-in stagger-6-5" style="grid-column: 1 / -1; flex: 1 1 100%;`;
-ui = ui.replace(targetProfile, replacementProfile);
+  if (activeFilter === 'SENT') {
+    deliveries = deliveries.filter(isDeliveryDone);
+  } else if (activeFilter === 'FLOWER') {
+    deliveries = deliveries.filter(d => d.rewardSfl && d.rewardSfl > 0);
+  } else if (activeFilter === 'COINS') {
+    deliveries = deliveries.filter(d => d.rewardCoins && d.rewardCoins > 0);
+  } else if (activeFilter === 'SEASONAL') {
+    deliveries = deliveries.filter(d => d.rewardMarks && d.rewardMarks > 0);
+  }
+  // --------------------`;
 
-// Also fix Composteiras which is also stagger-6 but title="Composteiras"
-let targetCompost = `title="Composteiras">`;
-// Wait, we don't want Composteiras to be full width, we want it side by side with Animals.
-// Let's just make sure Expansion and Profile are full width.
+ui = ui.replace(
+  /const chores = Array.isArray\(farm.chores\)\s*\?.*?const tasks = chores\.filter\(c => c\.type === 'chore'\);/s,
+  filterLogic
+);
+
+// 2. Add filter UI
+const filterHtml = `
+      <!-- Filter Bar -->
+      <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; margin-bottom:16px; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+        \${['ALL', 'SENT', 'FLOWER', 'SEASONAL', 'COINS'].map(f => {
+          const isActive = activeFilter === f;
+          const bg = isActive ? 'var(--amber-subtle)' : 'var(--surface-3)';
+          const border = isActive ? 'var(--amber)' : 'var(--surface-border)';
+          const color = isActive ? 'var(--amber)' : 'var(--text-secondary)';
+          let label = f;
+          if (f === 'ALL') label = 'TUDO';
+          if (f === 'SENT') label = 'PRONTOS';
+          if (f === 'FLOWER') label = 'FLOWER';
+          if (f === 'SEASONAL') label = 'TICKETS';
+          if (f === 'COINS') label = 'MOEDAS';
+          
+          return \`<button onclick="window.__app.State.deliveriesFilter='\${f}'; window.__app.renderDeliveriesPage();" 
+                  style="background:\${bg}; border:1px solid \${border}; color:\${color}; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer;">\${label}</button>\`;
+        }).join('')}
+      </div>
+`;
+
+ui = ui.replace(
+  /<!-- Deliveries Section -->/g,
+  filterHtml + '\n      <!-- Deliveries Section -->'
+);
 
 fs.writeFileSync('js/ui.js', ui);
-console.log('Fixed inline styles in ui.js');
+console.log('Filters added');

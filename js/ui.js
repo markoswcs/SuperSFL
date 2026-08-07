@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=76';
-import { NOTIF_TYPES } from './notifications.js?v=76';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=76';
-import { t } from './i18n.js?v=76';
-import Farm from './farm.js?v=76';
+import Storage from './storage.js?v=77';
+import { NOTIF_TYPES } from './notifications.js?v=77';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=77';
+import { t } from './i18n.js?v=77';
+import Farm from './farm.js?v=77';
 
 // duplicate removed
 
@@ -952,8 +952,10 @@ function renderMarketPage(prices, exchange) {
 function renderMarketFiltered(search = '', filter = 'all') {
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
   let history = {};
+  let alerts = [];
   try {
     history = JSON.parse(localStorage.getItem('prices_history') || '{}');
+    alerts = JSON.parse(localStorage.getItem('sfl_price_alerts') || '[]');
   } catch(e) {}
 
   let entries = [];
@@ -1004,26 +1006,57 @@ function renderMarketFiltered(search = '', filter = 'all') {
       else if (h.trend === 'down') trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
     }
 
+    const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
+    const targetPrice = targetAlert ? targetAlert.threshold : null;
+    const isTargetHit = targetPrice && item.priceInSfl >= targetPrice;
+    
+    const cardBorder = isTargetHit ? 'var(--emerald)' : 'var(--surface-border)';
+    const cardShadow = isTargetHit ? '0 0 16px rgba(16,185,129,0.3)' : 'var(--shadow-sm)';
+    const glowColor = isTargetHit ? 'var(--emerald-subtle)' : 'var(--amber-subtle)';
+    const progressPct = targetPrice ? Math.min(100, (item.priceInSfl / targetPrice) * 100) : 0;
+
     return `
-      <div class="market-item spring-in" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})" style="cursor:pointer; display:flex; padding:12px; height:auto; gap:12px; align-items:center; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden;">
-        <div style="position:absolute; top:0; right:0; width:64px; height:64px; background:radial-gradient(circle at top right, var(--amber-subtle), transparent 70%); opacity:0.5; pointer-events:none;"></div>
+      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:16px; height:auto; gap:12px; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; transition:all 0.3s ease;">
+        <div style="position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle at top right, ${glowColor}, transparent 70%); opacity:0.6; pointer-events:none;"></div>
         
-        <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);flex-shrink:0; z-index:1;">
-          <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';">
-        </div>
-        
-        <div style="flex:1; display:flex; flex-direction:column; gap:2px; z-index:1;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div style="font-size:15px; font-weight:800; color:var(--text-primary); letter-spacing:-0.2px;">${item.name}</div>
-            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:var(--surface-3); padding:2px 6px; border-radius:8px;">Estoque: <span style="color:var(--text-secondary)">${formatNumber(item.qty)}</span></div>
+        <div style="display:flex; gap:12px; align-items:center; z-index:1; cursor:pointer;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
+          <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);flex-shrink:0;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';">
           </div>
           
-          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:2px;">
-            <div style="display:flex; align-items:center; gap:4px;">
-              <span style="font-size:13px; font-weight:600; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL</span>
-              ${trendHtml}
+          <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="font-size:16px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px;">${item.name}</div>
+              <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:var(--surface-3); padding:4px 8px; border-radius:8px;">Estoque: <span style="color:var(--text-secondary); font-size:12px;">${formatNumber(item.qty)}</span></div>
             </div>
-            <div style="font-size:14px; font-weight:800; color:var(--emerald);">= ${formatPrice(totalSfl)} SFL</div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:14px; font-weight:700; color:var(--text-secondary);">${formatPrice(item.priceInSfl)} SFL</span>
+                ${trendHtml}
+              </div>
+              <div style="font-size:15px; font-weight:900; color:var(--emerald);">= ${formatPrice(totalSfl)} SFL</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="z-index:1; border-top:1px solid var(--surface-border); padding-top:12px; margin-top:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="flex:1;">
+              <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:6px;">
+                Alvo de Venda ${targetPrice ? `<span style="color:var(--text-secondary)">(${targetPrice} SFL)</span>` : ''}
+              </div>
+              ${targetPrice ? `
+                <div style="background:rgba(0,0,0,0.3);border-radius:100px;height:6px;overflow:hidden;width:100%;">
+                  <div style="height:100%;border-radius:100px;width:${progressPct}%;background:${isTargetHit ? 'var(--emerald)' : 'linear-gradient(90deg, var(--amber), var(--emerald))'};transition:width 0.5s ease; box-shadow:0 0 8px ${isTargetHit ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
+                </div>
+              ` : `
+                <div style="font-size:11px; color:var(--text-tertiary); font-style:italic;">Nenhum alvo definido.</div>
+              `}
+            </div>
+            <button onclick="event.stopPropagation(); window.__app.promptPriceAlert('${safeName}', ${item.priceInSfl})" style="background:var(--surface-3); border:1px solid var(--surface-border); border-radius:8px; padding:6px 12px; color:var(--text-secondary); font-size:12px; font-weight:700; cursor:pointer;">
+              ${targetPrice ? 'Editar' : 'Definir'}
+            </button>
           </div>
         </div>
       </div>

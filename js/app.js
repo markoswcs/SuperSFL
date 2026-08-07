@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=76';
-import API from './api.js?v=76';
-import Farm from './farm.js?v=76';
-import UI from './ui.js?v=76';
-import Notifications from './notifications.js?v=76';
-import i18n from './i18n.js?v=76';
+import Storage from './storage.js?v=77';
+import API from './api.js?v=77';
+import Farm from './farm.js?v=77';
+import UI from './ui.js?v=77';
+import Notifications from './notifications.js?v=77';
+import i18n from './i18n.js?v=77';
 
 // --- State ---
 const State = {
@@ -93,6 +93,33 @@ async function init() {
       const resUsd = num * rateUsd;
       const el = document.getElementById('flw-converter-result');
       if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)} <span style="font-size:11px;color:var(--text-tertiary)">($${resUsd.toFixed(2)})</span>`;
+    },
+    promptPriceAlert: (item, currentPrice) => {
+      const html = `
+        <div style="padding:16px;">
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preço alvo (SFL) para vender <b>${item}</b>. O card ficará destacado quando o mercado atingir este valor.</div>
+          <div style="font-size:12px;margin-bottom:16px;">Preço atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></div>
+          <input type="number" id="prompt-alert-input" step="0.0001" placeholder="Ex: ${(currentPrice * 1.2).toFixed(4)}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);margin-bottom:16px;">
+          <button id="prompt-alert-save" class="btn btn-primary" style="width:100%; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Salvar Alvo</button>
+        </div>
+      `;
+      UI.showModal('🎯 Alvo de Venda', html);
+      setTimeout(() => {
+        const btn = document.getElementById('prompt-alert-save');
+        if (btn) {
+          btn.onclick = () => {
+            const val = parseFloat(document.getElementById('prompt-alert-input').value);
+            if (val > 0) {
+              window.__app.addPriceAlert(item, 'up', val);
+              if (State.currentTab === 'market') {
+                UI.renderMarketPage(State.prices, State.exchange);
+              }
+            } else {
+              UI.showToast('Valor inválido', 'error');
+            }
+          };
+        }
+      }, 50);
     },
     addPriceAlert: (item, type, threshold) => {
       if (!item || !type || isNaN(threshold) || threshold <= 0) {

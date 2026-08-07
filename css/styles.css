@@ -436,13 +436,13 @@ body::before {
    ============================================================= */
 
 .stat-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--s3);
   margin-bottom: var(--s4);
 }
 .stat-grid > * {
-  flex: 1 1 calc(50% - 12px);
+  min-width: 0; /* Prevent flex grid blowout */
 }
 
 .stat-card {
@@ -477,6 +477,9 @@ body::before {
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-value.amber { color: var(--amber-glow); }
@@ -486,8 +489,12 @@ body::before {
 
 .stat-sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-tertiary);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* =============================================================

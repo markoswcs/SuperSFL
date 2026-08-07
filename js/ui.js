@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=82';
-import { NOTIF_TYPES } from './notifications.js?v=82';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=82';
-import { t } from './i18n.js?v=82';
-import Farm from './farm.js?v=82';
+import Storage from './storage.js?v=83';
+import { NOTIF_TYPES } from './notifications.js?v=83';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=83';
+import { t } from './i18n.js?v=83';
+import Farm from './farm.js?v=83';
 
 // duplicate removed
 
@@ -282,7 +282,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_balance')}</div>
             <div class="stat-value amber" style="font-size:20px; line-height:1;">${formatSfl(parsedFarm.balance)}</div>
             <div class="stat-sub" style="margin-top:2px;">SFL</div>
@@ -294,7 +294,7 @@ function renderHome(exchange, prices, parsedFarm) {
             <img src="${ASSETS.COINS}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
             <span style="font-size:18px;display:none">🪙</span>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_coins')}</div>
             <div class="stat-value sky" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.coins, 0)}</div>
             <div class="stat-sub" style="margin-top:2px;">${t('home_coins')}</div>
@@ -306,7 +306,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.GEM}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">Diamantes</div>
             <div class="stat-value" style="font-size:20px; line-height:1; color: #a855f7;">${formatNumber(parsedFarm.gems, 0)}</div>
             <div class="stat-sub" style="margin-top:2px;">Gems</div>
@@ -318,7 +318,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.VIP}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">Status VIP</div>
             <div class="stat-value ${parsedFarm.isVip ? 'amber' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isVip ? 'Ativo' : 'Inativo'}
@@ -331,7 +331,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${cropIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_crops')}</div>
             <div class="stat-value ${readyCrops > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
@@ -348,7 +348,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${fruitIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.APPLE">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">FRUTAS</div>
             <div class="stat-value ${readyFruits > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
@@ -365,7 +365,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.CHICKEN}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_animals')}</div>
             <div class="stat-value ${collectAnimals > 0 ? 'emerald' : (attnAnimals > 0 ? 'coral' : '')}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
@@ -383,7 +383,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <span style="font-size:24px;line-height:1">♻️</span>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">COMPOSTEIRAS</div>
             <div class="stat-value ${readyCompost > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
@@ -397,7 +397,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃO</div>
             <div class="stat-value ${expansionClass}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : expansionValue}
@@ -551,7 +551,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <span style="font-size:24px;line-height:1">✨</span>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">ENCANTO</div>
             <div class="stat-value sky" style="font-size:20px; line-height:1;">${formatNumber(parsedFarm.charm, 0)}</div>
             <div class="stat-sub" style="margin-top:2px;">Pontos</div>
@@ -564,7 +564,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.SFL}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:hue-rotate(90deg);" onerror="this.style.display='none'">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">SFL LIVRE DE TAXA</div>
             <div class="stat-value emerald" style="font-size:20px; line-height:1;">${formatSfl(parsedFarm.taxFreeSFL)}</div>
             <div class="stat-sub" style="margin-top:2px;">SFL</div>
@@ -1040,7 +1040,7 @@ function renderMarketFiltered(search = '', filter = 'all') {
         
         <div style="z-index:1; border-top:1px solid var(--surface-border); padding-top:12px; margin-top:4px;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-            <div style="flex:1;">
+            <div style="flex:1; min-width:0;">
               <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:6px;">
                 Alvo de Venda ${targetPrice ? `<span style="color:var(--text-secondary)">(${targetPrice} SFL)</span>` : ''}
               </div>
@@ -1244,7 +1244,7 @@ function renderDeliveriesPage() {
             <img src="${npcImg}" style="width:38px;height:38px;object-fit:contain;image-rendering:pixelated;" onerror="this.textContent='📦';this.style.display='none';this.nextElementSibling.style.display='block'">
             <span style="font-size:24px;display:none;">📦</span>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
             <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
           </div>
@@ -1273,7 +1273,7 @@ function renderDeliveriesPage() {
         
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;position:relative;z-index:1;">
           <div style="width:48px;height:48px;background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(234,179,8,0.05));border:2px solid rgba(251,191,36,0.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);">⭐</div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${c.npc}</div>
             <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${c.description || c.activity || ''}</div>
           </div>
@@ -1385,7 +1385,7 @@ function renderAlertsPage() {
     ? priceAlerts.map(a => `
       <div class="spring-in" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--surface-border);">
         <img src="https://sfl.world/img/source/${encodeURIComponent(a.item)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
-        <div style="flex:1;">
+        <div style="flex:1; min-width:0;">
           <div style="font-size:13px;font-weight:800;color:var(--text-primary);">${a.item}</div>
           <div style="font-size:11px;color:${a.type === 'up' ? 'var(--emerald)' : 'var(--coral)'};font-weight:700;margin-top:1px;">
             ${a.type === 'up' ? '▲ Avisar se subir acima de' : '▼ Avisar se cair abaixo de'} ${formatPrice(a.threshold)} SFL
@@ -1880,7 +1880,7 @@ window.__app.showCropsModal = () => {
           <img src="${iconUrl}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
           <span style="font-size:32px;display:none">${crop.emoji || '🌱'}</span>
         </div>
-        <div style="flex:1;">
+        <div style="flex:1; min-width:0;">
           <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${crop.name}</div>
           <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">
             Quantidade: <strong style="color:var(--text-primary); font-size:14px;">${crop.amount}x</strong>
@@ -2116,7 +2116,7 @@ window.__app.showAnimalsModal = () => {
           <div style="width:64px;height:64px;background:var(--surface-2);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--surface-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
             ${iconContent}
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${typeName}</div>
             <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">
               Total na fazenda: <strong style="color:var(--text-primary); font-size:14px;">${group.total}</strong>

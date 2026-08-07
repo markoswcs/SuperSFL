@@ -308,7 +308,7 @@ function parseRocks(farm) {
   addRocks(farm?.iron,         'Iron Rock',     IRON_REGROW_MS,   '🔩');
   addRocks(farm?.gold,         'Gold Rock',     GOLD_REGROW_MS,   '🥇');
   addRocks(farm?.crimstones,   'Crimstone',     CRIMSTONE_REGROW, '💎');
-  addRocks(farm?.sunstones,    'Sunstone',      GOLD_REGROW_MS,   '🌟');
+  addRocks(farm?.sunstones || farm?.sunstone, 'Sunstone', GOLD_REGROW_MS, '🌟');
 
   return items.sort((a, b) => (a.msLeft < 0 ? -1 : a.msLeft) - (b.msLeft < 0 ? -1 : b.msLeft));
 }

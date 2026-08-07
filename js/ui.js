@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=87';
-import { NOTIF_TYPES } from './notifications.js?v=87';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=87';
-import { t } from './i18n.js?v=87';
-import Farm from './farm.js?v=87';
+import Storage from './storage.js?v=88';
+import { NOTIF_TYPES } from './notifications.js?v=88';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=88';
+import { t } from './i18n.js?v=88';
+import Farm from './farm.js?v=88';
 
 // duplicate removed
 
@@ -375,7 +375,7 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- Composting -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showCompostModal && window.__app.showCompostModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"'} title="Composteiras">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <img src="https://sfl.world/img/source/CompostBin.png" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.APPLE">
+            <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/compost.png" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.APPLE">
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">COMPOSTEIRAS</div>
@@ -1262,10 +1262,7 @@ function renderDeliveriesPage() {
         <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--emerald-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
         
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1;">
-          <div style="width:48px;height:48px;background:var(--surface-3);border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);">
-            <img src="${npcImg}" style="width:38px;height:38px;object-fit:contain;image-rendering:pixelated;" onerror="this.textContent='📦';this.style.display='none';this.nextElementSibling.style.display='block'">
-            <span style="font-size:24px;display:none;">📦</span>
-          </div>
+          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase;">${d.npc.charAt(0)}</div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
             <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
@@ -2294,7 +2291,7 @@ window.__app.showCompostModal = () => {
   const listHtml = items.map((c, i) => {
     const isReady = c.status === 'ready';
     const isProducing = c.msLeft > 0;
-    const imgUrl = `https://sfl.world/img/source/${c.name.replace(/\s+/g, '')}.png`;
+    const imgUrl = 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/compost.png';
     const produceImg = isProducing || isReady ? `<img src="https://sfl.world/img/source/${c.type.replace(/\s+/g, '')}.png" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
 
     return `
@@ -2324,6 +2321,6 @@ window.__app.showCompostModal = () => {
     </div>
   `;
   
-  showModal('<img src="https://sfl.world/img/source/CompostBin.png" style="width:24px;height:24px;vertical-align:middle;margin-right:8px;image-rendering:pixelated;"> Detalhes das Composteiras', modalHtml);
+  showModal('♻️ Detalhes das Composteiras', modalHtml);
 };
 

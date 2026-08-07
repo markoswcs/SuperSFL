@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=90';
-import { NOTIF_TYPES } from './notifications.js?v=90';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=90';
-import { t } from './i18n.js?v=90';
-import Farm from './farm.js?v=90';
+import Storage from './storage.js?v=91';
+import { NOTIF_TYPES } from './notifications.js?v=91';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=91';
+import { t } from './i18n.js?v=91';
+import Farm from './farm.js?v=91';
 
 // duplicate removed
 
@@ -2291,7 +2291,12 @@ window.__app.showCompostModal = () => {
   const listHtml = items.map((c, i) => {
     const isReady = c.status === 'ready';
     const isProducing = c.msLeft > 0;
-    const imgUrl = 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/compost.png';
+    let composterImg = 'compost.png';
+    if (c.name === 'Turbo Composter') composterImg = 'fruitful_blend.png';
+    else if (c.name === 'Premium Composter') composterImg = 'rapid_root.png';
+    else if (c.name === 'Compost Bin') composterImg = 'sprout_mix.png';
+    
+    const imgUrl = `https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/${composterImg}`;
     const produceImg = isProducing || isReady ? `<img src="https://sfl.world/img/source/${c.type.replace(/\s+/g, '')}.png" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
 
     return `

@@ -16,16 +16,22 @@ const ENDPOINTS = {
   FARM_DATA:  (id) => `https://api.sunflower-land.com/community/farms/${id}`,
 };
 
-// --- Proxy Configurations ---
-// Fallback chain: local start.bat -> corsproxy.io -> direct
-const PROXIES = [
-  (url) => {
-    const host = window.location.hostname || 'localhost';
-    return `http://${host}:3001/?url=${encodeURIComponent(url)}`;
-  },
+const host = window.location.hostname || 'localhost';
+const isLocal = host === 'localhost' || host === '127.0.0.1';
+
+const PROXIES = [];
+
+// Somente tenta o proxy local (start.bat) se estiver rodando no localhost
+// Isso evita erros de mixed-content e timeouts longos no celular (GitHub Pages)
+if (isLocal) {
+  PROXIES.push((url) => `http://${host}:3001/?url=${encodeURIComponent(url)}`);
+}
+
+PROXIES.push(
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url) => url // Direct fallback just in case CORS is disabled or running locally
-];
+  (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
+  (url) => url // Direct fallback just in case CORS is disabled
+);
 
 async function fetchJson(url, options = {}) {
   const isPrivate = !!options.headers && !!options.headers['x-api-key'];
@@ -36,7 +42,7 @@ async function fetchJson(url, options = {}) {
       const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
       const proxyUrl = proxy(urlWithCacheBust);
       const res = await fetch(proxyUrl, {
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(10000),
         cache: 'no-cache',
         ...options,
       });

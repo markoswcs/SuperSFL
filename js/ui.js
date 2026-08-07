@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=72';
-import { NOTIF_TYPES } from './notifications.js?v=72';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=72';
-import { t } from './i18n.js?v=72';
-import Farm from './farm.js?v=72';
+import Storage from './storage.js?v=73';
+import { NOTIF_TYPES } from './notifications.js?v=73';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=73';
+import { t } from './i18n.js?v=73';
+import Farm from './farm.js?v=73';
 
 // duplicate removed
 
@@ -1606,15 +1606,14 @@ function renderSettingsPage() {
         >
         ${settings.communityApiKey ? '<span style="color:var(--emerald);font-size:18px;" title="Chave Salva">✅</span>' : ''}
       </div>
-      ${settings.communityApiKey ? ((window.__app.State.hasKeyError || window.__app.State.proxyError) ? `
+      ${settings.communityApiKey ? (window.__app.State.hasKeyError ? `
         <div class="card error-box" style="margin-top: 15px; border-color: var(--error-color);">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <span style="font-size:16px;line-height:1">❌</span>
             <div>
-              <strong>Erro de Conexão:</strong><br>
-              <span style="color: #ffaa99;">${window.__app.State.lastErrorMessage || 'O servidor oficial recusou a chave ou o proxy falhou.'}</span><br><br>
-              
-              Se for "Invalid API Key", gere uma nova no jogo e cole acima.
+              <strong>Chave de API Inválida:</strong><br>
+              <span style="color: #ffaa99;">A chave configurada expirou ou está incorreta.</span><br><br>
+              Gere uma nova no jogo e cole acima para restaurar o acesso.
             </div>
           </div>
         </div>

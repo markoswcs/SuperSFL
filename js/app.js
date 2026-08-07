@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=72';
-import API from './api.js?v=72';
-import Farm from './farm.js?v=72';
-import UI from './ui.js?v=72';
-import Notifications from './notifications.js?v=72';
-import i18n from './i18n.js?v=72';
+import Storage from './storage.js?v=73';
+import API from './api.js?v=73';
+import Farm from './farm.js?v=73';
+import UI from './ui.js?v=73';
+import Notifications from './notifications.js?v=73';
+import i18n from './i18n.js?v=73';
 
 // --- State ---
 const State = {
@@ -46,8 +46,8 @@ async function init() {
       if (!State.farmId) return;
       UI.showToast('Sincronizando com a blockchain...', 'info');
       // Clear API caches for this farm to force fresh fetch
-      localStorage.removeItem('sfl_cache_api_farm_' + State.farmId);
-      localStorage.removeItem('sfl_cache_api_land_' + State.farmId);
+      localStorage.removeItem('sfl_cache_farm_' + State.farmId);
+      localStorage.removeItem('sfl_cache_land_' + State.farmId);
       await refreshData(true);
       UI.showToast('Colheita Sincronizada!', 'success');
     },
@@ -188,11 +188,8 @@ async function refreshData(force = false) {
     State.prices   = prices;
     
     const hasKeyError = errors.some(e => e?.includes('API Key') || e?.includes('unauthorized'));
-    const hasProxyError = errors.some(e => e?.includes('Failed to fetch') || e?.includes('NetworkError'));
-    
     State.hasKeyError = hasKeyError;
     const settings = Storage.getSettings();
-    State.proxyError = hasProxyError && State.farmId && settings.communityApiKey ? true : false;
 
     if (errors.length > 0) {
       console.warn('API partial failures:', errors);

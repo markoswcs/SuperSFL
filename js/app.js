@@ -306,11 +306,15 @@ async function refreshData(force = false) {
               const qty      = itemName ? (prev.items[itemName] || 0) : 0;
               const sflEarned = parseFloat(prev.sfl || 0) * (1 - (prev.tax || 0.1));
               if (itemName && sflEarned > 0) {
+                const baseCost = window.__app.getEstimatedCost ? window.__app.getEstimatedCost(itemName) : 0;
+                const totalCost = baseCost * qty;
+                const profit = sflEarned - totalCost;
+
                 const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
-                salesLog.push({ item: itemName, qty, sflEarned, timestamp: Date.now() });
-                if (salesLog.length > 200) salesLog.splice(0, salesLog.length - 200);
+                salesLog.push({ type: 'sale', item: itemName, qty, sflEarned, cost: totalCost, profit, timestamp: Date.now() });
+                if (salesLog.length > 300) salesLog.splice(0, salesLog.length - 300);
                 localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
-                console.log('[Sales] Detected sale:', itemName, qty, sflEarned, 'SFL');
+                console.log('[Sales] Detected sale:', itemName, qty, sflEarned, 'SFL. Profit:', profit);
               }
             }
           });

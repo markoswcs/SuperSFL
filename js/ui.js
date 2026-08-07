@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=80';
-import { NOTIF_TYPES } from './notifications.js?v=80';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=80';
-import { t } from './i18n.js?v=80';
-import Farm from './farm.js?v=80';
+import Storage from './storage.js?v=81';
+import { NOTIF_TYPES } from './notifications.js?v=81';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=81';
+import { t } from './i18n.js?v=81';
+import Farm from './farm.js?v=81';
 
 // duplicate removed
 
@@ -931,16 +931,71 @@ function renderMarketFiltered(search = '', filter = 'all') {
   // Sort by Total Value (Qty * Price)
   entries = entries.sort((a, b) => (b.qty * b.priceInSfl) - (a.qty * a.priceInSfl));
 
+  const marketGrid = $('#market-grid');
+  let dashboard = $('#market-dashboard-container');
+  if (!dashboard && marketGrid && marketGrid.parentNode) {
+    dashboard = document.createElement('div');
+    dashboard.id = 'market-dashboard-container';
+    dashboard.className = 'mb-4';
+    marketGrid.parentNode.insertBefore(dashboard, marketGrid);
+  }
+
+  if (dashboard) {
+    if (entries.length === 0) {
+      dashboard.style.display = 'none';
+    } else {
+      dashboard.style.display = 'block';
+      let currentTotal = 0;
+      let targetTotal = 0;
+      entries.forEach(item => {
+        currentTotal += item.qty * item.priceInSfl;
+        const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
+        if (targetAlert && targetAlert.threshold > item.priceInSfl) {
+          targetTotal += item.qty * targetAlert.threshold;
+        } else {
+          targetTotal += item.qty * item.priceInSfl;
+        }
+      });
+
+      const diff = targetTotal - currentTotal;
+      const diffPct = currentTotal > 0 ? (diff / currentTotal) * 100 : 0;
+
+      dashboard.innerHTML = `
+        <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow-sm);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:800; color:var(--text-tertiary); text-transform:uppercase;">Visão Geral do Estoque</div>
+            <button onclick="window.__app.promptGlobalAlerts()" style="background:var(--emerald-subtle); border:1px solid var(--emerald); color:var(--emerald); border-radius:8px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <i class="bi bi-lightning-fill"></i> Estratégia Global
+            </button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Valor Atual</div>
+              <div style="font-size:18px; font-weight:900; color:var(--text-primary);">${formatPrice(currentTotal)} SFL</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Valor nos Alvos</div>
+              <div style="font-size:18px; font-weight:900; color:var(--emerald);">${formatPrice(targetTotal)} SFL</div>
+              ${diff > 0 ? `<div style="font-size:11px; font-weight:700; color:var(--emerald); margin-top:2px;">+ ${formatPrice(diff)} SFL (+${diffPct.toFixed(1)}%)</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   setHtml('#market-grid', entries.length > 0 ? entries.map(item => {
     const totalSfl = item.qty * item.priceInSfl;
     const safeName = item.name.replace(/'/g, "\\'");
     
     let trendHtml = '';
     let priceColor = 'var(--text-secondary)';
+    let isPump = false;
     if (history[item.name]) {
       const h = history[item.name];
       if (h.trend === 'up') {
-        trendHtml = '<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲</span>';
+        isPump = h.prev && item.priceInSfl > h.prev * 1.10;
+        trendHtml = `<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲ ${isPump ? '🔥' : ''}</span>`;
         priceColor = 'var(--emerald)';
       } else if (h.trend === 'down') {
         trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
@@ -960,6 +1015,7 @@ function renderMarketFiltered(search = '', filter = 'all') {
     return `
       <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:16px; height:auto; gap:12px; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; transition:all 0.3s ease;">
         <div style="position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle at top right, ${glowColor}, transparent 70%); opacity:0.6; pointer-events:none;"></div>
+        ${isPump ? `<div style="position:absolute; top:8px; right:8px; background:rgba(239,68,68,0.1); color:var(--coral); font-size:10px; font-weight:800; padding:4px 8px; border-radius:8px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP 🔥</div>` : ''}
         
         <div style="display:flex; gap:12px; align-items:center; z-index:1; cursor:pointer;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
           <div style="width:48px;height:48px;background:var(--surface-3);border:1px solid rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);flex-shrink:0;">

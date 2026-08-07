@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=80';
-import API from './api.js?v=80';
-import Farm from './farm.js?v=80';
-import UI from './ui.js?v=80';
-import Notifications from './notifications.js?v=80';
-import i18n from './i18n.js?v=80';
+import Storage from './storage.js?v=81';
+import API from './api.js?v=81';
+import Farm from './farm.js?v=81';
+import UI from './ui.js?v=81';
+import Notifications from './notifications.js?v=81';
+import i18n from './i18n.js?v=81';
 
 // --- State ---
 const State = {
@@ -93,6 +93,43 @@ async function init() {
       const resUsd = num * rateUsd;
       const el = document.getElementById('flw-converter-result');
       if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)} <span style="font-size:11px;color:var(--text-tertiary)">($${resUsd.toFixed(2)})</span>`;
+    },
+    promptGlobalAlerts: () => {
+      const html = `
+        <div style="padding:16px;">
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina automaticamente um alvo de venda para <b>TODOS</b> os itens do seu estoque baseados no preço atual de mercado.</div>
+          
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button onclick="window.__app.applyGlobalAlerts(1.10)" class="btn" style="border:1px solid var(--emerald); background:transparent; color:var(--emerald); padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">+10% de Lucro</button>
+            <button onclick="window.__app.applyGlobalAlerts(1.20)" class="btn" style="border:1px solid var(--emerald); background:transparent; color:var(--emerald); padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">+20% de Lucro</button>
+            <button onclick="window.__app.applyGlobalAlerts(1.50)" class="btn" style="border:1px solid var(--emerald); background:transparent; color:var(--emerald); padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">+50% de Lucro</button>
+          </div>
+          
+          <div style="margin-top:16px;font-size:11px;color:var(--text-tertiary);text-align:center;">
+            Isso vai substituir os alvos que você definiu manualmente.
+          </div>
+        </div>
+      `;
+      UI.showModal('🚀 Estratégia Global', html);
+    },
+    applyGlobalAlerts: (multiplier) => {
+      const inv = State.parsedFarm?.inventory;
+      if (!inv) return;
+      const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
+      
+      const prices = (Object.keys(State.prices?.p2p || {}).length > 0) ? State.prices.p2p : (Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES);
+      
+      let count = 0;
+      allOwned.forEach(item => {
+        const price = prices[item.name];
+        if (price && item.qty > 0) {
+          Storage.savePriceAlert({ item: item.name, type: 'up', threshold: price * multiplier });
+          count++;
+        }
+      });
+      UI.hideModal();
+      UI.showToast(`${count} alvos atualizados com sucesso!`, 'success');
+      if (State.currentTab === 'market') UI.renderMarketPage(State.prices, State.exchange);
     },
     promptPriceAlert: (item, currentPrice) => {
       let history = {};

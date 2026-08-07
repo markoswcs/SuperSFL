@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=91';
-import { NOTIF_TYPES } from './notifications.js?v=91';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=91';
-import { t } from './i18n.js?v=91';
-import Farm from './farm.js?v=91';
+import Storage from './storage.js?v=100';
+import { NOTIF_TYPES } from './notifications.js?v=100';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=100';
+import { t } from './i18n.js?v=100';
+import Farm from './farm.js?v=100';
 
 // duplicate removed
 

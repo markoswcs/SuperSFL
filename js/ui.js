@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=74';
-import { NOTIF_TYPES } from './notifications.js?v=74';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=74';
-import { t } from './i18n.js?v=74';
-import Farm from './farm.js?v=74';
+import Storage from './storage.js?v=75';
+import { NOTIF_TYPES } from './notifications.js?v=75';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=75';
+import { t } from './i18n.js?v=75';
+import Farm from './farm.js?v=75';
 
 // duplicate removed
 
@@ -959,8 +959,8 @@ function renderMarketFiltered(search = '', filter = 'all') {
   let entries = [];
   
   // 1. Fetch exactly what the user has in their inventory
-  if (State.parsedFarm && State.parsedFarm.inventory) {
-    const inv = State.parsedFarm.inventory;
+  if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
+    const inv = window.__app.State.parsedFarm.inventory;
     const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
     
     allOwned.forEach(item => {
@@ -976,7 +976,7 @@ function renderMarketFiltered(search = '', filter = 'all') {
   }
 
   // If no farm data, show warning
-  if (!State.parsedFarm || !State.parsedFarm.inventory || State.parsedFarm.isPartial) {
+  if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
     setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">Inventário não encontrado</div><div class="empty-state-sub" style="margin-top:8px;">Conecte sua API Key na aba Ajustes para ver as suas crops e recursos no Mercado.</div></div>');
     return;
   }
@@ -1134,7 +1134,7 @@ function renderDeliveriesPage() {
   const el = $('#deliveries-content');
   if (!el) return;
 
-  const farm = State.parsedFarm;
+  const farm = window.__app.State.parsedFarm;
 
   if (!farm) {
     el.innerHTML = `

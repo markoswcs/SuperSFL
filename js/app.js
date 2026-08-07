@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=100';
-import API from './api.js?v=100';
-import Farm from './farm.js?v=100';
-import UI from './ui.js?v=100';
-import Notifications from './notifications.js?v=100';
-import i18n from './i18n.js?v=100';
+import Storage from './storage.js?v=102';
+import API from './api.js?v=102';
+import Farm from './farm.js?v=102';
+import UI from './ui.js?v=102';
+import Notifications from './notifications.js?v=102';
+import i18n from './i18n.js?v=102';
 
 // --- State ---
 const State = {
@@ -306,9 +306,13 @@ async function refreshData(force = false) {
               const qty      = itemName ? (prev.items[itemName] || 0) : 0;
               const sflEarned = parseFloat(prev.sfl || 0) * (1 - (prev.tax || 0.1));
               if (itemName && sflEarned > 0) {
+                const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(itemName) : 0;
+                const totalCost = baseCost * qty;
+                const profit = sflEarned - totalCost;
+
                 const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
-                salesLog.push({ item: itemName, qty, sflEarned, timestamp: Date.now() });
-                if (salesLog.length > 200) salesLog.splice(0, salesLog.length - 200);
+                salesLog.push({ type: 'sale', item: itemName, qty, sflEarned, cost: totalCost, profit, timestamp: Date.now() });
+                if (salesLog.length > 300) salesLog.splice(0, salesLog.length - 300);
                 localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
                 console.log('[Sales] Detected sale:', itemName, qty, sflEarned, 'SFL');
               }

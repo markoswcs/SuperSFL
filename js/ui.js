@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=100';
-import { NOTIF_TYPES } from './notifications.js?v=100';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=100';
-import { t } from './i18n.js?v=100';
-import Farm from './farm.js?v=100';
+import Storage from './storage.js?v=102';
+import { NOTIF_TYPES } from './notifications.js?v=102';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=102';
+import { t } from './i18n.js?v=102';
+import Farm from './farm.js?v=102';
 
 // duplicate removed
 
@@ -927,7 +927,7 @@ function renderMarketPage(prices, exchange) {
   }
   _allPrices = p2p;
 
-  renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'all');
+  renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'portfolio');
 
   const settingsContainer = $('#market-settings-container');
   if (settingsContainer) {
@@ -935,7 +935,7 @@ function renderMarketPage(prices, exchange) {
   }
 }
 
-function renderMarketFiltered(search = '', filter = 'all') {
+function renderMarketFiltered(search = '', filter = 'portfolio') {
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
   let history = {};
   let alerts = [];
@@ -944,41 +944,6 @@ function renderMarketFiltered(search = '', filter = 'all') {
     alerts = JSON.parse(localStorage.getItem('sfl_price_alerts') || '[]');
   } catch(e) {}
 
-  let entries = [];
-  
-  // 1. Fetch exactly what the user has in their inventory
-  if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
-    const inv = window.__app.State.parsedFarm.inventory;
-    const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
-    
-    allOwned.forEach(item => {
-      const priceInSfl = p2p[item.name];
-      if (priceInSfl && item.qty > 0) {
-        entries.push({
-          name: item.name,
-          qty: item.qty,
-          priceInSfl: priceInSfl
-        });
-      }
-    });
-  }
-
-  // If no farm data, show warning
-  if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
-    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">Inventário não encontrado</div><div class="empty-state-sub" style="margin-top:8px;">Conecte sua API Key na aba Ajustes para ver as suas crops e recursos no Mercado.</div></div>');
-    return;
-  }
-
-  if (search) {
-    const q = search.toLowerCase();
-    entries = entries.filter(e => e.name.toLowerCase().includes(q));
-  }
-
-  if (filter === 'crops') entries = entries.filter(e => /Seed|Sunflower|Potato|Carrot|Cabbage|Parsnip|Radish|Wheat|Kale|Eggplant|Corn|Soybean|Barley|Rhubarb|Zucchini|Yam|Broccoli|Pepper|Onion|Turnip|Artichoke|Beetroot|Cauliflower|Pumpkin|Apple|Blueberry|Orange|Banana|Grape|Rice|Olive|Tomato|Lemon/.test(e.name));
-  if (filter === 'resources') entries = entries.filter(e => /Wood|Stone|Iron|Gold|Crimstone|Obsidian|Honey|Egg|Feather|Wool|Leather|Milk|Oil|Salt/.test(e.name));
-  if (filter === 'fish') entries = entries.filter(e => /fish|Fish|Tuna|Shark|Eel|Bass|Mahi|Salmon|Cod|Crab|Lobster|Mussel|Oyster|Shrimp|Bait/.test(e.name));
-
-  // Filter: history (show sales log)
   if (filter === 'history') {
     let salesLog = [];
     try {
@@ -989,32 +954,46 @@ function renderMarketFiltered(search = '', filter = 'all') {
       setHtml('#market-grid', `
         <div class="empty-state" style="grid-column:1/-1">
           <span class="empty-state-icon">📜</span>
-          <div class="empty-state-title">Nenhuma venda registrada ainda</div>
+          <div class="empty-state-title">Nenhum histórico registrado</div>
           <div class="empty-state-sub" style="margin-top:8px;">
-            O histórico começa a ser registrado a partir de agora.<br>
-            Cada vez que sincronizar após uma venda, ela aparecerá aqui.
+            As suas vendas começarão a aparecer aqui automaticamente.<br>
+            Você também pode registrar compras manuais.
           </div>
+          <button onclick="window.__app.promptManualPurchase()" style="margin-top:16px; background:var(--emerald); color:var(--surface-1); border:none; padding:8px 16px; border-radius:8px; font-weight:800; cursor:pointer;">+ Registrar Compra Manual</button>
         </div>
       `);
       return;
     }
 
-    const totalSfl = salesLog.reduce((s, e) => s + (e.sflEarned || 0), 0);
-    const listHtml = salesLog.slice().reverse().slice(0, 50).map(entry => {
+    const totalProfit = salesLog.reduce((s, e) => s + (e.profit !== undefined ? e.profit : (e.sflEarned || 0)), 0);
+    const totalSales = salesLog.filter(e => e.type !== 'purchase').length;
+    const totalPurchases = salesLog.filter(e => e.type === 'purchase').length;
+
+    const listHtml = salesLog.slice().reverse().slice(0, 100).map(entry => {
       const date = new Date(entry.timestamp || Date.now());
       const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      const isPurchase = entry.type === 'purchase';
+      const profit = entry.profit !== undefined ? entry.profit : (entry.sflEarned || 0);
+      const isPositive = profit >= 0;
+      
+      const valColor = isPurchase ? 'var(--coral)' : (isPositive ? 'var(--emerald)' : 'var(--coral)');
+      const valSign = isPurchase ? '-' : (isPositive ? '+' : '');
+      const valStr = isPurchase ? (entry.cost || 0).toFixed(3) : Math.abs(profit).toFixed(3);
+
       return `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;position:relative;overflow:hidden;">
+          ${isPurchase ? '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--coral);"></div>' : ''}
           <div style="width:40px;height:40px;background:var(--surface-3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.06);">
             <img src="https://sfl.world/img/source/${encodeURIComponent(entry.item || 'SFL')}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${isPurchase ? '<span style="font-size:10px;background:var(--coral-subtle);color:var(--coral);padding:2px 4px;border-radius:4px;margin-left:4px;">COMPRA</span>' : ''}</div>
             <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} às ${timeStr}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:15px;font-weight:900;color:var(--emerald);">+${(entry.sflEarned || 0).toFixed(3)} SFL</div>
+            <div style="font-size:15px;font-weight:900;color:${valColor};">${valSign}${valStr} SFL</div>
             <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${entry.qty || '?'}</div>
           </div>
         </div>
@@ -1022,14 +1001,17 @@ function renderMarketFiltered(search = '', filter = 'all') {
     }).join('');
 
     setHtml('#market-grid', `
-      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Total Ganho (Registrado)</div>
-          <div style="font-size:22px;font-weight:900;color:var(--emerald);">${totalSfl.toFixed(3)} SFL</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Lucro Total P&L</div>
+          <div style="font-size:22px;font-weight:900;color:${totalProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(3)} SFL</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:12px;color:var(--text-tertiary);">${salesLog.length} venda${salesLog.length !== 1 ? 's' : ''}</div>
-          <button onclick="if(confirm('Limpar todo o histórico de vendas?')){localStorage.removeItem('sfl_sales_log');window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);}" style="margin-top:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--coral);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Limpar</button>
+          <div style="font-size:12px;color:var(--text-tertiary);">${totalSales} vendas / ${totalPurchases} compras</div>
+          <div style="display:flex; gap:6px; margin-top:6px; justify-content:flex-end;">
+            <button onclick="window.__app.promptManualPurchase()" style="background:var(--emerald-subtle);border:1px solid var(--emerald);color:var(--emerald);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Compra</button>
+            <button onclick="if(confirm('Limpar todo o histórico?')){localStorage.removeItem('sfl_sales_log');window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);}" style="background:var(--coral-subtle);border:1px solid rgba(239,68,68,0.3);color:var(--coral);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Limpar</button>
+          </div>
         </div>
       </div>
       ${listHtml}
@@ -1037,8 +1019,50 @@ function renderMarketFiltered(search = '', filter = 'all') {
     return;
   }
 
-  // Sort by Total Value (Qty * Price)
-  entries = entries.sort((a, b) => (b.qty * b.priceInSfl) - (a.qty * a.priceInSfl));
+  let entries = [];
+  
+  if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
+    const inv = window.__app.State.parsedFarm.inventory;
+    const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
+    
+    allOwned.forEach(item => {
+      const priceInSfl = p2p[item.name];
+      if (priceInSfl && item.qty > 0) {
+        const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(item.name) : 0;
+        const totalValue = item.qty * priceInSfl;
+        const unitProfit = priceInSfl - baseCost;
+        const totalProfit = unitProfit * item.qty;
+        const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 100;
+
+        entries.push({
+          name: item.name,
+          qty: item.qty,
+          priceInSfl: priceInSfl,
+          baseCost,
+          unitProfit,
+          totalProfit,
+          profitMargin,
+          totalValue
+        });
+      }
+    });
+  }
+
+  if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
+    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">Inventário não encontrado</div><div class="empty-state-sub" style="margin-top:8px;">Conecte sua API Key na aba Ajustes para ver o seu portfólio no Mercado.</div></div>');
+    return;
+  }
+
+  if (search) {
+    const q = search.toLowerCase();
+    entries = entries.filter(e => e.name.toLowerCase().includes(q));
+  }
+
+  if (filter === 'portfolio') {
+    entries = entries.sort((a, b) => b.totalValue - a.totalValue);
+  } else if (filter === 'opportunities') {
+    entries = entries.sort((a, b) => b.profitMargin - a.profitMargin);
+  }
 
   const marketGrid = $('#market-grid');
   let dashboard = $('#market-dashboard-container');
@@ -1049,66 +1073,19 @@ function renderMarketFiltered(search = '', filter = 'all') {
     marketGrid.parentNode.insertBefore(dashboard, marketGrid);
   }
 
-  if (dashboard) {
-    if (entries.length === 0) {
-      dashboard.style.display = 'none';
-    } else {
-      dashboard.style.display = 'block';
-      let currentTotal = 0;
-      let targetTotal = 0;
-      entries.forEach(item => {
-        currentTotal += item.qty * item.priceInSfl;
-        const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
-        if (targetAlert && targetAlert.threshold > item.priceInSfl) {
-          targetTotal += item.qty * targetAlert.threshold;
-        } else {
-          targetTotal += item.qty * item.priceInSfl;
-        }
-      });
-
-      const diff = targetTotal - currentTotal;
-      const diffPct = currentTotal > 0 ? (diff / currentTotal) * 100 : 0;
-
-      dashboard.innerHTML = `
-        <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow-sm);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="font-size:12px; font-weight:800; color:var(--text-tertiary); text-transform:uppercase;">Visão Geral do Estoque</div>
-            <button onclick="window.__app.promptGlobalAlerts()" style="background:var(--emerald-subtle); border:1px solid var(--emerald); color:var(--emerald); border-radius:8px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px;">
-              <i class="bi bi-lightning-fill"></i> Estratégia Global
-            </button>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-            <div>
-              <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Valor Atual</div>
-              <div style="font-size:18px; font-weight:900; color:var(--text-primary);">${formatPrice(currentTotal)} SFL</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Valor nos Alvos</div>
-              <div style="font-size:18px; font-weight:900; color:var(--emerald);">${formatPrice(targetTotal)} SFL</div>
-              ${diff > 0 ? `<div style="font-size:11px; font-weight:700; color:var(--emerald); margin-top:2px;">+ ${formatPrice(diff)} SFL (+${diffPct.toFixed(1)}%)</div>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  }
-
   setHtml('#market-grid', entries.length > 0 ? entries.map(item => {
+    const safeName = item.name.replace(/'/g, "\\\\'");
     const totalSfl = item.qty * item.priceInSfl;
-    const safeName = item.name.replace(/'/g, "\\'");
     
     let trendHtml = '';
-    let priceColor = 'var(--text-secondary)';
     let isPump = false;
     if (history[item.name]) {
       const h = history[item.name];
       if (h.trend === 'up') {
         isPump = h.prev && item.priceInSfl > h.prev * 1.10;
         trendHtml = `<span style="color:var(--emerald); font-size:11px; margin-left:4px;">▲ ${isPump ? '🔥' : ''}</span>`;
-        priceColor = 'var(--emerald)';
       } else if (h.trend === 'down') {
         trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">▼</span>';
-        priceColor = 'var(--coral)';
       }
     }
 
@@ -1118,12 +1095,9 @@ function renderMarketFiltered(search = '', filter = 'all') {
     
     const cardBorder = isTargetHit ? 'var(--emerald)' : 'var(--surface-border)';
     const cardShadow = isTargetHit ? '0 0 16px rgba(16,185,129,0.3)' : 'var(--shadow-sm)';
-    const glowColor = isTargetHit ? 'var(--emerald-subtle)' : 'var(--amber-subtle)';
-    const progressPct = targetPrice ? Math.min(100, (item.priceInSfl / targetPrice) * 100) : 0;
-
+    
     return `
-      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:16px; height:auto; gap:12px; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; transition:all 0.3s ease;">
-        <div style="position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle at top right, ${glowColor}, transparent 70%); opacity:0.6; pointer-events:none;"></div>
+      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:16px; height:auto; gap:12px; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden;">
         ${isPump ? `<div style="position:absolute; top:8px; right:8px; background:rgba(239,68,68,0.1); color:var(--coral); font-size:10px; font-weight:800; padding:4px 8px; border-radius:8px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP 🔥</div>` : ''}
         
         <div style="display:flex; gap:12px; align-items:center; z-index:1; cursor:pointer;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
@@ -1134,26 +1108,20 @@ function renderMarketFiltered(search = '', filter = 'all') {
           <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div style="font-size:16px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px;">${item.name}</div>
-              <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:var(--surface-3); padding:4px 8px; border-radius:8px;">Estoque: <span style="color:var(--text-secondary); font-size:12px;">${formatNumber(item.qty)}</span></div>
+              <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:var(--surface-3); padding:4px 8px; border-radius:8px;">${item.qty} un</div>
             </div>
             
             <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
               <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:14px; font-weight:700; color:${priceColor};">${formatPrice(item.priceInSfl)} SFL</span>
+                <span style="font-size:14px; font-weight:700; color:var(--text-secondary);">${item.priceInSfl.toFixed(3)} SFL</span>
                 ${trendHtml}
               </div>
-              <div style="font-size:15px; font-weight:900; color:var(--emerald);">= ${formatPrice(totalSfl)} SFL</div>
+              <div style="font-size:15px; font-weight:900; color:var(--emerald);">= ${totalSfl.toFixed(2)} SFL</div>
             </div>
           </div>
         </div>
         
         <div style="z-index:1; border-top:1px solid var(--surface-border); padding-top:12px; margin-top:4px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-            <div style="flex:1; min-width:0;">
-              <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:6px;">
-                Alvo de Venda ${targetPrice ? `<span style="color:var(--text-secondary)">(${targetPrice} SFL)</span>` : ''}
-              </div>
-              ${targetPrice ? `
                 <div style="background:rgba(0,0,0,0.3);border-radius:100px;height:6px;overflow:hidden;width:100%;">
                   <div style="height:100%;border-radius:100px;width:${progressPct}%;background:${isTargetHit ? 'var(--emerald)' : 'linear-gradient(90deg, var(--amber), var(--emerald))'};transition:width 0.5s ease; box-shadow:0 0 8px ${isTargetHit ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
                 </div>

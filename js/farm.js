@@ -44,6 +44,36 @@ const FRUIT_GROW_MS = {
   Grape: 12 * 3600_000,
 };
 
+function getResourceYield(farm, type) {
+  let base = 1;
+  let multiplier = 1;
+  
+  const skills = farm?.bumpkin?.skills || {};
+  const equipped = farm?.bumpkin?.equipped || {};
+  const inv = farm?.inventory || {};
+  
+  if (type === 'tree') {
+    if (skills['Lumberjack']) base += 0.1;
+    if (skills['Tree Hugger']) base += 0.2;
+    if (skills['Tough Tree']) base += 0.2;
+    if (equipped.hat === 'Woodsman Hat') base += 0.2;
+    if (inv['Woody the Beaver']) multiplier += 0.2;
+    if (inv['Apprentice Beaver']) multiplier += 0.2;
+    if (inv['Foreman Beaver']) multiplier += 0.2;
+  } 
+  else if (type === 'stone rock') {
+    if (skills['Coal Face']) base += 0.2;
+  }
+  else if (type === 'iron rock') {
+    if (skills['Coal Face']) base += 0.2;
+  }
+  else if (type === 'gold rock') {
+    if (skills['Gold Rush']) base += 0.2;
+  }
+  
+  return base * multiplier;
+}
+
 const TREE_REGROW_MS   = 2 * 3600_000;  // 2h
 const STONE_REGROW_MS  = 4 * 3600_000;  // 4h
 const IRON_REGROW_MS   = 8 * 3600_000;  // 8h
@@ -273,6 +303,7 @@ function parseTrees(farm) {
       status:    choppedAt ? getTimerClass(msLeft) : 'ready',
       countdown: choppedAt ? formatCountdown(msLeft) : 'Standing',
       type:  'tree',
+      amount: getResourceYield(farm, 'tree'),
     };
   }).filter(t => t.status !== 'ready' || true)
     .sort((a, b) => (a.msLeft < 0 ? -1 : a.msLeft) - (b.msLeft < 0 ? -1 : b.msLeft));
@@ -300,6 +331,7 @@ function parseRocks(farm) {
         status:    minedAt ? getTimerClass(msLeft) : 'ready',
         countdown: minedAt ? formatCountdown(msLeft) : 'Available',
         type:  'rock',
+        amount: getResourceYield(farm, name.toLowerCase()),
       });
     });
   };
@@ -336,6 +368,7 @@ function parseMushrooms(farm) {
       status:    msLeft <= 0 ? 'ready' : getTimerClass(msLeft),
       countdown: msLeft <= 0 ? 'Pronto!' : formatCountdown(msLeft),
       type:  'mushroom',
+      amount: 1,
     };
   }).sort((a, b) => a.msLeft - b.msLeft);
 }

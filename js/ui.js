@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=92';
-import { NOTIF_TYPES } from './notifications.js?v=92';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=92';
-import { t } from './i18n.js?v=92';
-import Farm from './farm.js?v=92';
+import Storage from './storage.js?v=91';
+import { NOTIF_TYPES } from './notifications.js?v=91';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=91';
+import { t } from './i18n.js?v=91';
+import Farm from './farm.js?v=91';
 
 // duplicate removed
 
@@ -270,6 +270,34 @@ function renderHome(exchange, prices, parsedFarm) {
       }
     }
 
+    // Island resources stats
+    const islandTrees = parsedFarm.trees || [];
+    const islandRocks = parsedFarm.rocks || [];
+    const islandMush  = parsedFarm.mushrooms || [];
+    const islandOil   = parsedFarm.oil || [];
+
+    const treesReady  = islandTrees.filter(t => t.status === 'ready').length;
+    const treesTotal  = islandTrees.length;
+    const stoneReady  = islandRocks.filter(r => r.name === 'Stone Rock' && r.status === 'ready').length;
+    const ironReady   = islandRocks.filter(r => r.name === 'Iron Rock' && r.status === 'ready').length;
+    const goldReady   = islandRocks.filter(r => r.name === 'Gold Rock' && r.status === 'ready').length;
+    const crimsReady  = islandRocks.filter(r => r.name === 'Crimstone' && r.status === 'ready').length;
+    const sunReady    = islandRocks.filter(r => r.name === 'Sunstone' && r.status === 'ready').length;
+    const mushReady   = islandMush.filter(m => m.status === 'ready').length;
+    const oilReady    = islandOil.filter(o => o.status === 'ready').length;
+    const totalIslandReady = treesReady + stoneReady + ironReady + goldReady + crimsReady + sunReady + mushReady + oilReady;
+
+    const nextIslandRes = [
+      ...islandTrees.filter(t => t.status !== 'ready' && t.msLeft > 0),
+      ...islandRocks.filter(r => r.status !== 'ready' && r.msLeft > 0),
+      ...islandMush.filter(m => m.status !== 'ready' && m.msLeft > 0),
+    ].sort((a, b) => a.msLeft - b.msLeft)[0];
+
+    const islandSub = parsedFarm.isPartial ? '-' :
+      (totalIslandReady > 0 ? `${totalIslandReady} pronto${totalIslandReady > 1 ? 's' : ''} para coletar` :
+       (nextIslandRes ? `Próximo em ${nextIslandRes.countdown}` : 'Tudo disponível'));
+
+
     setHtml('#home-farm-summary', `
       <div class="section-header">
         <div class="section-title">🚜 ${t('home_farm_summary')}</div>
@@ -386,6 +414,36 @@ function renderHome(exchange, prices, parsedFarm) {
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${parsedFarm.isPartial ? '-' : `${parsedFarm.composting.length} Composteiras`}</div>
           </div>
         </div>
+
+        <!-- Island Resources -->
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showIslandResourcesModal && window.__app.showIslandResourcesModal()" style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:12px; padding: 14px; cursor:pointer;" title="Recursos da Ilha">
+          <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);flex-shrink:0;">
+            <img src="https://sfl.world/img/source/Wood.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div class="stat-label" style="font-size:12px; margin-bottom:5px;">🌿 RECURSOS DA ILHA</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+              ${[
+                {img:'Wood', count: treesReady, total: treesTotal, label:'Madeira'},
+                {img:'Stone', count: stoneReady, total: islandRocks.filter(r=>r.name==='Stone Rock').length, label:'Pedra'},
+                {img:'Iron', count: ironReady, total: islandRocks.filter(r=>r.name==='Iron Rock').length, label:'Ferro'},
+                {img:'Gold', count: goldReady, total: islandRocks.filter(r=>r.name==='Gold Rock').length, label:'Ouro'},
+                {img:'Crimstone', count: crimsReady, total: islandRocks.filter(r=>r.name==='Crimstone').length, label:'Crimstone'},
+                {img:'Sunstone', count: sunReady, total: islandRocks.filter(r=>r.name==='Sunstone').length, label:'Sunstone'},
+                {img:'Wild Mushroom', count: mushReady, total: islandMush.length, label:'Cogumelo'},
+                {img:'Oil', count: oilReady, total: islandOil.length, label:'Petróleo'},
+              ].filter(r => r.total > 0).map(r => `
+                <div title="${r.label}" style="display:flex;align-items:center;gap:4px;background:${r.count>0?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.04)'};border:1px solid ${r.count>0?'rgba(16,185,129,0.3)':'rgba(255,255,255,0.08)'};border-radius:8px;padding:4px 8px;">
+                  <img src="https://sfl.world/img/source/${encodeURIComponent(r.img)}.png" style="width:16px;height:16px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+                  <span style="font-size:12px;font-weight:700;color:${r.count>0?'var(--emerald)':'var(--text-secondary)'}">${r.count}/${r.total}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="stat-sub" style="margin-top:5px;font-size:11px;color:var(--text-tertiary);">${islandSub}</div>
+          </div>
+          <div style="color:var(--text-tertiary);font-size:20px;">›</div>
+        </div>
+
         <!-- Expansion -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="grid-column: 1 / -1; opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"' : 'style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansão"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
@@ -920,6 +978,65 @@ function renderMarketFiltered(search = '', filter = 'all') {
   if (filter === 'resources') entries = entries.filter(e => /Wood|Stone|Iron|Gold|Crimstone|Obsidian|Honey|Egg|Feather|Wool|Leather|Milk|Oil|Salt/.test(e.name));
   if (filter === 'fish') entries = entries.filter(e => /fish|Fish|Tuna|Shark|Eel|Bass|Mahi|Salmon|Cod|Crab|Lobster|Mussel|Oyster|Shrimp|Bait/.test(e.name));
 
+  // Filter: history (show sales log)
+  if (filter === 'history') {
+    let salesLog = [];
+    try {
+      salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
+    } catch(e) {}
+
+    if (salesLog.length === 0) {
+      setHtml('#market-grid', `
+        <div class="empty-state" style="grid-column:1/-1">
+          <span class="empty-state-icon">📜</span>
+          <div class="empty-state-title">Nenhuma venda registrada ainda</div>
+          <div class="empty-state-sub" style="margin-top:8px;">
+            O histórico começa a ser registrado a partir de agora.<br>
+            Cada vez que sincronizar após uma venda, ela aparecerá aqui.
+          </div>
+        </div>
+      `);
+      return;
+    }
+
+    const totalSfl = salesLog.reduce((s, e) => s + (e.sflEarned || 0), 0);
+    const listHtml = salesLog.slice().reverse().slice(0, 50).map(entry => {
+      const date = new Date(entry.timestamp || Date.now());
+      const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;">
+          <div style="width:40px;height:40px;background:var(--surface-3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.06);">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(entry.item || 'SFL')}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'}</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} às ${timeStr}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:15px;font-weight:900;color:var(--emerald);">+${(entry.sflEarned || 0).toFixed(3)} SFL</div>
+            <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${entry.qty || '?'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    setHtml('#market-grid', `
+      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Total Ganho (Registrado)</div>
+          <div style="font-size:22px;font-weight:900;color:var(--emerald);">${totalSfl.toFixed(3)} SFL</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:var(--text-tertiary);">${salesLog.length} venda${salesLog.length !== 1 ? 's' : ''}</div>
+          <button onclick="if(confirm('Limpar todo o histórico de vendas?')){localStorage.removeItem('sfl_sales_log');window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);}" style="margin-top:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--coral);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Limpar</button>
+        </div>
+      </div>
+      ${listHtml}
+    `);
+    return;
+  }
+
   // Sort by Total Value (Qty * Price)
   entries = entries.sort((a, b) => (b.qty * b.priceInSfl) - (a.qty * a.priceInSfl));
 
@@ -1262,10 +1379,7 @@ function renderDeliveriesPage() {
         <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--emerald-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
         
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1;">
-          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; position:relative;">
-            <img src="https://sunflower-land.com/play/assets/sunnyside/npcs/${d.npc}.gif" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;" onerror="this.onerror=null; this.src='https://sunflower-land.com/play/assets/sunnyside/npcs/${d.npc}.png'; this.onerror=function(){ this.style.display='none'; };" />
-            <span style="z-index:-1;">${d.npc.charAt(0)}</span>
-          </div>
+          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase;">${d.npc.charAt(0)}</div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
             <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
@@ -1363,7 +1477,7 @@ function renderDeliveriesPage() {
           if (f === 'SEASONAL') label = 'TICKETS';
           if (f === 'COINS') label = 'MOEDAS';
           
-          return `<button onclick="window.__app.State.deliveriesFilter='${f}'; window.__app.UI.renderDeliveriesPage();" 
+          return `<button onclick="window.__app.State.deliveriesFilter='${f}'; window.__app.renderDeliveriesPage();" 
                   style="background:${bg}; border:1px solid ${border}; color:${color}; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer;">${label}</button>`;
         }).join('')}
       </div>

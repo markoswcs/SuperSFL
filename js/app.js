@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=92';
-import API from './api.js?v=92';
-import Farm from './farm.js?v=92';
-import UI from './ui.js?v=92';
-import Notifications from './notifications.js?v=92';
-import i18n from './i18n.js?v=92';
+import Storage from './storage.js?v=93';
+import API from './api.js?v=93';
+import Farm from './farm.js?v=93';
+import UI from './ui.js?v=93';
+import Notifications from './notifications.js?v=93';
+import i18n from './i18n.js?v=93';
 
 // --- State ---
 const State = {
@@ -284,10 +284,42 @@ async function refreshData(force = false) {
       }
     }
 
+    // Track completed sales by comparing active listings before and after
+    const prevListings = window.__sflPrevListings || [];
+    const prevBalance = window.__sflPrevBalance || 0;
+
     if (farmData) {
       // Full game state
       State.parsedFarm = Farm.parseFarm(farmData, landInfo);
       State.hasKeyError = false;
+
+      // Detect completed sales (compare tradeListings before and after)
+      try {
+        const farm = farmData.farm || farmData;
+        const currentListings = Object.entries(farm.tradeListings || {}).map(([id, l]) => ({id, ...l}));
+        if (prevListings.length > 0) {
+          prevListings.forEach(prev => {
+            const stillExists = currentListings.find(c => c.id === prev.id);
+            if (!stillExists) {
+              // Listing disappeared — likely sold
+              const itemName = Object.keys(prev.items || {})[0];
+              const qty      = itemName ? (prev.items[itemName] || 0) : 0;
+              const sflEarned = parseFloat(prev.sfl || 0) * (1 - (prev.tax || 0.1));
+              if (itemName && sflEarned > 0) {
+                const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
+                salesLog.push({ item: itemName, qty, sflEarned, timestamp: Date.now() });
+                if (salesLog.length > 200) salesLog.splice(0, salesLog.length - 200);
+                localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
+                console.log('[Sales] Detected sale:', itemName, qty, sflEarned, 'SFL');
+              }
+            }
+          });
+        }
+        window.__sflPrevListings = currentListings;
+        window.__sflPrevBalance  = State.parsedFarm?.balance ?? 0;
+      } catch(salesErr) {
+        console.warn('[Sales] Tracking error:', salesErr);
+      }
     } else if (landInfo) {
       // Land info only
       State.parsedFarm = Farm.parseLandInfo(landInfo);

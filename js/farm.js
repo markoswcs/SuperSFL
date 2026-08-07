@@ -308,8 +308,35 @@ function parseRocks(farm) {
   addRocks(farm?.iron,         'Iron Rock',     IRON_REGROW_MS,   '🔩');
   addRocks(farm?.gold,         'Gold Rock',     GOLD_REGROW_MS,   '🥇');
   addRocks(farm?.crimstones,   'Crimstone',     CRIMSTONE_REGROW, '💎');
+  addRocks(farm?.sunstones,    'Sunstone',      GOLD_REGROW_MS,   '🌟');
 
   return items.sort((a, b) => (a.msLeft < 0 ? -1 : a.msLeft) - (b.msLeft < 0 ? -1 : b.msLeft));
+}
+
+const MUSHROOM_REGROW_MS = 16 * 3600_000; // 16h
+
+/**
+ * Parse mushrooms (wild mushrooms on the island)
+ */
+function parseMushrooms(farm) {
+  if (!farm?.mushrooms?.mushrooms) return [];
+  const now = Date.now();
+
+  return Object.entries(farm.mushrooms.mushrooms).map(([id, m]) => {
+    const plantedAt = m.plantedAt ?? 0;
+    const readyAt   = plantedAt + MUSHROOM_REGROW_MS;
+    const msLeft    = readyAt - now;
+
+    return {
+      id,
+      name: m.name || 'Wild Mushroom',
+      emoji: '🍄',
+      msLeft,
+      status:    msLeft <= 0 ? 'ready' : getTimerClass(msLeft),
+      countdown: msLeft <= 0 ? 'Pronto!' : formatCountdown(msLeft),
+      type:  'mushroom',
+    };
+  }).sort((a, b) => a.msLeft - b.msLeft);
 }
 
 // Levels for animals based on experience
@@ -914,6 +941,7 @@ function parseFarm(farmData) {
     bumpkin:     parseBumpkin(farm),
     inventory:   parseInventory(farm),
     chores:      parseChores(farm),
+    mushrooms:   parseMushrooms(farm),
     expansionRequirements: farm.expansionRequirements,
     expansionConstruction: farm.expansionConstruction
   };

@@ -319,10 +319,11 @@ const MUSHROOM_REGROW_MS = 16 * 3600_000; // 16h
  * Parse mushrooms (wild mushrooms on the island)
  */
 function parseMushrooms(farm) {
-  if (!farm?.mushrooms?.mushrooms) return [];
+  const nodes = farm?.mushrooms?.mushrooms || (farm?.mushrooms && Object.keys(farm.mushrooms).some(k => !isNaN(k)) ? farm.mushrooms : null);
+  if (!nodes) return [];
   const now = Date.now();
 
-  return Object.entries(farm.mushrooms.mushrooms).map(([id, m]) => {
+  return Object.entries(nodes).map(([id, m]) => {
     const plantedAt = m.plantedAt ?? 0;
     const readyAt   = plantedAt + MUSHROOM_REGROW_MS;
     const msLeft    = readyAt - now;

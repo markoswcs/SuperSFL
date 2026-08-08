@@ -18,8 +18,21 @@ const DEFAULT_PREFS = {
 class NotificationEngine {
   constructor() {
     this.prefs = { ...DEFAULT_PREFS };
-    this.notifiedIds = new Set();
+    this.notifiedIds = this.loadNotifiedIds();
     this.loadPrefs();
+  }
+
+  loadNotifiedIds() {
+    try {
+      const arr = JSON.parse(localStorage.getItem('sfl_notified_ids') || '[]');
+      return new Set(arr);
+    } catch(e) {
+      return new Set();
+    }
+  }
+
+  saveNotifiedIds() {
+    localStorage.setItem('sfl_notified_ids', JSON.stringify([...this.notifiedIds]));
   }
 
   loadPrefs() {
@@ -363,6 +376,7 @@ class NotificationEngine {
       }
     });
     this.notifiedIds = toKeep;
+    this.saveNotifiedIds();
   }
 }
 

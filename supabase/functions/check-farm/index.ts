@@ -2,12 +2,12 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0"
 import webpush from "https://esm.sh/web-push@3.6.6"
 
-const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') || "";
-const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') || "";
+const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') || "BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo";
+const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') || "BEj6GsZR9yQJ7FWMEjF3OU_2QLb-L3kwSa8-jZnWgPQ";
 
 // Config VAPID
 webpush.setVapidDetails(
-  'mailto:contato@exemplo.com',
+  'mailto:mw64097@gmail.com',
   VAPID_PUBLIC,
   VAPID_PRIVATE
 );

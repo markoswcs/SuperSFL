@@ -74,7 +74,7 @@ class NotificationEngine {
       }
 
       // IMPORTANTE: Insira sua Chave Pública VAPID aqui
-      const publicVapidKey = 'COLOQUE_SUA_CHAVE_PUBLICA_VAPID_AQUI'; 
+      const publicVapidKey = 'BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo'; 
       if (publicVapidKey === 'COLOQUE_SUA_CHAVE_PUBLICA_VAPID_AQUI') {
         alert('O desenvolvedor precisa configurar a chave VAPID no código para as notificações funcionarem 24/7.');
         return true;

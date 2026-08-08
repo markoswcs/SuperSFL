@@ -825,6 +825,9 @@ function parseChores(farm) {
         progress: chore.initialProgress || 0,
         reward: chore.reward || {},
         rewardSfl: chore.reward?.sfl || 0,
+        rewardCoins: chore.reward?.coins || 0,
+        rewardMarks: chore.reward?.marks || 0,
+        rewardTickets: chore.reward?.tickets || 0,
         rewardItems: chore.reward?.items || {},
       });
     });
@@ -845,6 +848,7 @@ function parseChores(farm) {
         rewardItems: order.reward?.items || {},
         rewardCoins: order.reward?.coins || 0,
         rewardMarks: order.reward?.marks || 0,
+        rewardTickets: order.reward?.tickets || 0,
         expiresAt: order.readyAt || 0,
         id: order.id || '',
       });

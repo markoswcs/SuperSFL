@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=140';
+import Storage from './storage.js?v=141';
 
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=140';
-import { t } from './i18n.js?v=140';
-import Farm from './farm.js?v=140';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=141';
+import { t } from './i18n.js?v=141';
+import Farm from './farm.js?v=141';
 
 // duplicate removed
 
@@ -1642,7 +1642,7 @@ function renderDeliveriesPage() {
   } else if (activeFilter === 'COINS') {
     deliveries = deliveries.filter(d => d.rewardCoins && d.rewardCoins > 0);
   } else if (activeFilter === 'SEASONAL') {
-    deliveries = deliveries.filter(d => d.rewardMarks && d.rewardMarks > 0);
+    deliveries = deliveries.filter(d => (d.rewardMarks && d.rewardMarks > 0) || (d.rewardTickets && d.rewardTickets > 0));
   }
   // --------------------
 
@@ -1661,7 +1661,7 @@ function renderDeliveriesPage() {
       <div style="margin-bottom:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
           <div style="width:28px; height:28px; background:rgba(255,255,255,0.05); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-            <img src="https://sfl.world/img/source/${name.replace(/\s+/g, '')}.png"
+            <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png"
                  style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;"
                  onerror="this.style.display='none'">
           </div>
@@ -1685,6 +1685,7 @@ function renderDeliveriesPage() {
     if (d.rewardSfl) rewardText.push(`${formatSfl(d.rewardSfl)} SFL`);
     if (d.rewardCoins) rewardText.push(`${formatNumber(d.rewardCoins)} Coins`);
     if (d.rewardMarks) rewardText.push(`${d.rewardMarks} Marks`);
+    if (d.rewardTickets) rewardText.push(`${d.rewardTickets} Tickets`);
     if (d.rewardItems) Object.entries(d.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
 
     const npcImg = `https://sfl.world/img/source/${d.npc.replace(/\s+/g, '')}.png`;
@@ -1714,6 +1715,9 @@ function renderDeliveriesPage() {
   function choreCard(c, idx) {
     const rewardText = [];
     if (c.rewardSfl) rewardText.push(`${formatSfl(c.rewardSfl)} SFL`);
+    if (c.rewardCoins) rewardText.push(`${formatNumber(c.rewardCoins)} Coins`);
+    if (c.rewardMarks) rewardText.push(`${c.rewardMarks} Marks`);
+    if (c.rewardTickets) rewardText.push(`${c.rewardTickets} Tickets`);
     if (c.rewardItems) Object.entries(c.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
     const pct = c.requirement > 0 ? Math.min(100, (c.progress / c.requirement) * 100) : 0;
     const done = c.progress >= c.requirement;

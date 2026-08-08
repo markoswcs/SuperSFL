@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=103';
-import { NOTIF_TYPES } from './notifications.js?v=103';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=103';
-import { t } from './i18n.js?v=103';
-import Farm from './farm.js?v=103';
+import Storage from './storage.js?v=102';
+import { NOTIF_TYPES } from './notifications.js?v=102';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=102';
+import { t } from './i18n.js?v=102';
+import Farm from './farm.js?v=102';
 
 // duplicate removed
 
@@ -1122,15 +1122,16 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         </div>
         
         <div style="z-index:1; border-top:1px solid var(--surface-border); padding-top:12px; margin-top:4px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Custo Est.</div>
-              <div style="font-size:12px; font-weight:700; color:var(--text-secondary);">${item.baseCost > 0 ? item.baseCost.toFixed(3) : '---'} SFL</div>
+                <div style="background:rgba(0,0,0,0.3);border-radius:100px;height:6px;overflow:hidden;width:100%;">
+                  <div style="height:100%;border-radius:100px;width:${progressPct}%;background:${isTargetHit ? 'var(--emerald)' : 'linear-gradient(90deg, var(--amber), var(--emerald))'};transition:width 0.5s ease; box-shadow:0 0 8px ${isTargetHit ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
+                </div>
+              ` : `
+                <div style="font-size:11px; color:var(--text-tertiary); font-style:italic;">Nenhum alvo definido.</div>
+              `}
             </div>
-            <div style="text-align:right;">
-              <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Lucro Un.</div>
-              <div style="font-size:12px; font-weight:800; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">${item.unitProfit >= 0 ? '+' : ''}${item.unitProfit.toFixed(3)} SFL ${item.baseCost > 0 ? `<span style="background:${item.unitProfit >= 0 ? 'var(--emerald-subtle)' : 'var(--coral-subtle)'}; padding:2px 4px; border-radius:4px; font-size:10px; margin-left:4px;">${item.unitProfit >= 0 ? '+' : ''}${item.profitMargin.toFixed(0)}%</span>` : ''}</div>
-            </div>
+            <button onclick="event.stopPropagation(); window.__app.promptPriceAlert('${safeName}', ${item.priceInSfl})" style="background:var(--surface-3); border:1px solid var(--surface-border); border-radius:8px; padding:6px 12px; color:var(--text-secondary); font-size:12px; font-weight:700; cursor:pointer;">
+              ${targetPrice ? 'Editar' : 'Definir'}
+            </button>
           </div>
         </div>
       </div>

@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=138';
-import API from './api.js?v=138';
-import Farm from './farm.js?v=138';
-import UI from './ui.js?v=138';
+import Storage from './storage.js?v=139';
+import API from './api.js?v=139';
+import Farm from './farm.js?v=139';
+import UI from './ui.js?v=139';
 
-import i18n from './i18n.js?v=138';
+import i18n from './i18n.js?v=139';
 
 // --- State ---
 const State = {
@@ -224,9 +224,7 @@ async function init() {
   switchTab('farm');
   setupAutoRefresh();
 
-  // Notification badge listener
-  Notifications.onBadgeUpdate(() => UI.updateAlertBadge());
-  UI.updateAlertBadge();
+  // (Badge updates removed, using Web Push directly)
 }
 
 function loadCachedState() {
@@ -496,7 +494,7 @@ function renderCurrentTab() {
       break;
     case 'alerts':
       UI.renderAlertsPage();
-      const perm = Notifications.hasPermission() ? 'granted' : 'default';
+      const perm = Notification.permission;
       UI.renderNotifSettings(perm);
       break;
     case 'settings':
@@ -591,7 +589,6 @@ function removeFarm(id) {
   if (State.farmId === String(id)) {
     State.farmId = Storage.getActiveFarm();
     State.parsedFarm = null;
-    Notifications.clearAllScheduled();
   }
   UI.renderSettingsPage();
   if (!State.farmId) {

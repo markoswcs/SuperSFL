@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=138';
+import Storage from './storage.js?v=139';
 
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=138';
-import { t } from './i18n.js?v=138';
-import Farm from './farm.js?v=138';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=139';
+import { t } from './i18n.js?v=139';
+import Farm from './farm.js?v=139';
 
 // duplicate removed
 
@@ -2054,8 +2054,7 @@ function bindNotifToggles() {
   const requestBtn = $('#btn-request-notif');
   if (requestBtn) {
     requestBtn.addEventListener('click', async () => {
-      const { default: Notifications } = await import('./notifications.js');
-      const perm = await Notifications.requestPermission();
+      const perm = await Notification.requestPermission();
       if (perm === 'granted') {
         Storage.saveNotifPrefs({ enabled: true });
         renderNotifSettings(perm);

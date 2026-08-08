@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=126';
-import { NOTIF_TYPES } from './notifications.js?v=126';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=126';
-import { t } from './i18n.js?v=126';
-import Farm from './farm.js?v=126';
+import Storage from './storage.js?v=127';
+import { NOTIF_TYPES } from './notifications.js?v=127';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=127';
+import { t } from './i18n.js?v=127';
+import Farm from './farm.js?v=127';
 
 // duplicate removed
 
@@ -1208,202 +1208,230 @@ function hideModal() {
 function openP2pCalc(itemName, priceInSfl) {
   const farm = window.__app.getFarmData ? window.__app.getFarmData() : {};
 
-  // === 1. INVENTORY: Use rawInventory (flat name->qty map) ===
+  // Inventory
   const rawInv = farm.rawInventory || {};
-  const inventoryQty = rawInv[itemName] || 0;
+  const inventoryQty = Math.floor(rawInv[itemName] || 0);
 
-  // === 2. ISLAND + TAX (Official SFL Rates) ===
-  // Spring Island = 50%, Desert = 20%, Volcano = 15%
-  // VIP status halves the tax. Data comes straight from the API.
+  // Island + Tax
   const islandName = farm.islandType || 'unknown';
-  const ISLAND_LABELS = {
-    'basic':   'Básica',
-    'spring':  'Spring',
-    'desert':  'Deserto',
-    'volcano': 'Volcano',
-  };
-  const ISLAND_EMOJI = { 'basic': '🌱', 'spring': '🌸', 'desert': '🏜️', 'volcano': '🌋' };
+  const ISLAND_LABELS = { 'basic':'Básica','spring':'Spring','desert':'Deserto','volcano':'Volcano' };
+  const ISLAND_EMOJI  = { 'basic':'🌱','spring':'🌸','desert':'🏜️','volcano':'🌋' };
   const islandLabel = ISLAND_LABELS[islandName] || islandName;
   const islandEmoji = ISLAND_EMOJI[islandName] || '🏝️';
 
-  // taxRate in % (e.g. 15 for 15%)
   let taxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
   const isVip = farm.isVip || false;
-  if (isVip) taxPct = taxPct * 0.5; // VIP = half tax
-  const taxRate = taxPct / 100;     // decimal form e.g. 0.15
-
-  // === 3. COST per unit (seed/fertilizer cost from farm.js helpers) ===
-  const cost = (window.__app.getEstimatedCost && window.__app.getEstimatedCost(itemName)) || 0;
-
-  // === 4. DERIVED METRICS ===
-  // Net received per unit after tax
-  const netPerUnit = priceInSfl * (1 - taxRate);
-  // Profit per unit after tax and seed cost
-  const profitPerUnit = cost > 0 ? netPerUnit - cost : 0;
-  // Margin % relative to cost
-  const marginPct = cost > 0 ? (profitPerUnit / cost) * 100 : 0;
-
-  // Current total value of your stock (at market price, net of tax)
-  const totalNetValue = inventoryQty * netPerUnit;
-  // Current total cost of your stock
-  const totalCostValue = inventoryQty * cost;
-  // Current total profit (what you'd pocket if you sold everything now)
-  const totalProfitNow = totalNetValue - totalCostValue;
-
-  // Helper: target sale price to achieve X% net profit over cost
-  // Formula: salePrice = cost * (1 + profitTarget%) / (1 - taxRate)
-  const targetPrice = (pct) => cost > 0 ? (cost * (1 + pct / 100)) / (1 - taxRate) : 0;
-
-  // Colour helpers
-  const col = (v) => v > 0 ? 'var(--emerald)' : v < 0 ? 'var(--coral)' : 'var(--text-secondary)';
-  const fmt = (v, dp = 4) => v.toFixed(dp);
-  const fmtSfl = (v) => fmt(Math.abs(v), 4);
-
-  // Island tax badge colour
+  if (isVip) taxPct = taxPct * 0.5;
+  const taxRate = taxPct / 100;
   const taxColour = taxPct <= 15 ? 'var(--emerald)' : taxPct <= 20 ? 'var(--amber)' : 'var(--coral)';
 
+  // Cost per unit
+  const cost = (window.__app.getEstimatedCost && window.__app.getEstimatedCost(itemName)) || 0;
+
+  // Derived per-unit metrics
+  const netPerUnit   = priceInSfl * (1 - taxRate);
+  const profitPerUnit = cost > 0 ? netPerUnit - cost : 0;
+  const marginPct    = cost > 0 ? (profitPerUnit / cost) * 100 : 0;
+  const col = (v) => v > 0 ? 'var(--emerald)' : v < 0 ? 'var(--coral)' : 'var(--text-secondary)';
+
   const defaultQty = inventoryQty > 0 ? inventoryQty : 10;
+  const hasCost = cost > 0;
 
-  showModal(`📊 Lucro: ${itemName}`, `
-    <!-- ── HEADER: Item snapshot ── -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+  showModal(`📊 ${itemName}`, `
 
-      <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
-        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">📦 Estoque</div>
-        <div style="font-family:var(--font-mono); font-size:22px; font-weight:800; color:var(--text-primary); line-height:1;">${inventoryQty}</div>
-        <div style="font-size:10px; color:var(--text-tertiary); margin-top:2px;">${itemName}</div>
+    <!-- ── STATS ROW ── -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+      <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">📦 Estoque</div>
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--text-primary);line-height:1;">${inventoryQty}</div>
+        <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">${itemName}</div>
       </div>
-
-      <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
-        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">💰 Mercado Atual</div>
-        <div style="font-family:var(--font-mono); font-size:22px; font-weight:800; color:var(--amber); line-height:1;">${fmtSfl(priceInSfl)}</div>
-        <div style="font-size:10px; color:var(--text-tertiary); margin-top:2px;">SFL / unidade</div>
+      <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">💰 Preço Mercado</div>
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--amber);line-height:1;">${priceInSfl.toFixed(4)}</div>
+        <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">SFL / unidade</div>
       </div>
-
-      <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
-        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">🌱 Custo Unitário</div>
-        <div style="font-family:var(--font-mono); font-size:22px; font-weight:800; color:var(--text-secondary); line-height:1;">${cost > 0 ? fmtSfl(cost) : '--'}</div>
-        <div style="font-size:10px; color:var(--text-tertiary); margin-top:2px;">SFL / unidade</div>
+      ${hasCost ? `
+      <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">🌱 Custo/Unid.</div>
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--text-secondary);line-height:1;">${cost.toFixed(4)}</div>
+        <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">SFL / unidade</div>
       </div>
-
-      <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
-        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">📈 Lucro/Unid.</div>
-        <div style="font-family:var(--font-mono); font-size:22px; font-weight:800; color:${col(profitPerUnit)}; line-height:1;">
-          ${cost > 0 ? (profitPerUnit >= 0 ? '+' : '-') + fmtSfl(profitPerUnit) : '--'}
-        </div>
-        <div style="font-size:10px; color:${col(marginPct)}; margin-top:2px; font-weight:700;">
-          ${cost > 0 ? (marginPct >= 0 ? '+' : '') + marginPct.toFixed(1) + '% margem' : ''}
-        </div>
-      </div>
+      <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">📈 Lucro/Unid.</div>
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:${col(profitPerUnit)};line-height:1;">${(profitPerUnit >= 0 ? '+' : '') + profitPerUnit.toFixed(4)}</div>
+        <div style="font-size:9px;color:${col(marginPct)};margin-top:2px;font-weight:700;">${(marginPct >= 0 ? '+' : '') + marginPct.toFixed(1)}% margem</div>
+      </div>` : ''}
     </div>
 
-    <!-- ── ISLAND + TAX INFO ── -->
-    <div style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(0,0,0,0.15); border-radius:10px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
+    <!-- ── ISLAND BADGE ── -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,0.15);border-radius:9px;padding:7px 12px;margin-bottom:12px;font-size:12px;flex-wrap:wrap;">
       <span>${islandEmoji} Ilha <strong style="color:var(--text-primary);">${islandLabel}</strong></span>
       <span style="color:var(--text-tertiary);">|</span>
       <span>Taxa: <strong style="color:${taxColour};">${taxPct.toFixed(1)}%</strong></span>
-      ${isVip ? '<span style="color:var(--text-tertiary);">|</span><span style="color:var(--emerald); font-weight:700;">⭐ VIP</span>' : ''}
+      ${isVip ? '<span style="color:var(--text-tertiary);">|</span><span style="color:var(--emerald);font-weight:700;">⭐ VIP</span>' : ''}
     </div>
 
     <!-- ── SIMULATOR ── -->
-    <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-bottom:8px;">
-      <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">🧮 Simular Venda</div>
-      <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1"
-        style="width:100%; box-sizing:border-box; margin-bottom:8px;"
-        oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost})">
+    <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🧮 Simular Venda</div>
 
-      <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
-        <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
-          <span>Receita bruta</span><span id="calc-gross" style="font-family:var(--font-mono);">0 SFL</span>
+      <!-- Qty input + All Stock button -->
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
+        <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1"
+          style="flex:1;min-width:0;"
+          oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost}, 0)">
+        ${inventoryQty > 0 ? `
+        <button onclick="document.getElementById('calc-qty').value=${inventoryQty}; window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost}, 0)"
+          style="background:rgba(245,158,11,0.12);border:1px solid var(--amber);color:var(--amber);
+            border-radius:10px;padding:0 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0;">
+          📦 Todo o Estoque
+        </button>` : ''}
+      </div>
+
+      <!-- Results -->
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+          <span>Receita bruta</span>
+          <span id="calc-gross" style="font-family:var(--font-mono);">0 SFL</span>
         </div>
-        <div style="display:flex; justify-content:space-between; color:var(--coral);">
-          <span>Taxa da ilha (${taxPct.toFixed(1)}%)</span><span id="calc-tax" style="font-family:var(--font-mono);">- 0 SFL</span>
+        <div style="display:flex;justify-content:space-between;color:var(--coral);">
+          <span>Taxa (${taxPct.toFixed(1)}%)</span>
+          <span id="calc-tax" style="font-family:var(--font-mono);">- 0 SFL</span>
         </div>
-        <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--text-primary); border-top:1px solid rgba(255,255,255,0.08); padding-top:6px;">
-          <span>Receita líquida</span><span id="calc-net" style="font-family:var(--font-mono);">0 SFL</span>
-        </div>
-        ${cost > 0 ? `
-        <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
-          <span>Custo total (sementes)</span><span id="calc-cost-total" style="font-family:var(--font-mono);">0 SFL</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-weight:800; padding-top:6px; border-top:2px solid rgba(255,255,255,0.1);">
-          <span>✅ Lucro total</span><span id="calc-total-profit" style="font-family:var(--font-mono); font-size:15px;">0 SFL</span>
+        ${hasCost ? `
+        <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+          <span>Custo das sementes</span>
+          <span id="calc-cost-total" style="font-family:var(--font-mono);">- 0 SFL</span>
         </div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;
+          border-top:2px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:2px;">
+          <span style="color:var(--text-primary);">💰 ${hasCost ? 'Lucro líquido' : 'Receita líquida'}</span>
+          <span id="calc-net" style="font-family:var(--font-mono);color:var(--emerald);">0 SFL</span>
+        </div>
       </div>
     </div>
 
-    ${cost > 0 ? `
-    <!-- ── TARGET PROFIT PLANNER ── -->
-    <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-top:4px;">
-      <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">🎯 Planejador de Lucro Alvo</div>
-      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-        Escolha quanto de lucro quer ter por item. O app calcula o preço de venda necessário.
-      </div>
+    ${hasCost ? `
+    <!-- ── META DE LUCRO ── -->
+    <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;margin-top:10px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">🎯 Meta de Lucro</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">Selecione a % de lucro desejada e o resultado acima atualiza automaticamente.</div>
 
-      <!-- Quick buttons -->
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px;">
-        ${[2, 5, 10, 20].map(pct => {
-          const tp = targetPrice(pct);
-          const diff = tp - priceInSfl;
-          const diffSign = diff > 0 ? '+' : '';
-          const btnColor = diff <= 0 ? 'var(--emerald)' : 'var(--amber)';
-          return `<button onclick="window.__app.showTargetProfit(${pct}, ${priceInSfl}, ${taxRate}, ${cost})"
-            style="background:rgba(0,0,0,0.2); border:1px solid ${btnColor}; color:${btnColor};
-              border-radius:10px; padding:8px 4px; cursor:pointer; font-size:12px; font-weight:800;
-              display:flex; flex-direction:column; align-items:center; gap:2px;">
+      <!-- % buttons — 3 per row to avoid overflow -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+        ${[2, 5, 10, 20, 30, 50].map(pct => {
+          // target price needed to reach this profit %
+          const tp = (cost * (1 + pct / 100)) / (1 - taxRate);
+          const reachable = tp <= priceInSfl;
+          const btnColor = reachable ? 'var(--emerald)' : 'var(--amber)';
+          return `<button onclick="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost}, ${pct})"
+            id="calc-pct-btn-${pct}"
+            style="background:rgba(0,0,0,0.2);border:1px solid ${btnColor};color:${btnColor};
+              border-radius:10px;padding:9px 4px;cursor:pointer;font-size:13px;font-weight:800;
+              display:flex;flex-direction:column;align-items:center;gap:1px;width:100%;box-sizing:border-box;">
             <span>+${pct}%</span>
-            <span style="font-family:var(--font-mono); font-size:10px;">${fmt(tp,4)}</span>
+            <span style="font-family:var(--font-mono);font-size:9px;opacity:0.8;">${tp.toFixed(4)}</span>
           </button>`;
         }).join('')}
       </div>
 
-      <!-- Custom % input -->
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
-        <span style="font-size:12px; color:var(--text-secondary); white-space:nowrap;">Custom:</span>
-        <input type="number" id="calc-custom-pct" placeholder="Ex: 15" min="0" step="1"
-          style="flex:1; padding:7px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
-            border-radius:8px; color:var(--text-primary); font-size:13px; outline:none;">
-        <span style="font-size:13px; color:var(--text-tertiary);">%</span>
-        <button onclick="window.__app.showTargetProfit(parseFloat(document.getElementById('calc-custom-pct').value||0), ${priceInSfl}, ${taxRate}, ${cost})"
-          style="background:rgba(245,158,11,0.15); border:1px solid var(--amber); color:var(--amber);
-            border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:800; white-space:nowrap;">
+      <!-- Custom % -->
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="calc-custom-pct" placeholder="%" min="0" step="1"
+          style="width:60px;flex-shrink:0;padding:8px;background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+            color:var(--text-primary);font-size:14px;outline:none;text-align:center;">
+        <span style="font-size:13px;color:var(--text-tertiary);">% de lucro</span>
+        <button onclick="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost}, parseFloat(document.getElementById('calc-custom-pct').value)||0)"
+          style="margin-left:auto;background:rgba(245,158,11,0.15);border:1px solid var(--amber);color:var(--amber);
+            border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;">
           Calcular
         </button>
       </div>
 
-      <!-- Result box -->
-      <div id="calc-target-result" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px; display:none;">
+      <!-- Target message -->
+      <div id="calc-target-msg" style="margin-top:10px;padding:10px;background:rgba(0,0,0,0.2);
+        border:1px solid rgba(255,255,255,0.06);border-radius:10px;display:none;font-size:12px;">
       </div>
     </div>` : ''}
+
   `);
 
-  setTimeout(() => window.__app.updateP2pCalc(priceInSfl, taxRate, cost), 50);
+  setTimeout(() => window.__app.updateP2pCalc(priceInSfl, taxRate, cost, 0), 50);
 }
 
-function updateP2pCalc(price, taxRate, cost) {
+
+function updateP2pCalc(price, taxRate, cost, profitPct) {
   const qtyInput = $('#calc-qty');
   if (!qtyInput) return;
 
-  const qty = parseInt(qtyInput.value) || 0;
+  const qty = parseFloat(qtyInput.value) || 0;
   const gross = qty * price;
   const tax = gross * taxRate;
-  const net = gross - tax;
+  const net = gross - tax;            // net revenue at current market price
   const totalCost = qty * cost;
-  const profit = net - totalCost;
+  const rawProfit = net - totalCost;  // profit at current price
 
+  // Update raw display rows (always shown)
   setText('#calc-gross', gross.toFixed(4) + ' SFL');
   setText('#calc-tax', '- ' + tax.toFixed(4) + ' SFL');
-  setText('#calc-net', net.toFixed(4) + ' SFL');
 
   const costEl = $('#calc-cost-total');
-  if (costEl && cost > 0) costEl.innerText = totalCost.toFixed(4) + ' SFL';
+  if (costEl && cost > 0) costEl.innerText = '- ' + totalCost.toFixed(4) + ' SFL';
 
-  const profitEl = $('#calc-total-profit');
-  if (profitEl && cost > 0) {
-    profitEl.innerText = (profit >= 0 ? '+' : '') + profit.toFixed(4) + ' SFL';
-    profitEl.style.color = profit > 0 ? 'var(--emerald)' : profit < 0 ? 'var(--coral)' : 'var(--text-primary)';
+  // The main "Lucro / Receita líquida" number at the bottom
+  const netEl = $('#calc-net');
+
+  // If profitPct > 0: show what the profit WOULD BE if they sold at the target price
+  if (profitPct > 0 && cost > 0) {
+    // Target sale price per unit to achieve profitPct over cost after tax
+    const targetUnitPrice = (cost * (1 + profitPct / 100)) / (1 - taxRate);
+    const targetGross = qty * targetUnitPrice;
+    const targetTax   = targetGross * taxRate;
+    const targetNet   = targetGross - targetTax;
+    const targetProfit = targetNet - totalCost;
+
+    if (netEl) {
+      netEl.innerText = (targetProfit >= 0 ? '+' : '') + targetProfit.toFixed(4) + ' SFL';
+      netEl.style.color = targetProfit > 0 ? 'var(--emerald)' : 'var(--coral)';
+    }
+
+    // Show the target message below the % buttons
+    const msgEl = $('#calc-target-msg');
+    if (msgEl) {
+      const diff = targetUnitPrice - price;
+      const isReached = diff <= 0;
+      msgEl.style.display = 'block';
+      msgEl.innerHTML = `
+        <div style="margin-bottom:6px;font-weight:700;color:var(--text-primary);">Para +${profitPct}% de lucro:</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:var(--text-secondary);">Preço de venda alvo</span>
+          <span style="font-family:var(--font-mono);font-weight:800;color:${isReached ? 'var(--emerald)' : 'var(--amber)'};">${targetUnitPrice.toFixed(4)} SFL/un.</span>
+        </div>
+        <div style="font-size:11px;color:${isReached ? 'var(--emerald)' : 'var(--text-secondary)'};">
+          ${isReached
+            ? '✅ O mercado atual já paga esse preço!'
+            : `Mercado precisa subir <strong style="color:var(--amber);">+${diff.toFixed(4)} SFL</strong> por unidade`}
+        </div>
+      `;
+    }
+  } else {
+    // Normal mode: show actual net profit at current market price
+    if (netEl) {
+      if (cost > 0) {
+        netEl.innerText = (rawProfit >= 0 ? '+' : '') + rawProfit.toFixed(4) + ' SFL';
+        netEl.style.color = rawProfit > 0 ? 'var(--emerald)' : rawProfit < 0 ? 'var(--coral)' : 'var(--text-primary)';
+      } else {
+        netEl.innerText = net.toFixed(4) + ' SFL';
+        netEl.style.color = 'var(--emerald)';
+      }
+    }
+    const msgEl = $('#calc-target-msg');
+    if (msgEl) msgEl.style.display = 'none';
   }
 }
+
 
 // Called when user clicks a profit% button or the Calcular button
 function showTargetProfit(profitPct, currentPrice, taxRate, cost) {

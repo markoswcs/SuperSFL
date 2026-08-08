@@ -951,6 +951,11 @@ function parseFarm(farmData) {
     level,
     bumpkinLevel,
     islandType,
+    taxRate:     (function(){
+      // Derive tax from island if not explicitly on the API response for authenticated calls
+      const map = { 'basic': 0, 'spring': 10, 'desert': 20, 'volcano': 15 };
+      return map[islandType] !== undefined ? map[islandType] : 15;
+    })(),
     balance:     parseFloat(farm.balance) || 0,
     coins:       farm.coins || 0,
     gems:        parseFloat(farm.inventory?.Gem) || 0,

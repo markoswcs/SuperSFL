@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=124';
-import { NOTIF_TYPES } from './notifications.js?v=124';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=124';
-import { t } from './i18n.js?v=124';
-import Farm from './farm.js?v=124';
+import Storage from './storage.js?v=125';
+import { NOTIF_TYPES } from './notifications.js?v=125';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=125';
+import { t } from './i18n.js?v=125';
+import Farm from './farm.js?v=125';
 
 // duplicate removed
 
@@ -1205,72 +1205,78 @@ function hideModal() {
   $('#app-modal').style.display = 'none';
 }
 
-function openP2pCalc(itemName, priceInSfl, defaultQty = 10) {
-  const settings = Storage.getSettings();
-  // Correct tax rates per island type
-  // Source: sfl.world API returns taxResource as a decimal (e.g., 0.075 = 7.5%)
-  const taxRateMap = {
-    'basic':   0,      // No P2P market on basic island
-    'petal':   0.50,   // 50% tax (Petal Paradise)
-    'desert':  0.20,   // 20% tax (Desert)
-    'volcano': 0.15,   // 15% tax (Volcano)
-    'spring':  0.10,   // 10% tax
-  };
-  let taxRate = taxRateMap[settings.island] ?? 0.15;
-  if (settings.isVip)    taxRate = taxRate * 0.5;              // VIP: -50% tax
-  if (settings.hasShrine) taxRate = Math.max(0, taxRate - 0.025); // Shrine: -2.5%
+function openP2pCalc(itemName, priceInSfl) {
+  const farm = window.__app.getFarmData ? window.__app.getFarmData() : {};
+  const settings = window.__app.Storage ? window.__app.Storage.getSettings() : {};
+  
+  const inventoryQty = farm.inventory?.[itemName] || 0;
+  let taxRate = (farm.taxRate !== undefined ? farm.taxRate : 15) / 100;
+  const islandName = farm.islandType || 'basic';
+  
+  if (settings.isVip || farm.isVip) taxRate = taxRate * 0.5;
+  if (settings.hasShrine) taxRate = Math.max(0, taxRate - 0.025);
+  
+  const defaultQty = inventoryQty > 0 ? inventoryQty : 10;
+  
+  const cost = window.__app.getEstimatedCost ? window.__app.getEstimatedCost(itemName) : 0;
 
-  showModal(`Calculator: ${itemName}`, `
-    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);margin-bottom:16px">
-      Floor Price: <strong style="color:var(--amber)">${priceInSfl} SFL</strong><br>
-      Island: <strong>${settings.island}</strong> | Tax: <strong>${(taxRate * 100).toFixed(1)}%</strong>
-      ${settings.isVip ? ' | <span style="color:var(--emerald)">VIP ✓</span>' : ''}
-      ${settings.hasShrine ? ' | <span style="color:var(--sky)">⛩ Shrine ✓</span>' : ''}
+  showModal(`Lucro: ${itemName}`, `
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+      
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1; background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">Saldo (Estoque)</div>
+          <div style="font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--text-primary);">${inventoryQty}</div>
+        </div>
+        <div style="flex:1; background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">Valor de Mercado</div>
+          <div style="font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--amber);">${priceInSfl} <span style="font-size:10px">SFL</span></div>
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1; background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">Custo Unitário</div>
+          <div style="font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--text-secondary);">${cost > 0 ? cost.toFixed(4) : '--'} <span style="font-size:10px">SFL</span></div>
+        </div>
+        <div style="flex:1; background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">Margem (Por Item)</div>
+          <div id="calc-margin-unit" style="font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--text-secondary);">--</div>
+        </div>
+      </div>
+      
+      <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); text-align:center;">
+        Ilha: <strong style="color:var(--text-primary); text-transform:capitalize;">${islandName}</strong> | Taxa: <strong>${(taxRate * 100).toFixed(1)}%</strong>
+        ${(settings.isVip || farm.isVip) ? ' | <span style="color:var(--emerald)">VIP</span>' : ''}
+      </div>
+
     </div>
     
-    <label style="font-size:12px;color:var(--text-tertiary);display:block;margin-bottom:4px"></label>
-    <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1" oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate})">
+    <label style="font-size:12px;color:var(--text-tertiary);display:block;margin-bottom:8px">Simular Venda (Qtd)</label>
+    <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1" oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost})">
     
     <div class="calc-row">
-      <span></span>
+      <span>Receita Bruta</span>
       <span id="calc-gross">0 SFL</span>
     </div>
     <div class="calc-row">
-      <span>Tax (${(taxRate * 100).toFixed(1)}%)</span>
+      <span>Taxa (${(taxRate * 100).toFixed(1)}%)</span>
       <span id="calc-tax" style="color:var(--coral)">- 0 SFL</span>
     </div>
     <div class="calc-row total">
-      <span></span>
+      <span>Receita Líquida</span>
       <span id="calc-net">0 SFL</span>
     </div>
-
-    <!-- Price Alerts for this item -->
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--surface-border);">
-      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🎯 Alertas de Preço</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <input type="number" id="alert-up-val" step="0.0001" placeholder="Avisar se subir acima de..."
-          style="flex:1;padding:8px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:8px;color:var(--text-primary);font-size:12px;outline:none;">
-        <button onclick="window.__app.addPriceAlert('${itemName.replace(/'/g,"\\'")}', 'up', parseFloat(document.getElementById('alert-up-val').value))"
-          style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--emerald);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;">
-          ▲ Alta
-        </button>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <input type="number" id="alert-down-val" step="0.0001" placeholder="Avisar se cair abaixo de..."
-          style="flex:1;padding:8px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:8px;color:var(--text-primary);font-size:12px;outline:none;">
-        <button onclick="window.__app.addPriceAlert('${itemName.replace(/'/g,"\\'")}', 'down', parseFloat(document.getElementById('alert-down-val').value))"
-          style="background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.3);color:var(--coral);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;">
-          ▼ Baixa
-        </button>
-      </div>
+    <div class="calc-row" style="margin-top:12px; padding-top:12px; border-top:1px dashed var(--surface-border);">
+      <span style="font-weight:700;">Lucro Total (Líquido - Custo)</span>
+      <span id="calc-total-profit" style="font-weight:800; font-family:var(--font-mono);">0 SFL</span>
     </div>
   `);
   
-  // Trigger initial calculation immediately
-  setTimeout(() => window.__app.updateP2pCalc(priceInSfl, taxRate), 50);
+  setTimeout(() => window.__app.updateP2pCalc(priceInSfl, taxRate, cost), 50);
 }
 
-function updateP2pCalc(price, taxRate) {
+function updateP2pCalc(price, taxRate, cost) {
   const qtyInput = $('#calc-qty');
   if (!qtyInput) return;
   
@@ -1278,10 +1284,36 @@ function updateP2pCalc(price, taxRate) {
   const gross = qty * price;
   const tax = gross * taxRate;
   const net = gross - tax;
+  const totalCost = qty * cost;
+  const profit = net - totalCost;
   
   setText('#calc-gross', formatPrice(gross) + ' SFL');
   setText('#calc-tax', '- ' + formatPrice(tax) + ' SFL');
   setText('#calc-net', formatPrice(net) + ' SFL');
+  
+  const profitEl = $('#calc-total-profit');
+  if (profitEl) {
+    if (cost > 0) {
+      profitEl.innerText = (profit > 0 ? '+' : '') + profit.toFixed(4) + ' SFL';
+      profitEl.style.color = profit > 0 ? 'var(--emerald)' : (profit < 0 ? 'var(--coral)' : 'var(--text-primary)');
+    } else {
+      profitEl.innerText = '--';
+      profitEl.style.color = 'var(--text-tertiary)';
+    }
+  }
+  
+  const marginEl = $('#calc-margin-unit');
+  if (marginEl) {
+    if (cost > 0) {
+      const netUnit = price * (1 - taxRate);
+      const marginPct = ((netUnit - cost) / cost) * 100;
+      marginEl.innerText = (marginPct > 0 ? '+' : '') + marginPct.toFixed(1) + '%';
+      marginEl.style.color = marginPct > 0 ? 'var(--emerald)' : (marginPct < 0 ? 'var(--coral)' : 'var(--text-primary)');
+    } else {
+      marginEl.innerText = '--';
+      marginEl.style.color = 'var(--text-tertiary)';
+    }
+  }
 }
 
 // =====================================================

@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=139';
+import Storage from './storage.js?v=140';
 
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=139';
-import { t } from './i18n.js?v=139';
-import Farm from './farm.js?v=139';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=140';
+import { t } from './i18n.js?v=140';
+import Farm from './farm.js?v=140';
 
 // duplicate removed
 
@@ -1964,6 +1964,15 @@ function renderNotifSettings(notifPermission) {
       </div>
     </div>
   `;
+
+  const NOTIF_TYPES = {
+    crops: { key: 'crops', icon: '🌾', label: 'Colheitas' },
+    animals: { key: 'animals', icon: '🐾', label: 'Animais' },
+    fruits: { key: 'fruits', icon: '🍎', label: 'Frutas' },
+    resources: { key: 'resources', icon: '🪨', label: 'Recursos Naturais' },
+    market: { key: 'market', icon: '📈', label: 'Mercado (Metas / Pump)' },
+    deliveries: { key: 'deliveries', icon: '📦', label: 'Entregas Prontas' }
+  };
 
   const typeToggles = Object.values(NOTIF_TYPES).map(typeObj => `
     <div class="notif-item">

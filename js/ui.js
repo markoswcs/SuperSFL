@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=116';
-import { NOTIF_TYPES } from './notifications.js?v=116';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=116';
-import { t } from './i18n.js?v=116';
-import Farm from './farm.js?v=116';
+import Storage from './storage.js?v=117';
+import { NOTIF_TYPES } from './notifications.js?v=117';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=117';
+import { t } from './i18n.js?v=117';
+import Farm from './farm.js?v=117';
 
 // duplicate removed
 
@@ -17,7 +17,7 @@ import Farm from './farm.js?v=116';
 // ASSETS & CONFIG
 // =====================================================
 const ASSETS = {
-  SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/sfl.webp',
+  SFL: 'icons/flower-hq.png',
   COINS: 'https://sfl.world/img/source/coins.png',
   GEM: 'https://sfl.world/img/source/Gem.png',
   VIP: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/vip.webp',
@@ -168,7 +168,7 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- LEFT: Token Price -->
         <div style="flex-shrink:0;min-width:0;">
           <div class="card-title" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-            <img src="${ASSETS.SFL}" style="width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src='https://sfl.world/img/Flower.png'">
+            <img src="${ASSETS.SFL}" style="width:22px;height:22px;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 2px 6px rgba(245,158,11,0.4));" onerror="this.src='https://sfl.world/img/Flower.png'">
             <span style="font-size:11px;">Flower (SFL)</span>
           </div>
           <div style="font-family:var(--font-mono);font-size:clamp(22px,6vw,32px);font-weight:700;color:var(--amber-glow);line-height:1;white-space:nowrap;">

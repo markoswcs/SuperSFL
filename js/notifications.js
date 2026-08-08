@@ -140,7 +140,8 @@ class NotificationEngine {
             if (isHungry) msg = `${animal.name} está com fome.`;
             if (needsLove) msg = `${animal.name} precisa de carinho.`;
             
-            const img = `https://sfl.world/img/source/${encodeURIComponent(animal.name)}.png`;
+            let imgName = animal.type || animal.name.split(' ')[0];
+            const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
             this.sendPush(`Aviso Animal! ${animal.emoji}`, { body: msg, tag: 'animals', icon: img });
             this.notifiedIds.add(uid);
           }
@@ -177,7 +178,18 @@ class NotificationEngine {
             const uid = `res-${res.name}-${res.readyAt || res.msLeft}`;
             activeIdsThisTick.add(uid);
             if (!this.notifiedIds.has(uid)) {
-              const img = `https://sfl.world/img/source/${encodeURIComponent(res.name)}.png`;
+              let imgName = res.name;
+              if (res.name.includes('Tree')) imgName = 'Wood';
+              else if (res.name.includes('Stone')) imgName = 'Stone';
+              else if (res.name.includes('Iron')) imgName = 'Iron';
+              else if (res.name.includes('Gold')) imgName = 'Gold';
+              else if (res.name.includes('Crimstone')) imgName = 'Crimstone';
+              else if (res.name.includes('Sunstone')) imgName = 'Sunstone';
+              else if (res.name.includes('Beehive')) imgName = 'Honey';
+              else if (res.name.includes('Oil')) imgName = 'Oil';
+              else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
+              
+              const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
               this.sendPush(`${title} Pronta! ${res.emoji}`, { 
                 body: `Seu recurso ${res.name} (${res.amount} un) está pronto para coletar.`,
                 tag: tag,

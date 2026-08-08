@@ -1634,11 +1634,11 @@ function renderAlertsPage() {
     
     <div class="card mb-4" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);">
       <div style="font-size:13px; font-weight:800; color:var(--amber); display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-        ⚠️ Atenção: Como funciona
+        🤖 Inteligência 24/7
       </div>
       <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.6;">
-        Como a sua conta fica segura apenas no seu celular e <b>não temos acesso aos seus dados na nuvem</b>, o seu próprio navegador processa os alertas.<br><br>
-        Você precisa manter o aplicativo <b>aberto ou minimizado no fundo</b> para que os alertas toquem na hora certa.
+        O SFL Pro agora possui um <b>robô inteligente na nuvem</b> que monitora a sua fazenda 24 horas por dia.<br><br>
+        Você <b>não precisa</b> manter o aplicativo aberto! Pode fechar tudo, e nós te avisaremos no exato minuto em que suas coisas ficarem prontas.
       </div>
     </div>
 

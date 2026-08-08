@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=133';
-import { NOTIF_TYPES } from './notifications.js?v=133';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=133';
-import { t } from './i18n.js?v=133';
-import Farm from './farm.js?v=133';
+import Storage from './storage.js?v=134';
+import { NOTIF_TYPES } from './notifications.js?v=134';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=134';
+import { t } from './i18n.js?v=134';
+import Farm from './farm.js?v=134';
 
 // duplicate removed
 
@@ -1160,75 +1160,90 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       : (targetPriceNeeded !== null ? item.priceInSfl >= targetPriceNeeded : false);
     const isProfitTargetMissed = targetPriceNeeded !== null && !isTargetHit;
     
-    let cardBorder = '';
-    let cardShadow = '';
-    let targetBadgeHtml = '';
+    let cardBorder = 'rgba(255,255,255,0.06)';
+    let cardShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    let targetFooterHtml = '';
 
-    if (isTargetHit && (targetAlert || targetPriceNeeded !== null)) {
-      cardBorder = 'rgba(16,185,129,0.5)'; 
-      cardShadow = '0 0 12px rgba(16,185,129,0.1)';
-      targetBadgeHtml = `<div style="background:rgba(16,185,129,0.15);color:var(--emerald);padding:3px 6px;border-radius:6px;font-size:10px;font-weight:800;display:flex;align-items:center;gap:4px;"><span style="font-size:11px">✅</span> Meta +${itemProfitPct}%</div>`;
-    } else if (isProfitTargetMissed) {
-      cardBorder = 'rgba(239,68,68,0.3)'; 
-      cardShadow = '0 4px 12px rgba(0,0,0,0.2)';
-      targetBadgeHtml = `<div style="background:rgba(239,68,68,0.15);color:var(--coral);padding:3px 6px;border-radius:6px;font-size:9px;font-weight:800;text-align:right;line-height:1.2;"><div style="opacity:0.8;">Meta +${itemProfitPct}%</div><div>Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(3)}</div></div>`;
-    } else {
-      cardBorder = 'rgba(255,255,255,0.06)'; 
-      cardShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    if (itemProfitPct > 0 && targetPriceNeeded) {
+      if (isTargetHit) {
+        cardBorder = 'rgba(16,185,129,0.4)'; 
+        cardShadow = '0 0 16px rgba(16,185,129,0.15)';
+        targetFooterHtml = `
+          <div style="background:rgba(16,185,129,0.1); border-top:1px solid rgba(16,185,129,0.2); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--emerald); color:#000; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">✅ META +${itemProfitPct}%</span>
+              <span style="font-size:11px; font-weight:700; color:var(--emerald);">Atingida!</span>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:var(--emerald);">Alvo era ${targetPriceNeeded.toFixed(4)}</div>
+          </div>
+        `;
+      } else {
+        targetFooterHtml = `
+          <div style="background:rgba(0,0,0,0.2); border-top:1px solid rgba(255,255,255,0.04); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">🎯 META +${itemProfitPct}%</span>
+              <span style="font-size:11px; font-weight:700; color:var(--text-tertiary);">Alvo: ${targetPriceNeeded.toFixed(4)}</span>
+            </div>
+            <div style="font-size:11px; font-weight:800; color:var(--amber);">Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(4)}</div>
+          </div>
+        `;
+      }
     }
     
-    return `
-      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:12px; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:12px; box-shadow:${cardShadow}; position:relative; overflow:hidden; gap:10px; cursor:pointer;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
-        
-        ${isPump ? `<div style="position:absolute; top:8px; left:56px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP 🔥</div>` : ''}
+    const lucroColor = hasCustomCost ? (unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)') : 'var(--text-tertiary)';
+    const lucroValStr = hasCustomCost ? (unitProfit >= 0 ? '+' : '') + unitProfit.toFixed(4) : '--';
+    const lucroBadge = hasCustomCost ? `<span style="margin-left:4px; background:${unitProfit >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${lucroColor}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">${unitProfit >= 0 ? '+' : ''}${profitMargin.toFixed(0)}%</span>` : '';
 
-        <div style="display:flex; align-items:center; gap:10px; z-index:1;">
-          <div style="width:38px; height:38px; background:var(--surface-3); border:1px solid rgba(255,255,255,0.06); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:24px; height:24px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
+    return `
+      <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; cursor:pointer; transition:all 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
+        
+        ${isPump ? `<div style="position:absolute; top:12px; left:60px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP 🔥</div>` : ''}
+
+        <div style="padding:16px; display:flex; gap:14px; position:relative;">
+          
+          <!-- Icon -->
+          <div style="width:48px; height:48px; background:var(--surface-3); border-radius:12px; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
           </div>
           
-          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:2px; min-width:0;">
-            <!-- Top Row -->
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                <span style="font-size:15px; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
-                <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.05); padding:2px 5px; border-radius:4px; white-space:nowrap;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un</span>
+          <!-- Stats -->
+          <div style="flex:1; min-width:0;">
+            <!-- Title Row -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div style="display:flex; align-items:baseline; gap:6px; min-width:0;">
+                <span style="font-size:16px; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
+                <span style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un</span>
               </div>
-              <span style="font-size:13px; font-weight:900; color:var(--emerald); white-space:nowrap;">= ${totalSfl.toFixed(2)} SFL</span>
+              <div style="font-size:14px; font-weight:800; color:var(--emerald); white-space:nowrap;">= ${totalSfl.toFixed(2)}</div>
             </div>
             
-            <!-- Bottom Row -->
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:14px; font-weight:700; color:${isProfitTargetMissed ? 'var(--coral)' : (isTargetHit && targetPriceNeeded !== null ? 'var(--emerald)' : 'var(--text-secondary)')};">${item.priceInSfl.toFixed(4)} SFL</span>
-                ${trendHtml}
+            <!-- Data Grid -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; row-gap:10px; column-gap:8px;">
+              <!-- Preço -->
+              <div>
+                <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">Preço Mercado</div>
+                <div style="font-size:13px; font-weight:800; color:var(--text-secondary); display:flex; align-items:center;">
+                  ${item.priceInSfl.toFixed(4)} SFL ${trendHtml}
+                </div>
               </div>
-              ${targetBadgeHtml}
+              <!-- Lucro -->
+              <div style="text-align:right;">
+                <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">Seu Lucro</div>
+                <div style="font-size:13px; font-weight:800; color:${lucroColor};">
+                  ${lucroValStr} ${lucroBadge}
+                </div>
+              </div>
+              <!-- Custo -->
+              <div>
+                <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">Custo Compra</div>
+                <div style="font-size:12px; font-weight:700; color:var(--text-tertiary);">${hasCustomCost ? costToUse.toFixed(4) : '--'} SFL</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Divider -->
-        <div style="height:1px; background:rgba(255,255,255,0.04); margin:0; z-index:1;"></div>
-
-        <!-- Footer Stats -->
-        <div style="display:flex; justify-content:space-between; align-items:center; z-index:1;">
-          <div style="font-size:10px;">
-            <span style="color:var(--text-tertiary); font-weight:700; text-transform:uppercase; margin-right:4px;">Custo:</span>
-            <span style="color:${hasCustomCost ? 'var(--text-secondary)' : 'var(--text-tertiary)'}; font-weight:800;">${hasCustomCost ? costToUse.toFixed(4) : '--'}</span>
-          </div>
-          <div style="font-size:10px; display:flex; align-items:center;">
-            <span style="color:var(--text-tertiary); font-weight:700; text-transform:uppercase; margin-right:4px;">Lucro:</span>
-            <span style="color:${hasCustomCost ? (unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)') : 'var(--text-tertiary)'}; font-weight:800;">
-              ${hasCustomCost ? (unitProfit >= 0 ? '+' : '') + unitProfit.toFixed(4) + ' SFL' : '--'}
-            </span>
-            ${hasCustomCost ? `
-              <span style="margin-left:6px; background:${unitProfit >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">
-                ${unitProfit >= 0 ? '+' : ''}${profitMargin.toFixed(0)}%
-              </span>
-            ` : ''}
-          </div>
-        </div>
+        <!-- Footer (if target exists) -->
+        ${targetFooterHtml}
       </div>
     `;
   }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🤷</span><div class="empty-state-title">Nada no Estoque</div><div class="empty-state-sub" style="margin-top:8px;">Você não tem itens nesta categoria com preços no mercado, ou o seu estoque está zerado.</div></div>`);

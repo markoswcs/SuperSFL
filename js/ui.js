@@ -2475,7 +2475,6 @@ export default {
   renderNotifSettings,
   renderSettingsPage,
   renderToolsPage,
-  renderDeliveriesPage,
   renderLoadingState,
   showModal,
   hideModal,

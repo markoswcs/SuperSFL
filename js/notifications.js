@@ -111,9 +111,11 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
+            const img = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
             this.sendPush(`Colheita Pronta! ${crop.emoji}`, { 
               body: `Suas plantações de ${crop.name} (${crop.amount} un) estão prontas para colher.`,
-              tag: 'crops'
+              tag: 'crops',
+              icon: img
             });
             this.notifiedIds.add(uid);
           }
@@ -138,7 +140,8 @@ class NotificationEngine {
             if (isHungry) msg = `${animal.name} está com fome.`;
             if (needsLove) msg = `${animal.name} precisa de carinho.`;
             
-            this.sendPush(`Aviso Animal! ${animal.emoji}`, { body: msg, tag: 'animals' });
+            const img = `https://sfl.world/img/source/${encodeURIComponent(animal.name)}.png`;
+            this.sendPush(`Aviso Animal! ${animal.emoji}`, { body: msg, tag: 'animals', icon: img });
             this.notifiedIds.add(uid);
           }
         }
@@ -153,9 +156,11 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
+            const img = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
             this.sendPush(`Fruta Pronta! ${fruit.emoji}`, { 
               body: `Suas árvores de ${fruit.name} (${fruit.amount} un) estão prontas para colher.`,
-              tag: 'fruits'
+              tag: 'fruits',
+              icon: img
             });
             this.notifiedIds.add(uid);
           }
@@ -172,9 +177,11 @@ class NotificationEngine {
             const uid = `res-${res.name}-${res.readyAt || res.msLeft}`;
             activeIdsThisTick.add(uid);
             if (!this.notifiedIds.has(uid)) {
+              const img = `https://sfl.world/img/source/${encodeURIComponent(res.name)}.png`;
               this.sendPush(`${title} Pronta! ${res.emoji}`, { 
                 body: `Seu recurso ${res.name} (${res.amount} un) está pronto para coletar.`,
-                tag: tag
+                tag: tag,
+                icon: img
               });
               this.notifiedIds.add(uid);
             }
@@ -244,9 +251,11 @@ class NotificationEngine {
                 activeIdsThisTick.add(uid);
                 
                 if (!this.notifiedIds.has(uid)) {
+                  const img = `https://sfl.world/img/source/${encodeURIComponent(itemName)}.png`;
                   this.sendPush(`Meta de Lucro Atingida! 💰`, {
                     body: `${itemName} atingiu o preço de ${currentPrice.toFixed(4)} SFL! Venda agora para lucrar +${itemProfitPct}%.`,
-                    tag: 'market'
+                    tag: 'market',
+                    icon: img
                   });
                   this.notifiedIds.add(uid);
                 }
@@ -261,9 +270,11 @@ class NotificationEngine {
               const uid = `market-alert-${alert.item}-${alert.threshold}`;
               activeIdsThisTick.add(uid);
               if (!this.notifiedIds.has(uid)) {
+                const img = `https://sfl.world/img/source/${encodeURIComponent(alert.item)}.png`;
                 this.sendPush(`ALERTA: PUMP no Mercado! 🚀`, {
                   body: `${alert.item} subiu para ${currentPrice.toFixed(4)} SFL!`,
-                  tag: 'market'
+                  tag: 'market',
+                  icon: img
                 });
                 this.notifiedIds.add(uid);
               }

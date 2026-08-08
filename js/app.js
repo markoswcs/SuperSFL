@@ -551,9 +551,7 @@ function renderCurrentTab() {
     case 'market':
       UI.renderMarketPage(State.prices, State.exchange);
       break;
-    case 'deliveries':
-      UI.renderDeliveriesPage();
-      break;
+
     case 'alerts':
       UI.renderAlertsPage();
       const perm = Notification.permission;

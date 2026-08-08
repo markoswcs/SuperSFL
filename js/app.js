@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=122';
-import API from './api.js?v=122';
-import Farm from './farm.js?v=122';
-import UI from './ui.js?v=122';
-import Notifications from './notifications.js?v=122';
-import i18n from './i18n.js?v=122';
+import Storage from './storage.js?v=123';
+import API from './api.js?v=123';
+import Farm from './farm.js?v=123';
+import UI from './ui.js?v=123';
+import Notifications from './notifications.js?v=123';
+import i18n from './i18n.js?v=123';
 
 // --- State ---
 const State = {
@@ -94,7 +94,7 @@ async function init() {
       const resBrl = num * rateBrl;
       const resUsd = num * rateUsd;
       const el = document.getElementById('flw-converter-result');
-      if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)}<br><span style="font-size:9px;color:var(--text-tertiary);">($${resUsd.toFixed(2)})</span>`;
+      if (el) el.innerHTML = `R$ ${resBrl.toFixed(2)}<br><span style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">($${resUsd.toFixed(2)})</span>`;
     },
     promptGlobalAlerts: () => {
       const html = `

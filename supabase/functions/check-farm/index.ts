@@ -96,12 +96,16 @@ serve(async (req) => {
 
         checkCategory(parsedFarm.crops, c => c.name, 'Plantação de');
         checkCategory(parsedFarm.animals, a => a.type, 'Animal');
-        checkCategory(parsedFarm.fruitPatches, f => f.name, 'Fruta');
+        checkCategory(parsedFarm.fruits, f => f.name, 'Fruta');
         checkCategory(parsedFarm.trees, () => 'Madeira', 'Recurso');
         checkCategory(parsedFarm.rocks, r => r.name, 'Recurso');
         checkCategory(parsedFarm.beehives, () => 'Mel', 'Recurso');
         checkCategory(parsedFarm.flowers, f => f.name, 'Flor');
         checkCategory(parsedFarm.oil, () => 'Óleo', 'Recurso');
+        checkCategory(parsedFarm.composting, c => c.name, 'Composteira');
+        checkCategory(parsedFarm.greenhouse, g => g.name, 'Estufa');
+        checkCategory(parsedFarm.buildings, b => b.name, 'Construção');
+        checkCategory(parsedFarm.cropMachine, c => c.name, 'Máquina');
         
         // Mushrooms and Chores
         checkCategory(parsedFarm.mushrooms, () => 'Cogumelo', 'Recurso');

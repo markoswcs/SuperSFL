@@ -277,6 +277,10 @@ class NotificationEngine {
       checkRes(parsedFarm.beehives, 'beehives', 'Mel');
       checkRes(parsedFarm.flowers, 'flowers', 'Flor');
       checkRes(parsedFarm.oil, 'oil', 'Óleo');
+      checkRes(parsedFarm.composting, 'composting', 'Composteira');
+      checkRes(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
+      checkRes(parsedFarm.buildings, 'buildings', 'Construção');
+      checkRes(parsedFarm.cropMachine, 'cropMachine', 'Máquina');
     }
 
     // 5. DELIVERIES

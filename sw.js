@@ -87,3 +87,23 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Handle incoming Web Push notifications from Supabase
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      const title = data.title || 'SFL Pro';
+      const options = {
+        body: data.body || '',
+        icon: data.icon || 'https://sfl.world/favicon.ico',
+        tag: data.tag || 'sfl-push',
+        badge: 'https://sfl.world/favicon.ico'
+      };
+      
+      event.waitUntil(self.registration.showNotification(title, options));
+    } catch (e) {
+      console.error('Error parsing push data', e);
+    }
+  }
+});

@@ -47,14 +47,24 @@ class NotificationEngine {
     }
   }
 
+  // Helper for VAPID keys
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
   async requestPermission() {
-    if (!('Notification' in window)) {
-      alert('Seu navegador não suporta notificações de sistema.');
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      alert('Seu navegador não suporta Web Push.');
       this.setPref('master', false);
       return false;
     }
-    
-    if (Notification.permission === 'granted') return true;
     
     try {
       const permission = await Notification.requestPermission();
@@ -62,11 +72,60 @@ class NotificationEngine {
         this.setPref('master', false);
         return false;
       }
-      // Test notification
-      this.sendPush('SFL PRO: Notificações Ativadas! ✅', { body: 'Você receberá avisos da sua fazenda por aqui.' });
+
+      // IMPORTANTE: Insira sua Chave Pública VAPID aqui
+      const publicVapidKey = 'COLOQUE_SUA_CHAVE_PUBLICA_VAPID_AQUI'; 
+      if (publicVapidKey === 'COLOQUE_SUA_CHAVE_PUBLICA_VAPID_AQUI') {
+        alert('O desenvolvedor precisa configurar a chave VAPID no código para as notificações funcionarem 24/7.');
+        return true;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(publicVapidKey)
+        });
+      }
+
+      const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
+      const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+      
+      const farmId = window.__app?.State?.farmId;
+      if (!farmId) {
+         console.error('Farm ID não encontrado');
+         return true;
+      }
+
+      // URL do Supabase fornecida pelo usuário
+      const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
+      const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
+
+      await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          farm_id: farmId,
+          endpoint: subscription.endpoint,
+          p256dh: p256dh,
+          auth: auth,
+          preferences: this.prefs
+        })
+      });
+
+      console.log('Push subscription salva no Supabase!');
+      this.sendPush('Push 24/7 Ativado! ✅', { body: 'Você receberá notificações através do Supabase.', tag: 'system' });
       return true;
     } catch (e) {
       console.error(e);
+      alert('Erro ao ativar notificações 24/7: ' + e.message);
       this.setPref('master', false);
       return false;
     }

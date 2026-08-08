@@ -198,6 +198,68 @@ async function init() {
       UI.renderAlertsPage();
       UI.showToast('Alerta removido.');
     },
+    promptManualPurchase: () => {
+      const html = `
+        <div style="padding:16px;">
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:4px;">Nome do Item</label>
+            <input type="text" id="manual-purchase-item" placeholder="Ex: Sunflower" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);">
+          </div>
+          <div style="margin-bottom:12px;display:flex;gap:12px;">
+            <div style="flex:1;">
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:4px;">Quantidade</label>
+              <input type="number" id="manual-purchase-qty" step="1" placeholder="Ex: 10" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:4px;">Custo (SFL/Flower)</label>
+              <input type="number" id="manual-purchase-cost" step="0.0001" placeholder="Ex: 2.5" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);">
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+             <label style="display:block;font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:4px;">Data (Opcional)</label>
+             <input type="datetime-local" id="manual-purchase-date" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);">
+          </div>
+          <button id="manual-purchase-save" class="btn btn-primary" style="width:100%; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Registrar Compra</button>
+        </div>
+      `;
+      UI.showModal('🛒 Registrar Compra', html);
+      setTimeout(() => {
+        const btnSave = document.getElementById('manual-purchase-save');
+        if (btnSave) {
+          btnSave.onclick = () => {
+            const item = document.getElementById('manual-purchase-item').value.trim();
+            const qty = parseFloat(document.getElementById('manual-purchase-qty').value);
+            const cost = parseFloat(document.getElementById('manual-purchase-cost').value);
+            const dateStr = document.getElementById('manual-purchase-date').value;
+            
+            if (!item || isNaN(qty) || isNaN(cost)) {
+              UI.showToast('Preencha os campos (Nome, Qtd, Custo).', 'error');
+              return;
+            }
+
+            const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
+            let salesLog = [];
+            try { salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]'); } catch(e){}
+            
+            salesLog.push({
+              id: 'manual_' + Date.now(),
+              type: 'purchase',
+              item: item,
+              qty: qty,
+              cost: cost,
+              timestamp: ts
+            });
+            
+            localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
+            UI.showToast('Compra registrada com sucesso!');
+            UI.hideModal();
+            if (State.currentTab === 'market') {
+              UI.renderMarketFiltered('', 'history');
+            }
+          };
+        }
+      }, 50);
+    },
     State,
   };
 

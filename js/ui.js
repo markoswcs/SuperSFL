@@ -1589,7 +1589,6 @@ function renderDeliveriesPage() {
   if (!el) return;
 
   const farm = window.__app.State.parsedFarm;
-
   if (!farm) {
     el.innerHTML = `
       <div class="empty-state" style="margin-top:48px">
@@ -1612,102 +1611,122 @@ function renderDeliveriesPage() {
     return;
   }
 
-    const chores = Array.isArray(farm.chores) ? farm.chores : farm.chores?.active || [];
+  const chores = Array.isArray(farm.chores) ? farm.chores : farm.chores?.active || [];
   let deliveries = chores.filter(c => c.type === 'delivery');
   const tasks = chores.filter(c => c.type === 'chore');
 
-  // --- FILTER LOGIC ---
-  window.__app.State.deliveriesFilter = window.__app.State.deliveriesFilter || 'ALL';
-  const activeFilter = window.__app.State.deliveriesFilter;
-
-  // Evaluate if delivery is 'sent' (done)
-  function isDeliveryDone(d) {
-    if (!d.items) return false;
-    const inv = farm.inventory || {};
-    const allOwned = {};
-    [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])].forEach(item => {
-      allOwned[item.name] = item.qty;
-    });
-    let done = true;
-    for (let [name, qty] of Object.entries(d.items)) {
-      if ((allOwned[name] ?? 0) < qty) done = false;
-    }
-    return done;
-  }
-
-  if (activeFilter === 'SENT') {
-    deliveries = deliveries.filter(isDeliveryDone);
-  } else if (activeFilter === 'FLOWER') {
-    deliveries = deliveries.filter(d => d.rewardSfl && d.rewardSfl > 0);
-  } else if (activeFilter === 'COINS') {
-    deliveries = deliveries.filter(d => d.rewardCoins && d.rewardCoins > 0);
-  } else if (activeFilter === 'SEASONAL') {
-    deliveries = deliveries.filter(d => (d.rewardMarks && d.rewardMarks > 0) || (d.rewardTickets && d.rewardTickets > 0));
-  }
-  // --------------------
-
-  // Get current inventory for cross-reference
+  // Get current inventory
   const inv = farm.inventory || {};
   const allOwned = {};
   [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])].forEach(item => {
     allOwned[item.name] = item.qty;
   });
 
-  function itemRow(name, required) {
-    const have = allOwned[name] ?? 0;
-    const pct = Math.min(100, (have / required) * 100);
-    const done = have >= required;
+  // Determine Season Ticket from inventory heuristics
+  const possibleTickets = ['Shiny Feather', 'Mermaid Scale', 'Tulip Bulb', 'Scroll', 'Bullion', 'Horseshoe', 'Kraken Tentacle'];
+  let seasonTicket = 'Shiny Feather';
+  for (let t of possibleTickets) {
+    if (allOwned[t] !== undefined) {
+      seasonTicket = t;
+      break;
+    }
+  }
+
+  function renderItemsHtml(d) {
+    let html = '';
+    Object.entries(d.items || {}).forEach(([name, qty]) => {
+      const have = allOwned[name] ?? 0;
+      const req = qty;
+      const done = have >= req;
+      html += `
+        <div style="position:relative; margin:2px;">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated; ${done ? '' : 'filter: grayscale(100%); opacity:0.5;'}">
+          ${done ? '' : `<div style="position:absolute;bottom:-6px;right:-10px;background:#e53e3e;color:#fff;font-size:9px;font-weight:900;padding:2px 4px;border-radius:4px;border:1px solid #fff;line-height:1;z-index:2;">${formatNumber(have)}/${formatNumber(req)}</div>`}
+        </div>
+      `;
+    });
+    return html;
+  }
+
+  function renderDeliveryGridCard(d, rewardHtml) {
+    const npcImg = `https://sfl.world/img/source/${encodeURIComponent(d.npc)}.png`;
+    const itemsHtml = renderItemsHtml(d);
+    
     return `
-      <div style="margin-bottom:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-          <div style="width:28px; height:28px; background:rgba(255,255,255,0.05); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(name)}.png"
-                 style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;"
-                 onerror="this.style.display='none'">
-          </div>
-          <span style="font-size:14px; font-weight:700; color:var(--text-primary);">${name}</span>
-          <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
-            <span style="font-size:13px; font-weight:800; color:${done ? 'var(--emerald)' : 'var(--amber)'};">${formatNumber(have)}</span>
-            <span style="font-size:12px; font-weight:600; color:var(--text-tertiary);">/ ${formatNumber(required)}</span>
-            ${done ? '<span style="font-size:14px;">✅</span>' : ''}
+      <div class="spring-in" style="background:#fcedcb; border:3px solid #b8754b; border-radius:12px; display:flex; flex-direction:column; overflow:visible; position:relative; min-height:100px; box-shadow:0 4px 0 rgba(0,0,0,0.15);">
+        <div style="padding:8px; flex:1; display:flex; align-items:center; justify-content:space-around; gap:4px; position:relative; z-index:1;">
+          <img src="${npcImg}" onerror="this.src='https://sfl.world/favicon.ico'" style="width:40px;height:40px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,0.2)); flex-shrink:0;">
+          <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center; justify-content:center; flex:1;">
+            ${itemsHtml}
           </div>
         </div>
-        <div style="background:var(--surface-border);border-radius:100px;height:4px;overflow:hidden;width:100%;">
-          <div style="height:100%;border-radius:100px;width:${pct}%;background:${done ? 'var(--emerald)' : 'var(--amber)'};transition:width 0.5s ease; box-shadow:0 0 8px ${done ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'};"></div>
+        ${rewardHtml || ''}
+        <div style="position:absolute; top:4px; right:4px; z-index:2;">
+          <img src="https://sfl.world/img/source/Love%20Letter.png" onerror="this.style.display='none'" style="width:16px;height:16px;image-rendering:pixelated;">
         </div>
       </div>
     `;
   }
 
-  function deliveryCard(d, idx) {
-    const itemsHtml = Object.entries(d.items || {}).map(([name, qty]) => itemRow(name, qty)).join('');
-    const rewardText = [];
-    if (d.rewardSfl) rewardText.push(`${formatSfl(d.rewardSfl)} SFL`);
-    if (d.rewardCoins) rewardText.push(`${formatNumber(d.rewardCoins)} Coins`);
-    if (d.rewardMarks) rewardText.push(`${d.rewardMarks} Marks`);
-    if (d.rewardTickets) rewardText.push(`${d.rewardTickets} Tickets`);
-    if (d.rewardItems) Object.entries(d.rewardItems).forEach(([n, q]) => rewardText.push(`${q}x ${n}`));
+  const coinDeliveries = deliveries.filter(d => d.rewardCoins > 0);
+  const flowerDeliveries = deliveries.filter(d => d.rewardSfl > 0);
+  const ticketDeliveries = deliveries.filter(d => d.rewardTickets > 0 || d.rewardMarks > 0);
 
-    const npcImg = `https://sfl.world/img/source/${d.npc.replace(/\s+/g, '')}.png`;
-
-    return `
-      <div class="spring-in" style="background:var(--surface-2);border:1px solid var(--surface-border);border-radius:20px;padding:16px;margin-bottom:16px;animation-delay:${idx * 40}ms;box-shadow:var(--shadow-md);position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:radial-gradient(circle, var(--emerald-subtle), transparent 70%);opacity:0.3;pointer-events:none;"></div>
-        
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1;">
-          <div style="width:48px;height:48px;background:linear-gradient(135deg, var(--surface-3), var(--surface-2));border:2px solid rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); font-size:24px; font-weight:900; color:var(--text-secondary); text-transform:uppercase;">${d.npc.charAt(0)}</div>
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:16px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">${d.npc}</div>
-            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">📦 Pedido de Entrega</div>
-          </div>
-          ${rewardText.length ? `
-            <div style="text-align:right;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(16,185,129,0.1);">
-              <div style="font-size:9px;color:var(--emerald);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:2px;">Recompensa</div>
-              <div style="font-size:14px;font-weight:900;color:var(--emerald);">${rewardText.join(' + ')}</div>
-            </div>
-          ` : ''}
+  let coinsHtml = '';
+  if (coinDeliveries.length > 0) {
+    const cardsHtml = coinDeliveries.map(d => {
+      const rewardBar = `
+        <div style="background:#fcb326; border-top:3px solid #b8754b; padding:4px; text-align:center; font-family:var(--font-mono); font-size:15px; font-weight:900; color:#3b2015; display:flex; align-items:center; justify-content:center; gap:6px; position:relative; z-index:1;">
+          ${formatNumber(d.rewardCoins)} <img src="https://sfl.world/img/source/Coins.png" style="width:18px;height:18px;image-rendering:pixelated;">
         </div>
-        <div style="position:relative;z-index:1;">${itemsHtml}</div>
+      `;
+      return renderDeliveryGridCard(d, rewardBar);
+    }).join('');
+    coinsHtml = `
+      <div style="margin-bottom:24px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:#fff; border:3px solid #4a5568; border-radius:12px; padding:4px 12px; margin-bottom:12px; font-family:var(--font-mono); font-size:16px; font-weight:900; color:#2d3748; text-transform:uppercase; box-shadow:0 4px 0 rgba(0,0,0,0.1);">
+          <img src="https://sfl.world/img/source/Coins.png" style="width:24px;height:24px;image-rendering:pixelated;margin-left:-12px;margin-top:-6px;"> Moedas
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:16px 12px;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  let flowerHtml = '';
+  if (flowerDeliveries.length > 0) {
+    const cardsHtml = flowerDeliveries.map(d => {
+      const rewardBar = `
+        <div style="background:#fcb326; border-top:3px solid #b8754b; padding:4px; text-align:center; font-family:var(--font-mono); font-size:15px; font-weight:900; color:#3b2015; display:flex; align-items:center; justify-content:center; gap:6px; position:relative; z-index:1;">
+          ${formatSfl(d.rewardSfl)} <img src="https://sfl.world/img/source/Block%20Buck.png" onerror="this.src='https://sfl.world/favicon.ico'" style="width:18px;height:18px;image-rendering:pixelated;">
+        </div>
+      `;
+      return renderDeliveryGridCard(d, rewardBar);
+    }).join('');
+    flowerHtml = `
+      <div style="margin-bottom:24px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:#fff; border:3px solid #4a5568; border-radius:12px; padding:4px 12px; margin-bottom:12px; font-family:var(--font-mono); font-size:16px; font-weight:900; color:#2d3748; text-transform:uppercase; box-shadow:0 4px 0 rgba(0,0,0,0.1);">
+          <img src="https://sfl.world/img/source/Block%20Buck.png" onerror="this.src='https://sfl.world/favicon.ico'" style="width:24px;height:24px;image-rendering:pixelated;margin-left:-12px;margin-top:-6px;"> FLOWER
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:16px 12px;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  let ticketHtml = '';
+  if (ticketDeliveries.length > 0) {
+    const cardsHtml = ticketDeliveries.map(d => renderDeliveryGridCard(d, null)).join('');
+    ticketHtml = `
+      <div style="margin-bottom:24px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:#fff; border:3px solid #4a5568; border-radius:12px; padding:4px 12px; margin-bottom:12px; font-family:var(--font-mono); font-size:16px; font-weight:900; color:#2d3748; text-transform:uppercase; box-shadow:0 4px 0 rgba(0,0,0,0.1);">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(seasonTicket)}.png" onerror="this.src='https://sfl.world/favicon.ico'" style="width:24px;height:24px;image-rendering:pixelated;margin-left:-12px;margin-top:-6px;transform:rotate(-15deg);"> ${seasonTicket}
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:16px 12px;">
+          ${cardsHtml}
+        </div>
       </div>
     `;
   }
@@ -1758,57 +1777,26 @@ function renderDeliveriesPage() {
     `;
   }
 
-  const deliveriesHtml = deliveries.length > 0
-    ? deliveries.map((d, i) => deliveryCard(d, i)).join('')
-    : `<div style="text-align:center;padding:24px;color:var(--text-tertiary);font-size:14px;">Nenhuma entrega ativa 🎉</div>`;
-
   const choresHtml = tasks.length > 0
     ? tasks.map((c, i) => choreCard(c, i)).join('')
     : `<div style="text-align:center;padding:24px;color:var(--text-tertiary);font-size:14px;">Nenhuma tarefa ativa 🎉</div>`;
 
+  if (deliveries.length === 0) {
+    coinsHtml = `<div style="text-align:center;padding:24px;color:var(--text-tertiary);font-size:14px;">Nenhuma entrega ativa 🎉</div>`;
+  }
+
   el.innerHTML = `
-    <div style="padding-bottom:8px;">
+    <div style="padding-bottom:16px;">
+      ${coinsHtml}
+      ${flowerHtml}
+      ${ticketHtml}
 
-      <!-- Summary Bar -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-        <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;padding:14px;text-align:center;">
-          <div style="font-size:28px;font-weight:900;color:var(--sky);">${deliveries.length}</div>
-          <div style="font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Entregas</div>
-        </div>
-        <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;padding:14px;text-align:center;">
-          <div style="font-size:28px;font-weight:900;color:var(--amber);">${tasks.length}</div>
-          <div style="font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Tarefas</div>
-        </div>
+      <div style="font-size:11px;font-weight:900;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-top:32px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <span style="flex:1;height:1px;background:var(--surface-border);"></span>
+        ⭐ Tarefas do Quadro
+        <span style="flex:1;height:1px;background:var(--surface-border);"></span>
       </div>
-
-      
-      <!-- Filter Bar -->
-      <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; margin-bottom:16px; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
-        ${['ALL', 'SENT', 'FLOWER', 'SEASONAL', 'COINS'].map(f => {
-          const isActive = activeFilter === f;
-          const bg = isActive ? 'var(--amber-subtle)' : 'var(--surface-3)';
-          const border = isActive ? 'var(--amber)' : 'var(--surface-border)';
-          const color = isActive ? 'var(--amber)' : 'var(--text-secondary)';
-          let label = f;
-          if (f === 'ALL') label = 'TUDO';
-          if (f === 'SENT') label = 'PRONTOS';
-          if (f === 'FLOWER') label = 'FLOWER';
-          if (f === 'SEASONAL') label = 'TICKETS';
-          if (f === 'COINS') label = 'MOEDAS';
-          
-          return `<button onclick="window.__app.State.deliveriesFilter='${f}'; window.__app.renderDeliveriesPage();" 
-                  style="background:${bg}; border:1px solid ${border}; color:${color}; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer;">${label}</button>`;
-        }).join('')}
-      </div>
-
-      <!-- Deliveries Section -->
-      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">📦 Pedidos de Entrega</div>
-      ${deliveriesHtml}
-
-      <!-- Chores Section -->
-      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-top:20px;margin-bottom:10px;">⭐ Tarefas do Quadro</div>
       ${choresHtml}
-
     </div>
   `;
 }

@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=134';
-import API from './api.js?v=134';
-import Farm from './farm.js?v=134';
-import UI from './ui.js?v=134';
-import Notifications from './notifications.js?v=134';
-import i18n from './i18n.js?v=134';
+import Storage from './storage.js?v=135';
+import API from './api.js?v=135';
+import Farm from './farm.js?v=135';
+import UI from './ui.js?v=135';
+import Notifications from './notifications.js?v=135';
+import i18n from './i18n.js?v=135';
 
 // --- State ---
 const State = {
@@ -390,8 +390,8 @@ async function refreshData(force = false) {
       // State.parsedFarm = null;
     }
 
-    if (State.parsedFarm) {
-      Notifications.scheduleAllNotifications(State.parsedFarm, exchange?.sfl?.usd);
+    if (State.parsedFarm && window.__app.NotificationEngine) {
+      window.__app.NotificationEngine.process(State.parsedFarm);
     }
 
     renderCurrentTab();

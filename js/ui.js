@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=134';
-import { NOTIF_TYPES } from './notifications.js?v=134';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=134';
-import { t } from './i18n.js?v=134';
-import Farm from './farm.js?v=134';
+import Storage from './storage.js?v=135';
+import { NOTIF_TYPES } from './notifications.js?v=135';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=135';
+import { t } from './i18n.js?v=135';
+import Farm from './farm.js?v=135';
 
 // duplicate removed
 
@@ -1848,72 +1848,68 @@ function renderToolsPage() {
 // =====================================================
 
 function renderAlertsPage() {
-  const log = Storage.getAlertLog();
-  const priceAlerts = Storage.getPriceAlerts ? Storage.getPriceAlerts() : [];
-
-  // --- Per-Item Price Alerts Section ---
-  const alertsHtml = priceAlerts.length > 0
-    ? priceAlerts.map(a => `
-      <div class="spring-in" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--surface-border);">
-        <img src="https://sfl.world/img/source/${encodeURIComponent(a.item)}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:13px;font-weight:800;color:var(--text-primary);">${a.item}</div>
-          <div style="font-size:11px;color:${a.type === 'up' ? 'var(--emerald)' : 'var(--coral)'};font-weight:700;margin-top:1px;">
-            ${a.type === 'up' ? '▲ Avisar se subir acima de' : '▼ Avisar se cair abaixo de'} ${formatPrice(a.threshold)} SFL
-          </div>
-        </div>
-        <button onclick="window.__app.deletePriceAlert('${a.item.replace(/'/g,"\\'")}', '${a.type}')"
-          style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:700;">
-          ✕
-        </button>
+  const prefs = window.__app.NotificationEngine ? window.__app.NotificationEngine.prefs : {};
+  
+  const html = `
+    <div class="section-header mb-3">
+      <div class="section-title">Central de Notificações</div>
+    </div>
+    
+    <div class="card mb-4" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);">
+      <div style="font-size:13px; font-weight:800; color:var(--amber); display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        ⚠️ Atenção: Como funciona
       </div>
-    `).join('')
-    : `<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:13px;">Nenhum alerta de preço configurado.<br>Clique em um item no <strong>Mercado</strong> e adicione um alerta!</div>`;
+      <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.6;">
+        Como a sua conta fica segura apenas no seu celular e <b>não temos acesso aos seus dados na nuvem</b>, o seu próprio navegador processa os alertas.<br><br>
+        Você precisa manter o aplicativo <b>aberto ou minimizado no fundo</b> para que os alertas toquem na hora certa.
+      </div>
+    </div>
 
-  const priceAlertSection = `
-    <div style="margin-bottom:20px;">
-      <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">🎯 Alertas de Preço por Item</div>
-      <div style="background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;overflow:hidden;">
-        ${alertsHtml}
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="notif-row master" style="padding:16px; background:var(--surface-3); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:15px; font-weight:800; color:var(--text-primary);">Permitir Notificações</span>
+          <span style="font-size:11px; font-weight:600; color:var(--text-tertiary);">Ative para receber avisos nativos do celular</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" onchange="window.__app.NotificationEngine.setPref('master', this.checked)" ${prefs.master ? 'checked' : ''}>
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <div style="padding:8px 0;">
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🌽 Plantações (Colheitas)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crops', this.checked)" ${prefs.crops ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🐔 Animais (Fome / Coleta)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('animals', this.checked)" ${prefs.animals ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🍎 Árvores Frutíferas</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('fruits', this.checked)" ${prefs.fruits ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🪨 Recursos Naturais</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('resources', this.checked)" ${prefs.resources ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">📈 Mercado (Metas / Pump)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('market', this.checked)" ${prefs.market ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13px; font-weight:700;">📦 Entregas Prontas</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('deliveries', this.checked)" ${prefs.deliveries ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
       </div>
     </div>
   `;
-
-  // Inject price alert section into alerts-list
-  const listEl = $('#alerts-list');
-  if (listEl) {
-    if (log.length === 0) {
-      listEl.innerHTML = `
-        <div class="empty-state">
-          <span class="empty-state-icon">🔕</span>
-          <div class="empty-state-title">${t('alerts_empty_title')}</div>
-          <div class="empty-state-sub">${t('alerts_empty_sub')}</div>
-        </div>
-      `;
-    } else {
-      listEl.innerHTML = log.map(a => `
-        <div class="alert-item">
-          <div class="alert-dot ${a.dot ?? 'amber'}"></div>
-          <div class="alert-content">
-            <div class="alert-title">${a.title}</div>
-            <div class="alert-time">${a.body ?? ''} · ${timeAgo(a.time)}</div>
-          </div>
-        </div>
-      `).join('');
-    }
+  
+  const container = document.getElementById('tab-alerts');
+  if (container) {
+    container.innerHTML = html;
   }
-
-  // Inject price alert management section before the history
-  const historyHeader = document.querySelector('#tab-alerts .section-header');
-  let priceAlertContainer = $('#price-alerts-container');
-  if (!priceAlertContainer) {
-    priceAlertContainer = document.createElement('div');
-    priceAlertContainer.id = 'price-alerts-container';
-    if (historyHeader) {
-      historyHeader.parentNode.insertBefore(priceAlertContainer, historyHeader);
-    }
-  }
-  priceAlertContainer.innerHTML = priceAlertSection;
 }
 
 function updateAlertBadge() {

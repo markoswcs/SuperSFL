@@ -3,7 +3,7 @@
  * Garante que o app seja instalável no celular/desktop
  */
 
-const CACHE_NAME = 'sflpro-v134';
+const CACHE_NAME = 'sflpro-v135';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -66,5 +66,24 @@ self.addEventListener('fetch', (e) => {
         return response;
       })
       .catch(() => caches.match(e.request))
+  );
+});
+
+// Focus app when clicking a notification
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Focus the first matching window if available
+      for (const client of clientList) {
+        if (client.url.includes('/SuperSFL/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow('/SuperSFL/');
+      }
+    })
   );
 });

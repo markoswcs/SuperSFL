@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=125';
-import API from './api.js?v=125';
-import Farm from './farm.js?v=125';
-import UI from './ui.js?v=125';
-import Notifications from './notifications.js?v=125';
-import i18n from './i18n.js?v=125';
+import Storage from './storage.js?v=126';
+import API from './api.js?v=126';
+import Farm from './farm.js?v=126';
+import UI from './ui.js?v=126';
+import Notifications from './notifications.js?v=126';
+import i18n from './i18n.js?v=126';
 
 // --- State ---
 const State = {
@@ -86,6 +86,10 @@ async function init() {
     Farm,
     openP2pCalc: UI.openP2pCalc,
     updateP2pCalc: UI.updateP2pCalc,
+    showTargetProfit: UI.showTargetProfit,
+    // Returns the current fully-parsed farm object so UI callbacks can access live data
+    getFarmData: () => State.parsedFarm || {},
+    getEstimatedCost: UI.getEstimatedCost,
     switchTab: (tabId) => {
       switchTab(tabId);
     },

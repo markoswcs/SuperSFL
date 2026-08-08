@@ -878,7 +878,14 @@ function parseLandInfo(landInfo) {
     charm:       land.charm ?? 0,
     cheer:       land.cheer ?? 0,
     taxFreeSFL:  parseFloat(land.taxFreeSFL) || 0,
-    taxRate:     land.taxResource !== undefined ? (parseFloat(land.taxResource) * 100) : 10,
+    taxRate:     (function() {
+      // If the API gives us taxResource (a decimal e.g. 0.15), use it directly
+      if (land.taxResource !== undefined) return parseFloat(land.taxResource) * 100;
+      // Otherwise use official island-based rates
+      const islandMap = { 'basic': 0, 'spring': 50, 'desert': 20, 'volcano': 15 };
+      const t = land.type ?? 'volcano';
+      return islandMap[t] !== undefined ? islandMap[t] : 15;
+    })(),
     createdDate: land.created ?? null,
     referrals:   land.referrals ?? { totalReferrals: 0, totalVIPReferrals: 0 },
     isVip:       land.vip ?? false,
@@ -900,6 +907,7 @@ function parseLandInfo(landInfo) {
     composting:  [],
     flowers:     [],
     cropMachine: [],
+    rawInventory: {},
     inventory:   { crops: [], resources: [], tools: [], food: [], special: [] },
     chores:      { active: [], skipped: 0, completed: 0 },
     _isLandInfoOnly: true,
@@ -952,8 +960,10 @@ function parseFarm(farmData) {
     bumpkinLevel,
     islandType,
     taxRate:     (function(){
-      // Derive tax from island if not explicitly on the API response for authenticated calls
-      const map = { 'basic': 0, 'spring': 10, 'desert': 20, 'volcano': 15 };
+      // Official SFL marketplace tax rates per island type
+      // Source: Sunflower Land docs / sfl.world API
+      // Spring Island = 50% (entry-level), Desert = 20%, Volcano = 15% (advanced)
+      const map = { 'basic': 0, 'spring': 50, 'desert': 20, 'volcano': 15 };
       return map[islandType] !== undefined ? map[islandType] : 15;
     })(),
     balance:     parseFloat(farm.balance) || 0,
@@ -978,6 +988,15 @@ function parseFarm(farmData) {
     flowers:     parseFlowers(farm),
     cropMachine: parseCropMachine(farm),
     bumpkin:     parseBumpkin(farm),
+    rawInventory: (function() {
+      // Flat name->qty map for fast lookup (e.g. rawInventory['Pumpkin'] = 42)
+      const raw = {};
+      Object.entries(farm.inventory || {}).forEach(([k, v]) => {
+        const n = parseFloat(v);
+        if (n > 0) raw[k] = n;
+      });
+      return raw;
+    })(),
     inventory:   parseInventory(farm),
     chores:      parseChores(farm),
     mushrooms:   parseMushrooms(farm),

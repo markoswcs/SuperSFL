@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=110';
-import API from './api.js?v=110';
-import Farm from './farm.js?v=110';
-import UI from './ui.js?v=110';
-import Notifications from './notifications.js?v=110';
-import i18n from './i18n.js?v=110';
+import Storage from './storage.js?v=111';
+import API from './api.js?v=111';
+import Farm from './farm.js?v=111';
+import UI from './ui.js?v=111';
+import Notifications from './notifications.js?v=111';
+import i18n from './i18n.js?v=111';
 
 // --- State ---
 const State = {
@@ -322,8 +322,47 @@ async function refreshData(force = false) {
             }
           });
         }
+        
+        // --- Detect Automatic Purchases (Heuristic) ---
+        const currentBalance = State.parsedFarm?.balance ?? 0;
+        const currentInventory = State.parsedFarm?.inventory || {};
+        const prevInventory = window.__sflPrevInventory || {};
+        
+        if (prevBalance > 0 && currentBalance < prevBalance && Object.keys(prevInventory).length > 0) {
+          const sflSpent = prevBalance - currentBalance;
+          const p2pPrices = State.prices?.p2p || State.prices?.data?.p2p || {};
+          
+          let purchasedItem = null;
+          let purchasedQty = 0;
+          
+          // Find if any tradable item (exists in P2P market) increased
+          for (const item of Object.keys(currentInventory)) {
+            const prevQty = prevInventory[item] || 0;
+            const gained = currentInventory[item] - prevQty;
+            if (gained > 0 && p2pPrices[item]) {
+              purchasedItem = item;
+              purchasedQty = gained;
+              break; // Usually one purchase per transaction
+            }
+          }
+          
+          if (purchasedItem && purchasedQty > 0) {
+            const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
+            // Avoid logging the exact same automatic purchase multiple times
+            const lastLog = salesLog[salesLog.length - 1];
+            if (!lastLog || lastLog.item !== purchasedItem || lastLog.qty !== purchasedQty || (Date.now() - lastLog.timestamp > 60000)) {
+              salesLog.push({ type: 'auto_purchase', item: purchasedItem, qty: purchasedQty, cost: sflSpent, profit: -sflSpent, timestamp: Date.now() });
+              if (salesLog.length > 300) salesLog.splice(0, salesLog.length - 300);
+              localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
+              console.log('[Purchases] Detected auto purchase:', purchasedItem, purchasedQty, sflSpent, 'SFL');
+            }
+          }
+        }
+        // ----------------------------------------------
+
         window.__sflPrevListings = currentListings;
-        window.__sflPrevBalance  = State.parsedFarm?.balance ?? 0;
+        window.__sflPrevBalance  = currentBalance;
+        window.__sflPrevInventory = { ...currentInventory };
       } catch(salesErr) {
         console.warn('[Sales] Tracking error:', salesErr);
       }

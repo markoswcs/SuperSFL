@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=110';
-import { NOTIF_TYPES } from './notifications.js?v=110';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=110';
-import { t } from './i18n.js?v=110';
-import Farm from './farm.js?v=110';
+import Storage from './storage.js?v=111';
+import { NOTIF_TYPES } from './notifications.js?v=111';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=111';
+import { t } from './i18n.js?v=111';
+import Farm from './farm.js?v=111';
 
 // duplicate removed
 
@@ -984,7 +984,8 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      const isPurchase = entry.type === 'purchase';
+      const isPurchase = entry.type === 'purchase' || entry.type === 'auto_purchase';
+      const isAuto = entry.type === 'auto_purchase';
       let profit = 0;
       let liveValue = 0;
       
@@ -999,15 +1000,22 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       const isPositive = profit >= 0;
       const valColor = isPositive ? 'var(--emerald)' : 'var(--coral)';
       const valSign = isPositive ? '+' : '';
+      const rowClass = isAuto ? 'history-auto' : (isPurchase ? 'history-manual' : 'history-sale');
+      
+      let badgeHtml = '';
+      if (isPurchase) {
+        if (isAuto) badgeHtml = '<span style="font-size:10px;background:rgba(139,92,246,0.15);color:rgb(167,139,250);padding:2px 4px;border-radius:4px;margin-left:4px;">AUTO</span>';
+        else badgeHtml = '<span style="font-size:10px;background:rgba(59,130,246,0.15);color:rgb(96,165,250);padding:2px 4px;border-radius:4px;margin-left:4px;">MANUAL</span>';
+      }
 
       return `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;position:relative;overflow:hidden;">
-          ${isPurchase ? '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#3b82f6;"></div>' : ''}
+        <div class="history-row ${rowClass}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;position:relative;overflow:hidden;">
+          ${isPurchase ? `<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${isAuto ? 'rgb(167,139,250)' : '#3b82f6'};"></div>` : ''}
           <div style="width:40px;height:40px;background:var(--surface-3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.06);">
             <img src="https://sfl.world/img/source/${encodeURIComponent(entry.item || 'SFL')}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${isPurchase ? '<span style="font-size:10px;background:rgba(59,130,246,0.15);color:rgb(96,165,250);padding:2px 4px;border-radius:4px;margin-left:4px;">COMPRA</span>' : ''}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${badgeHtml}</div>
             <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} às ${timeStr}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
@@ -1032,7 +1040,17 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
           </div>
         </div>
       </div>
-      ${listHtml}
+      
+      <div style="grid-column:1/-1; display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px;">
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display='flex');" style="cursor:pointer; font-size:11px; font-weight:800; background:var(--surface-3); padding:6px 14px; border-radius:16px; color:var(--text-primary);">Todas</div>
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-sale')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(16,185,129,0.15); color:var(--emerald); padding:6px 14px; border-radius:16px;">Vendas</div>
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-auto')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(139,92,246,0.15); color:rgb(167,139,250); padding:6px 14px; border-radius:16px;">Auto</div>
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-manual')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(59,130,246,0.15); color:rgb(96,165,250); padding:6px 14px; border-radius:16px;">Manuais</div>
+      </div>
+      
+      <div style="grid-column:1/-1;">
+        ${listHtml}
+      </div>
     `);
     return;
   }

@@ -273,10 +273,7 @@ class NotificationEngine {
         });
       };
       checkRes(parsedFarm.trees, 'trees', 'Madeira');
-      checkRes(parsedFarm.stones, 'stones', 'Pedra');
-      checkRes(parsedFarm.irons, 'irons', 'Ferro');
-      checkRes(parsedFarm.golds, 'golds', 'Ouro');
-      checkRes(parsedFarm.crimstones, 'crimstones', 'Crimstone');
+      checkRes(parsedFarm.rocks, 'rocks', 'Recurso');
       checkRes(parsedFarm.beehives, 'beehives', 'Mel');
       checkRes(parsedFarm.flowers, 'flowers', 'Flor');
       checkRes(parsedFarm.oil, 'oil', 'Óleo');

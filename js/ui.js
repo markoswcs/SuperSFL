@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=107';
-import { NOTIF_TYPES } from './notifications.js?v=107';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=107';
-import { t } from './i18n.js?v=107';
-import Farm from './farm.js?v=107';
+import Storage from './storage.js?v=108';
+import { NOTIF_TYPES } from './notifications.js?v=108';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=108';
+import { t } from './i18n.js?v=108';
+import Farm from './farm.js?v=108';
 
 // duplicate removed
 
@@ -1106,10 +1106,10 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
             <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
           </div>
           
-          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:4px;">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:4px; min-width:0;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="font-size:16px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px;">${item.name}</span>
-              <span style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.03);">${item.qty} un</span>
+              <span style="font-size:16px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
+              <span style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.03); white-space:nowrap;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un</span>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div style="display:flex; align-items:center; gap:6px;">

@@ -55,6 +55,8 @@ serve(async (req) => {
         let attentionNeeded = false;
         let notifIdParts = [];
 
+        let firstReadyItemName = '';
+
         // Helper to check categories
         const checkCategory = (items, itemNameFunc, messagePrefix) => {
           let readyCount = 0;
@@ -67,6 +69,7 @@ serve(async (req) => {
               if (item.status === 'ready') {
                 readyCount++;
                 if (!firstItemName) firstItemName = itemNameFunc(item);
+                if (!firstReadyItemName) firstReadyItemName = itemNameFunc(item);
                 notifIdParts.push(item.id || firstItemName);
               }
             });
@@ -75,6 +78,7 @@ serve(async (req) => {
               if (item.status === 'ready') {
                 readyCount++;
                 if (!firstItemName) firstItemName = itemNameFunc(item);
+                if (!firstReadyItemName) firstReadyItemName = itemNameFunc(item);
                 notifIdParts.push(item.id || firstItemName);
               }
             });
@@ -129,10 +133,22 @@ serve(async (req) => {
                 let bodyText = readyMessages.join('\n');
                 if (bodyText.length > 100) bodyText = bodyText.substring(0, 97) + '...';
 
+                let iconUrl = "https://sfl.world/favicon.ico";
+                if (firstReadyItemName) {
+                  let imgName = firstReadyItemName;
+                  if (imgName.includes('Wood')) imgName = 'Wood';
+                  if (imgName.includes('Stone')) imgName = 'Stone';
+                  if (imgName.includes('Iron')) imgName = 'Iron';
+                  if (imgName.includes('Gold')) imgName = 'Gold';
+                  if (imgName.includes('Egg')) imgName = 'Chicken';
+                  
+                  iconUrl = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
+                }
+
                 const payload = JSON.stringify({
                   title: "SFL Pro: Coisas Prontas!",
                   body: bodyText,
-                  icon: "https://sfl.world/favicon.ico",
+                  icon: iconUrl,
                   tag: "general-farm"
                 });
 

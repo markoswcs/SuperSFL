@@ -292,7 +292,8 @@ class NotificationEngine {
           if (!this.notifiedIds.has(uid)) {
             this.sendPush(`Entrega Disponível! 📦`, { 
               body: `NPC ${deliv.npc} está pronto para receber sua entrega.`,
-              tag: 'deliveries'
+              tag: 'deliveries',
+              icon: `https://sfl.world/img/source/${encodeURIComponent(deliv.npc || 'bumpkin')}.png`
             });
             this.notifiedIds.add(uid);
           }

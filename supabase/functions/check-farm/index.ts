@@ -106,6 +106,10 @@ serve(async (req) => {
         checkCategory(parsedFarm.greenhouse, g => g.name, 'Estufa');
         checkCategory(parsedFarm.buildings, b => b.name, 'Construção');
         checkCategory(parsedFarm.cropMachine, c => c.name, 'Máquina');
+        checkCategory(parsedFarm.crabTraps, c => c.name, 'Armadilha');
+        checkCategory(parsedFarm.shrines, s => s.name, 'Santuário');
+        checkCategory(parsedFarm.agingShed, a => a.name, 'Galpão');
+        checkCategory(parsedFarm.saltFarm, s => s.name, 'Salina');
         
         // Mushrooms and Chores
         checkCategory(parsedFarm.mushrooms, () => 'Cogumelo', 'Recurso');

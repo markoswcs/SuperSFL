@@ -530,8 +530,9 @@ function parseBuildings(farm) {
   Object.entries(farm.buildings).forEach(([name, instances]) => {
     if (!Array.isArray(instances)) return;
     instances.forEach((building, i) => {
-      if (!building.crafting) return;
-      const craftingItem = Array.isArray(building.crafting) ? building.crafting[0] : building.crafting;
+      const itemArray = building.processing || building.crafting;
+      if (!itemArray) return;
+      const craftingItem = Array.isArray(itemArray) ? itemArray[0] : itemArray;
       if (!craftingItem) return;
       const { readyAt, amount, name: itemName } = craftingItem;
       const msLeft = (readyAt ?? 0) - now;
@@ -578,6 +579,160 @@ function parseGreenhouse(farm) {
       type:     'greenhouse',
     };
   }).filter(Boolean).sort((a, b) => a.msLeft - b.msLeft);
+}
+
+/**
+ * Parse composting bins
+ */
+function parseComposting(farm) {
+  const now = Date.now();
+  if (!farm?.buildings) return [];
+  const composterTypes = ['Compost Bin', 'Turbo Composter', 'Premium Composter'];
+  return composterTypes.flatMap(type => {
+    const list = farm.buildings[type] || [];
+    return list.map((bin, id) => {
+      if (!bin.producing || !bin.producing.readyAt) return null;
+      const msLeft = bin.producing.readyAt - now;
+      return {
+        id:        `${type}-${id}`,
+        name:      type,
+        producing: Object.keys(bin.producing.items || {}).join(', '),
+        msLeft:    msLeft,
+        status:    getTimerClass(msLeft),
+        countdown: formatCountdown(msLeft),
+        type:      'composting'
+      };
+    }).filter(Boolean);
+  });
+}
+
+/**
+ * Parse Crab Traps
+ */
+function parseCrabTraps(farm) {
+  if (!farm?.crabTraps?.trapSpots) return [];
+  const now = Date.now();
+  const items = [];
+  Object.entries(farm.crabTraps.trapSpots).forEach(([id, spot]) => {
+    if (spot.waterTrap && spot.waterTrap.readyAt) {
+      const msLeft = spot.waterTrap.readyAt - now;
+      items.push({
+        id: `crabtrap-${id}`,
+        name: spot.waterTrap.type || 'Armadilha de Caranguejo',
+        readyAt: spot.waterTrap.readyAt,
+        msLeft,
+        status: getTimerClass(msLeft),
+        countdown: formatCountdown(msLeft),
+        type: 'crabTrap',
+      });
+    }
+  });
+  return items.sort((a, b) => a.msLeft - b.msLeft);
+}
+
+/**
+ * Parse Shrines (Collectibles)
+ */
+function parseShrines(farm) {
+  if (!farm?.collectibles) return [];
+  const SHRINE_DURATIONS = {
+    'Boar Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Hound Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Sparrow Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Fox Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Toucan Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Collie Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Moth Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Badger Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Mole Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Tortoise Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Stag Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Bear Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Bantam Shrine': 7 * 24 * 60 * 60 * 1000,
+    'Legendary Shrine': 1 * 24 * 60 * 60 * 1000,
+    'Trading Shrine': 30 * 24 * 60 * 60 * 1000,
+    'Obsidian Shrine': 14 * 24 * 60 * 60 * 1000,
+  };
+  
+  const now = Date.now();
+  const items = [];
+  
+  Object.entries(SHRINE_DURATIONS).forEach(([shrineName, durationMs]) => {
+    const shrineInstances = farm.collectibles[shrineName];
+    if (Array.isArray(shrineInstances)) {
+      shrineInstances.forEach((shrine, idx) => {
+        if (shrine.createdAt) {
+          const createdAtMs = shrine.createdAt > 100000000000 ? shrine.createdAt : shrine.createdAt * 1000;
+          const expiresAt = createdAtMs + durationMs;
+          const msLeft = expiresAt - now;
+          items.push({
+            id: `shrine-${shrineName.replace(/\s+/g, '')}-${idx}`,
+            name: shrineName,
+            readyAt: expiresAt,
+            msLeft,
+            status: getTimerClass(msLeft),
+            countdown: formatCountdown(msLeft),
+            type: 'shrine',
+          });
+        }
+      });
+    }
+  });
+  return items.sort((a, b) => a.msLeft - b.msLeft);
+}
+
+/**
+ * Parse Aging Shed
+ */
+function parseAgingShed(farm) {
+  if (!farm?.agingShed?.racks) return [];
+  const now = Date.now();
+  const items = [];
+  const racks = farm.agingShed.racks;
+  const rackTypes = ['aging', 'fermentation', 'spice'];
+  rackTypes.forEach((rackType) => {
+    if (Array.isArray(racks[rackType])) {
+      racks[rackType].forEach((slot) => {
+        if (slot.readyAt) {
+          const msLeft = slot.readyAt - now;
+          items.push({
+            id: `agingshed-${rackType}-${slot.id}`,
+            name: `Galpão de Envelhecimento (${slot.recipe})`,
+            readyAt: slot.readyAt,
+            msLeft,
+            status: getTimerClass(msLeft),
+            countdown: formatCountdown(msLeft),
+            type: 'agingshed',
+          });
+        }
+      });
+    }
+  });
+  return items.sort((a, b) => a.msLeft - b.msLeft);
+}
+
+/**
+ * Parse Salt Farm
+ */
+function parseSaltFarm(farm) {
+  if (!farm?.saltFarm?.nodes) return [];
+  const now = Date.now();
+  const items = [];
+  Object.entries(farm.saltFarm.nodes).forEach(([id, node]) => {
+    if (node.salt && node.salt.nextChargeAt) {
+      const msLeft = node.salt.nextChargeAt - now;
+      items.push({
+        id: `saltfarm-${id}`,
+        name: 'Fazenda de Sal',
+        readyAt: node.salt.nextChargeAt,
+        msLeft,
+        status: getTimerClass(msLeft),
+        countdown: formatCountdown(msLeft),
+        type: 'saltfarm',
+      });
+    }
+  });
+  return items.sort((a, b) => a.msLeft - b.msLeft);
 }
 
 /**
@@ -989,6 +1144,10 @@ function parseFarm(farmData) {
     greenhouse:  parseGreenhouse(farm),
     oil:         parseOil(farm),
     composting:  parseComposting(farm),
+    crabTraps:   parseCrabTraps(farm),
+    shrines:     parseShrines(farm),
+    agingShed:   parseAgingShed(farm),
+    saltFarm:    parseSaltFarm(farm),
     flowers:     parseFlowers(farm),
     cropMachine: parseCropMachine(farm),
     bumpkin:     parseBumpkin(farm),

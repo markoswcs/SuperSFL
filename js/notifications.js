@@ -281,6 +281,10 @@ class NotificationEngine {
       checkRes(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
       checkRes(parsedFarm.buildings, 'buildings', 'Construção');
       checkRes(parsedFarm.cropMachine, 'cropMachine', 'Máquina');
+      checkRes(parsedFarm.crabTraps, 'crabTraps', 'Armadilha');
+      checkRes(parsedFarm.shrines, 'shrines', 'Santuário');
+      checkRes(parsedFarm.agingShed, 'agingShed', 'Galpão');
+      checkRes(parsedFarm.saltFarm, 'saltFarm', 'Salina');
     }
 
     // 5. DELIVERIES

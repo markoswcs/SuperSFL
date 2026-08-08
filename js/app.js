@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=112';
-import API from './api.js?v=112';
-import Farm from './farm.js?v=112';
-import UI from './ui.js?v=112';
-import Notifications from './notifications.js?v=112';
-import i18n from './i18n.js?v=112';
+import Storage from './storage.js?v=113';
+import API from './api.js?v=113';
+import Farm from './farm.js?v=113';
+import UI from './ui.js?v=113';
+import Notifications from './notifications.js?v=113';
+import i18n from './i18n.js?v=113';
 
 // --- State ---
 const State = {
@@ -286,10 +286,15 @@ async function refreshData(force = false) {
       }
     }
 
-    // Track completed sales by comparing active listings before and after
-    const prevListings = window.__sflPrevListings || [];
-    const prevBalance = window.__sflPrevBalance || 0;
-
+    // Track completed sales and purchases by comparing state before and after
+    let prevListings = [];
+    let prevBalance = 0;
+    let prevInventory = {};
+    try {
+      prevListings = JSON.parse(localStorage.getItem('sfl_prev_listings') || '[]');
+      prevBalance = parseFloat(localStorage.getItem('sfl_prev_balance') || '0');
+      prevInventory = JSON.parse(localStorage.getItem('sfl_prev_inventory') || '{}');
+    } catch(e) {}
     if (farmData) {
       // Full game state
       State.rawFarm = farmData;
@@ -326,7 +331,6 @@ async function refreshData(force = false) {
         // --- Detect Automatic Purchases (Heuristic) ---
         const currentBalance = State.parsedFarm?.balance ?? 0;
         const currentInventory = State.parsedFarm?.inventory || {};
-        const prevInventory = window.__sflPrevInventory || {};
         
         if (prevBalance > 0 && currentBalance < prevBalance && Object.keys(prevInventory).length > 0) {
           const sflSpent = prevBalance - currentBalance;
@@ -360,9 +364,12 @@ async function refreshData(force = false) {
         }
         // ----------------------------------------------
 
-        window.__sflPrevListings = currentListings;
-        window.__sflPrevBalance  = currentBalance;
-        window.__sflPrevInventory = { ...currentInventory };
+        try {
+          localStorage.setItem('sfl_prev_listings', JSON.stringify(currentListings));
+          localStorage.setItem('sfl_prev_balance', currentBalance.toString());
+          localStorage.setItem('sfl_prev_inventory', JSON.stringify(currentInventory));
+        } catch(e) {}
+        
       } catch(salesErr) {
         console.warn('[Sales] Tracking error:', salesErr);
       }

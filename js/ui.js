@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=108';
-import { NOTIF_TYPES } from './notifications.js?v=108';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=108';
-import { t } from './i18n.js?v=108';
-import Farm from './farm.js?v=108';
+import Storage from './storage.js?v=109';
+import { NOTIF_TYPES } from './notifications.js?v=109';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=109';
+import { t } from './i18n.js?v=109';
+import Farm from './farm.js?v=109';
 
 // duplicate removed
 
@@ -2574,11 +2574,15 @@ window.__app.showIslandResourcesModal = () => {
 
 window.__app = window.__app || {};
 window.__app.promptManualPurchase = () => {
-  const item = prompt('Nome do Item comprado (em inglês, ex: Wood):');
+  let item = prompt('Nome do Item comprado (em inglês, ex: Wood, Basic Land):');
   if (!item) return;
-  const qty = parseFloat(prompt('Quantidade:'));
+  
+  // Smart Title Casing: "wood" -> "Wood", "basic land" -> "Basic Land"
+  item = item.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  
+  const qty = parseFloat(prompt('Quantidade (ex: 500):'));
   if (isNaN(qty) || qty <= 0) return;
-  const cost = parseFloat(prompt('Preço Total Pago (em SFL):'));
+  const cost = parseFloat(prompt('Preço Total Pago em SFL (ex: 20.5):'));
   if (isNaN(cost) || cost <= 0) return;
 
   const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
@@ -2586,7 +2590,8 @@ window.__app.promptManualPurchase = () => {
   localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
   
   if (window.__app.UI && window.__app.State) {
-    window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);
+    const searchVal = document.querySelector('#market-search')?.value || '';
+    window.__app.UI.renderMarketFiltered(searchVal, 'history');
   } else {
     window.location.reload();
   }

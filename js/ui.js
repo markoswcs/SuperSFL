@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=104';
-import { NOTIF_TYPES } from './notifications.js?v=104';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=104';
-import { t } from './i18n.js?v=104';
-import Farm from './farm.js?v=104';
+import Storage from './storage.js?v=105';
+import { NOTIF_TYPES } from './notifications.js?v=105';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=105';
+import { t } from './i18n.js?v=105';
+import Farm from './farm.js?v=105';
 
 // duplicate removed
 
@@ -2592,5 +2592,25 @@ window.__app.showIslandResourcesModal = () => {
     </div>
   `;
 
-  window.__app.UI.showModal('🌿 Recursos da Ilha', modalHtml);
+  window.__app.UI.showModal('🏝️ Recursos da Ilha', modalHtml);
+};
+
+window.__app = window.__app || {};
+window.__app.promptManualPurchase = () => {
+  const item = prompt('Nome do Item comprado (em inglês, ex: Wood):');
+  if (!item) return;
+  const qty = parseFloat(prompt('Quantidade:'));
+  if (isNaN(qty) || qty <= 0) return;
+  const cost = parseFloat(prompt('Preço Total Pago (em SFL):'));
+  if (isNaN(cost) || cost <= 0) return;
+
+  const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
+  salesLog.push({ type: 'purchase', item, qty, cost, profit: -cost, timestamp: Date.now() });
+  localStorage.setItem('sfl_sales_log', JSON.stringify(salesLog));
+  
+  if (window.__app.UI && window.__app.State) {
+    window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);
+  } else {
+    window.location.reload();
+  }
 };

@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=121';
-import { NOTIF_TYPES } from './notifications.js?v=121';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=121';
-import { t } from './i18n.js?v=121';
-import Farm from './farm.js?v=121';
+import Storage from './storage.js?v=122';
+import { NOTIF_TYPES } from './notifications.js?v=122';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=122';
+import { t } from './i18n.js?v=122';
+import Farm from './farm.js?v=122';
 
 // duplicate removed
 
@@ -17,7 +17,7 @@ import Farm from './farm.js?v=121';
 // ASSETS & CONFIG
 // =====================================================
 const ASSETS = {
-  SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/flowers/red_pansy.webp',
+  SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/flower_token.webp',
   COINS: 'https://sfl.world/img/source/coins.png',
   GEM: 'https://sfl.world/img/source/Gem.png',
   VIP: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/vip.webp',

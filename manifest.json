@@ -1,7 +1,7 @@
 {
-  "name": "SFL Hub — Sunflower Land Dashboard",
-  "short_name": "SFL Hub",
-  "description": "Dashboard completo para Sunflower Land: preços, fazenda, alertas e mercado P2P.",
+  "name": "SFL Pro — Sunflower Land Dashboard",
+  "short_name": "SFL Pro",
+  "description": "Dashboard profissional para Sunflower Land: preços, fazenda, alertas e mercado P2P.",
   "start_url": "/SuperSFL/",
   "scope": "/SuperSFL/",
   "id": "/SuperSFL/",

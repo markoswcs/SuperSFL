@@ -17,12 +17,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SFL Hub">
+  <meta name="apple-mobile-web-app-title" content="SFL Pro">
   
-  <title>SFL Hub — Sunflower Land Dashboard</title>
+  <title>SFL Pro — Sunflower Land Dashboard</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=114">
+  <link rel="stylesheet" href="css/styles.css?v=115">
   
   <!-- Icons -->
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -34,8 +34,8 @@
     <!-- Top Global Header -->
     <header class="top-header">
       <div class="app-logo">
-        <img src="https://sfl.world/img/Flower.png" class="app-logo-img" alt="SFL" onerror="this.style.display='none'">
-        <div class="app-logo-text">SFL<span>HUB</span></div>
+        <img src="icons/icon-192.png" class="app-logo-img" alt="SFL Pro" style="border-radius:8px;" onerror="this.src='https://sfl.world/img/Flower.png'">
+        <div class="app-logo-text">SFL<span>PRO</span></div>
       </div>
         <div class="header-actions">
           <span class="sync-time" id="sync-time">--:--</span>
@@ -139,12 +139,12 @@
     <div style="display:flex; align-items:center; gap:14px;">
       <img src="icons/icon-192.png" style="width:48px; height:48px; border-radius:12px; flex-shrink:0;" onerror="this.src='https://sfl.world/img/Flower.png'">
       <div style="flex:1; min-width:0;">
-        <div style="font-size:14px; font-weight:900; color:#fff; margin-bottom:2px;">Instalar SFL Hub</div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.5); line-height:1.4;">Acesse direto pela tela inicial do celular</div>
+        <div style="font-size:14px; font-weight:900; color:#fff; margin-bottom:2px;">Instalar SFL Pro</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.5); line-height:1.4;" id="pwa-banner-subtitle">Acesse direto pela tela inicial do celular</div>
       </div>
       <button id="pwa-dismiss-btn" style="background:none; border:none; color:rgba(255,255,255,0.3); font-size:20px; cursor:pointer; padding:4px; line-height:1; flex-shrink:0;" aria-label="Fechar">&times;</button>
     </div>
-    <div style="display:flex; gap:10px; margin-top:14px;">
+    <div style="display:flex; gap:10px; margin-top:14px;" id="pwa-btn-row">
       <button id="pwa-install-btn" style="flex:1; background:linear-gradient(135deg, #F59E0B, #d97706); color:#0A0D12; border:none; border-radius:12px; padding:12px; font-size:14px; font-weight:900; cursor:pointer; letter-spacing:0.3px;">📲 Instalar Agora</button>
     </div>
   </div>
@@ -153,11 +153,16 @@
   <script src="js/Sortable.min.js"></script>
 
   <!-- App Entry Point -->
-  <script src="js/market-costs.js?v=114"></script>
-  <script type="module" src="js/app.js?v=114"></script>
+  <script src="js/market-costs.js?v=115"></script>
+  <script type="module" src="js/app.js?v=115"></script>
 
   <!-- PWA: Service Worker + Install Prompt -->
   <script>
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const wasDismissed = localStorage.getItem('pwa_dismissed_v2');
+
     // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -167,19 +172,31 @@
       });
     }
 
-    // Capture the install prompt (Chrome/Android/Desktop)
-    let _installPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
     const installBtn = document.getElementById('pwa-install-btn');
     const dismissBtn = document.getElementById('pwa-dismiss-btn');
+    const subtitle = document.getElementById('pwa-banner-subtitle');
+    const btnRow = document.getElementById('pwa-btn-row');
 
+    function showBanner() {
+      if (!isStandalone && !wasDismissed && banner) {
+        setTimeout(() => { banner.style.display = 'block'; }, 2000);
+      }
+    }
+
+    // iOS Safari: no beforeinstallprompt — show manual instructions
+    if (isIOS && !isStandalone) {
+      if (installBtn) installBtn.style.display = 'none';
+      if (subtitle) subtitle.innerHTML = 'No Safari: toque em <strong style="color:#F59E0B">Compartilhar ↑</strong> depois <strong style="color:#F59E0B">"Tela de Início"</strong>';
+      showBanner();
+    }
+
+    // Android/Desktop Chrome: use native install prompt
+    let _installPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       _installPrompt = e;
-      // Don't show if already dismissed this session
-      if (!sessionStorage.getItem('pwa_dismissed')) {
-        setTimeout(() => { if (banner) banner.style.display = 'block'; }, 1500);
-      }
+      showBanner();
     });
 
     if (installBtn) {
@@ -197,12 +214,12 @@
     if (dismissBtn) {
       dismissBtn.addEventListener('click', () => {
         if (banner) banner.style.display = 'none';
-        sessionStorage.setItem('pwa_dismissed', '1');
+        localStorage.setItem('pwa_dismissed_v2', '1');
       });
     }
 
-    // Hide banner if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    // Hide if already installed
+    if (isStandalone) {
       if (banner) banner.style.display = 'none';
     }
   </script>

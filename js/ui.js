@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=131';
-import { NOTIF_TYPES } from './notifications.js?v=131';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=131';
-import { t } from './i18n.js?v=131';
-import Farm from './farm.js?v=131';
+import Storage from './storage.js?v=132';
+import { NOTIF_TYPES } from './notifications.js?v=132';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=132';
+import { t } from './i18n.js?v=132';
+import Farm from './farm.js?v=132';
 
 // duplicate removed
 
@@ -1143,6 +1143,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     })();
     const itemProfitPct = profitTarget[item.name] || 0;
     
+    const farm = window.__app.State.parsedFarm || {};
     let farmTaxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
     if (farm.isVip) farmTaxPct = farmTaxPct * 0.5;
     const farmTaxRate = farmTaxPct / 100;

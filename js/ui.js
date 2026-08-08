@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=115';
-import { NOTIF_TYPES } from './notifications.js?v=115';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=115';
-import { t } from './i18n.js?v=115';
-import Farm from './farm.js?v=115';
+import Storage from './storage.js?v=116';
+import { NOTIF_TYPES } from './notifications.js?v=116';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=116';
+import { t } from './i18n.js?v=116';
+import Farm from './farm.js?v=116';
 
 // duplicate removed
 
@@ -17,7 +17,7 @@ import Farm from './farm.js?v=115';
 // ASSETS & CONFIG
 // =====================================================
 const ASSETS = {
-  SFL: 'https://sfl.world/img/Flower.png',
+  SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/sfl.webp',
   COINS: 'https://sfl.world/img/source/coins.png',
   GEM: 'https://sfl.world/img/source/Gem.png',
   VIP: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/vip.webp',
@@ -163,32 +163,32 @@ function renderHome(exchange, prices, parsedFarm) {
   // SFL big display + Converter
   setHtml('#home-sfl-card', `
     <div class="card card--amber spring-in">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px; flex-wrap: wrap;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;">
         
         <!-- LEFT: Token Price -->
-        <div style="flex-shrink: 0;">
-          <div class="card-title" style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-            <img src="${ASSETS.SFL}" style="width:24px;height:24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-            Flower (SFL)
+        <div style="flex-shrink:0;min-width:0;">
+          <div class="card-title" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <img src="${ASSETS.SFL}" style="width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src='https://sfl.world/img/Flower.png'">
+            <span style="font-size:11px;">Flower (SFL)</span>
           </div>
-          <div style="font-family:var(--font-mono);font-size:32px;font-weight:700;color:var(--amber-glow);line-height:1">
-            $${sflUsd.toFixed(4)}
+          <div style="font-family:var(--font-mono);font-size:clamp(22px,6vw,32px);font-weight:700;color:var(--amber-glow);line-height:1;white-space:nowrap;">
+            $$${sflUsd.toFixed(4)}
           </div>
-          <div style="font-family:var(--font-mono);font-size:16px;color:var(--text-secondary);font-weight:600;margin-top:6px">
+          <div style="font-family:var(--font-mono);font-size:clamp(12px,3.5vw,16px);color:var(--text-secondary);font-weight:600;margin-top:4px;white-space:nowrap;">
             R$ ${sflBrl.toFixed(4)}
           </div>
         </div>
         
         <!-- RIGHT: Currency Converter -->
-        <div style="flex: 1 1 240px; max-width:400px; margin-left:auto;">
-          <div class="currency-converter" style="padding:10px; gap:6px;">
-            <div class="converter-input-wrapper" style="flex: 1.2;">
-              <input type="number" class="converter-input" id="flw-converter-input" placeholder="0" oninput="window.__app.convertFlower(this.value, ${sflBrl}, ${sflUsd})" style="font-size:15px; padding:8px 10px; padding-right:40px;">
-              <span class="converter-label" style="right:10px; font-size:13px;">SFL</span>
+        <div style="flex:1;min-width:0;max-width:260px;margin-left:auto;">
+          <div class="currency-converter" style="padding:8px;gap:4px;">
+            <div class="converter-input-wrapper" style="flex:1.1;">
+              <input type="number" class="converter-input" id="flw-converter-input" placeholder="0" oninput="window.__app.convertFlower(this.value, ${sflBrl}, ${sflUsd})" style="font-size:14px;padding:7px 8px;padding-right:36px;">
+              <span class="converter-label" style="right:8px;font-size:12px;">SFL</span>
             </div>
-            <div class="converter-icon" style="width:24px; height:24px; font-size:14px;"><i class="bi bi-arrow-left-right"></i></div>
-            <div class="converter-result-wrapper" style="flex: 1.2; padding:6px 8px; min-height:38px; display:flex; flex-direction:column; justify-content:center;">
-              <div class="converter-result" id="flw-converter-result" style="font-size:16px; font-weight:600;">R$ 0.00 <span style="font-size:13px;color:var(--text-tertiary)">($0.00)</span></div>
+            <div class="converter-icon" style="width:20px;height:20px;font-size:12px;"><i class="bi bi-arrow-left-right"></i></div>
+            <div class="converter-result-wrapper" style="flex:1.1;padding:5px 8px;min-height:34px;display:flex;flex-direction:column;justify-content:center;">
+              <div class="converter-result" id="flw-converter-result" style="font-size:clamp(12px,3.5vw,15px);font-weight:600;">R$ 0.00 <span style="font-size:11px;color:var(--text-tertiary)">($0.00)</span></div>
             </div>
           </div>
         </div>

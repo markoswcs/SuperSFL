@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=109';
-import { NOTIF_TYPES } from './notifications.js?v=109';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=109';
-import { t } from './i18n.js?v=109';
-import Farm from './farm.js?v=109';
+import Storage from './storage.js?v=110';
+import { NOTIF_TYPES } from './notifications.js?v=110';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=110';
+import { t } from './i18n.js?v=110';
+import Farm from './farm.js?v=110';
 
 // duplicate removed
 
@@ -965,7 +965,17 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       return;
     }
 
-    const totalProfit = salesLog.reduce((s, e) => s + (e.profit !== undefined ? e.profit : (e.sflEarned || 0)), 0);
+    let totalProfit = 0;
+    salesLog.forEach(entry => {
+      if (entry.type === 'purchase') {
+        const livePrice = p2p[entry.item] || (window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(entry.item) : 0);
+        const liveValue = livePrice * (entry.qty || 0);
+        totalProfit += (liveValue - (entry.cost || 0));
+      } else {
+        totalProfit += entry.profit !== undefined ? entry.profit : (entry.sflEarned || 0);
+      }
+    });
+
     const totalSales = salesLog.filter(e => e.type !== 'purchase').length;
     const totalPurchases = salesLog.filter(e => e.type === 'purchase').length;
 
@@ -975,26 +985,34 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
       const isPurchase = entry.type === 'purchase';
-      const profit = entry.profit !== undefined ? entry.profit : (entry.sflEarned || 0);
-      const isPositive = profit >= 0;
+      let profit = 0;
+      let liveValue = 0;
       
-      const valColor = isPurchase ? 'var(--coral)' : (isPositive ? 'var(--emerald)' : 'var(--coral)');
-      const valSign = isPurchase ? '-' : (isPositive ? '+' : '');
-      const valStr = isPurchase ? (entry.cost || 0).toFixed(3) : Math.abs(profit).toFixed(3);
+      if (isPurchase) {
+        const livePrice = p2p[entry.item] || (window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(entry.item) : 0);
+        liveValue = livePrice * (entry.qty || 0);
+        profit = liveValue - (entry.cost || 0);
+      } else {
+        profit = entry.profit !== undefined ? entry.profit : (entry.sflEarned || 0);
+      }
+      
+      const isPositive = profit >= 0;
+      const valColor = isPositive ? 'var(--emerald)' : 'var(--coral)';
+      const valSign = isPositive ? '+' : '';
 
       return `
         <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;position:relative;overflow:hidden;">
-          ${isPurchase ? '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--coral);"></div>' : ''}
+          ${isPurchase ? '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#3b82f6;"></div>' : ''}
           <div style="width:40px;height:40px;background:var(--surface-3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.06);">
             <img src="https://sfl.world/img/source/${encodeURIComponent(entry.item || 'SFL')}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${isPurchase ? '<span style="font-size:10px;background:var(--coral-subtle);color:var(--coral);padding:2px 4px;border-radius:4px;margin-left:4px;">COMPRA</span>' : ''}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${isPurchase ? '<span style="font-size:10px;background:rgba(59,130,246,0.15);color:rgb(96,165,250);padding:2px 4px;border-radius:4px;margin-left:4px;">COMPRA</span>' : ''}</div>
             <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} às ${timeStr}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:15px;font-weight:900;color:${valColor};">${valSign}${valStr} SFL</div>
-            <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${entry.qty || '?'}</div>
+            <div style="font-size:15px;font-weight:900;color:${valColor};">${valSign}${profit.toFixed(3)} SFL</div>
+            ${isPurchase ? `<div style="font-size:10px;color:var(--text-tertiary);">Pago: ${(entry.cost || 0).toFixed(2)} | Atual: ${liveValue.toFixed(2)}</div>` : `<div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${entry.qty || '?'}</div>`}
           </div>
         </div>
       `;

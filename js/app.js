@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=128';
-import API from './api.js?v=128';
-import Farm from './farm.js?v=128';
-import UI from './ui.js?v=128';
-import Notifications from './notifications.js?v=128';
-import i18n from './i18n.js?v=128';
+import Storage from './storage.js?v=129';
+import API from './api.js?v=129';
+import Farm from './farm.js?v=129';
+import UI from './ui.js?v=129';
+import Notifications from './notifications.js?v=129';
+import i18n from './i18n.js?v=129';
 
 // --- State ---
 const State = {
@@ -378,14 +378,16 @@ async function refreshData(force = false) {
         console.warn('[Sales] Tracking error:', salesErr);
       }
     } else if (landInfo) {
-      // Land info only
-      State.rawFarm = landInfo;
-      State.parsedFarm = Farm.parseLandInfo(landInfo);
-      if (State.parsedFarm) {
-        State.parsedFarm.isPartial = true;
+      if (!State.parsedFarm || State.parsedFarm.isPartial) {
+        State.rawFarm = landInfo;
+        State.parsedFarm = Farm.parseLandInfo(landInfo);
+        if (State.parsedFarm) {
+          State.parsedFarm.isPartial = true;
+        }
       }
     } else {
-      State.parsedFarm = null;
+      // Do not wipe State.parsedFarm on temporary network failures
+      // State.parsedFarm = null;
     }
 
     if (State.parsedFarm) {

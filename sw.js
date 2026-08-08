@@ -3,7 +3,7 @@
  * Garante que o app seja instalável no celular/desktop
  */
 
-const CACHE_NAME = 'sflpro-v128';
+const CACHE_NAME = 'sflpro-v129';
 const CORE_ASSETS = [
   '/',
   '/index.html',

@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=128';
-import { NOTIF_TYPES } from './notifications.js?v=128';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=128';
-import { t } from './i18n.js?v=128';
-import Farm from './farm.js?v=128';
+import Storage from './storage.js?v=129';
+import { NOTIF_TYPES } from './notifications.js?v=129';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=129';
+import { t } from './i18n.js?v=129';
+import Farm from './farm.js?v=129';
 
 // duplicate removed
 
@@ -1089,7 +1089,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     });
   }
   if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
-    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">Inventário não encontrado</div><div class="empty-state-sub" style="margin-top:8px;">Conecte sua API Key na aba Ajustes para ver o seu portfólio no Mercado.</div></div>');
+    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1; padding:30px; background:var(--surface-2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); text-align:center;"><span style="font-size:32px; display:block; margin-bottom:12px;">⚠️</span><div style="font-size:16px; font-weight:800; color:var(--text-primary);">Inventário Indisponível</div><div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Configure sua API Key corretamente na aba "Ajustes" para acessar seu estoque e definir metas de lucro.</div></div>');
     return;
   }
 
@@ -1138,7 +1138,10 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     const itemProfitPct = profitTarget[item.name] || 0;
     // Target price needed to hit the stored profit % (cost * (1 + pct/100) / (1 - taxRate))
     const farm = window.__app.State.parsedFarm || {};
-    const farmTaxRate = farm.taxRate !== undefined ? farm.taxRate / 100 : 0.15;
+    let farmTaxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
+    if (farm.isVip) farmTaxPct = farmTaxPct * 0.5;
+    const farmTaxRate = farmTaxPct / 100;
+    
     const targetPriceNeeded = item.baseCost > 0 && itemProfitPct > 0
       ? (item.baseCost * (1 + itemProfitPct / 100)) / (1 - farmTaxRate)
       : null;
@@ -1148,63 +1151,68 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     const isProfitTargetMissed = targetPriceNeeded !== null && !isTargetHit;
     
     let cardBorder, cardShadow;
+    let targetBadgeHtml = '';
+
     if (isTargetHit && (targetAlert || targetPriceNeeded !== null)) {
-      cardBorder = 'var(--emerald)'; cardShadow = '0 0 16px rgba(16,185,129,0.3)';
+      cardBorder = 'var(--emerald)'; 
+      cardShadow = '0 0 16px rgba(16,185,129,0.2)';
+      targetBadgeHtml = `<div style="background:rgba(16,185,129,0.15);color:var(--emerald);padding:3px 6px;border-radius:6px;font-size:10px;font-weight:800;display:flex;align-items:center;gap:3px;"><span style="font-size:12px">✅</span> Meta +${itemProfitPct}%</div>`;
     } else if (isProfitTargetMissed) {
-      cardBorder = 'var(--coral)'; cardShadow = '0 0 10px rgba(239,68,68,0.2)';
+      cardBorder = 'var(--coral)'; 
+      cardShadow = '0 0 10px rgba(239,68,68,0.1)';
+      targetBadgeHtml = `<div style="background:rgba(239,68,68,0.15);color:var(--coral);padding:3px 6px;border-radius:6px;font-size:10px;font-weight:800;display:flex;flex-direction:column;align-items:flex-end;"><span style="opacity:0.8;">Meta +${itemProfitPct}%</span><span>Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(3)}</span></div>`;
     } else {
-      cardBorder = 'var(--surface-border)'; cardShadow = 'var(--shadow-sm)';
+      cardBorder = 'var(--surface-border)'; 
+      cardShadow = 'var(--shadow-sm)';
     }
     
     return `
-      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:16px; background:linear-gradient(180deg, var(--surface-2) 0%, rgba(20,20,20,0.3) 100%); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; gap:14px; cursor:pointer; transition:transform 0.2s ease, border-color 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
+      <div class="market-item spring-in" style="display:flex; flex-direction:column; padding:12px; background:linear-gradient(180deg, var(--surface-2) 0%, rgba(20,20,20,0.3) 100%); border:1px solid ${cardBorder}; border-radius:14px; box-shadow:${cardShadow}; position:relative; overflow:hidden; gap:10px; cursor:pointer; transition:transform 0.2s ease, border-color 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
         
-        ${isPump ? `<div style="position:absolute; top:12px; right:12px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:10px; font-weight:800; padding:4px 8px; border-radius:6px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite; letter-spacing:0.5px;">PUMP 🔥</div>` : ''}
+        ${isPump ? `<div style="position:absolute; top:8px; right:8px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite; letter-spacing:0.5px;">PUMP 🔥</div>` : ''}
 
         <!-- Top Section: Icon, Name, Qty -->
-        <div style="display:flex; align-items:center; gap:14px; z-index:1;">
-          <div style="width:46px; height:46px; background:var(--surface-3); border:1px solid rgba(255,255,255,0.06); border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 4px rgba(0,0,0,0.25); flex-shrink:0;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
+        <div style="display:flex; align-items:center; gap:12px; z-index:1;">
+          <div style="width:40px; height:40px; background:var(--surface-3); border:1px solid rgba(255,255,255,0.06); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 4px rgba(0,0,0,0.25); flex-shrink:0;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:24px; height:24px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
           </div>
           
-          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:4px; min-width:0;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="font-size:16px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
-              <span style="font-size:11px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.03); white-space:nowrap;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un</span>
-            </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:2px; min-width:0;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:13px; font-weight:600; color:${isProfitTargetMissed ? 'var(--coral)' : (isTargetHit && targetPriceNeeded !== null ? 'var(--emerald)' : 'var(--text-secondary)')};"
-                >${item.priceInSfl.toFixed(3)} SFL${itemProfitPct > 0 ? ` <span style="font-size:10px;opacity:.7;">meta:+${itemProfitPct}%</span>` : ''}</span>
-                ${trendHtml}
+                <span style="font-size:15px; font-weight:900; color:var(--text-primary); letter-spacing:-0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
+                <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.04); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.03); white-space:nowrap;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un</span>
               </div>
               <span style="font-size:14px; font-weight:900; color:var(--emerald);">=${totalSfl.toFixed(2)} SFL</span>
             </div>
-            ${targetPriceNeeded !== null && !isTargetHit ? `<div style="font-size:10px;color:var(--coral);font-weight:700;">Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(4)} SFL para meta</div>` : ''}
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:14px; font-weight:700; color:${isProfitTargetMissed ? 'var(--coral)' : (isTargetHit && targetPriceNeeded !== null ? 'var(--emerald)' : 'var(--text-secondary)')};"
+                >${item.priceInSfl.toFixed(4)} SFL</span>
+                ${trendHtml}
+              </div>
+              ${targetBadgeHtml}
+            </div>
           </div>
         </div>
 
-        <!-- Divider -->
-        <div style="height:1px; background:var(--surface-border); opacity:0.5; margin:0 -4px; z-index:1;"></div>
-
         <!-- Bottom Section: Costs & Margins -->
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:0 4px; z-index:1;">
-          <div style="display:flex; flex-direction:column; gap:3px;">
-            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Custo Est.</span>
-            <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">${item.baseCost > 0 ? item.baseCost.toFixed(3) : '---'} SFL</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; z-index:1; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Custo:</span>
+            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">${item.baseCost > 0 ? item.baseCost.toFixed(4) : '--'}</span>
           </div>
-          <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-end;">
-            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Lucro Un.</span>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:12px; font-weight:800; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">
-                ${item.unitProfit >= 0 ? '+' : ''}${item.unitProfit.toFixed(3)} SFL
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Lucro:</span>
+            <span style="font-size:11px; font-weight:800; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">
+              ${item.unitProfit >= 0 ? '+' : ''}${item.unitProfit.toFixed(4)} SFL
+            </span>
+            ${item.baseCost > 0 ? `
+              <span style="background:${item.unitProfit >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">
+                ${item.unitProfit >= 0 ? '+' : ''}${item.profitMargin.toFixed(0)}%
               </span>
-              ${item.baseCost > 0 ? `
-                <span style="background:${item.unitProfit >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'}; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:800;">
-                  ${item.unitProfit >= 0 ? '+' : ''}${item.profitMargin.toFixed(0)}%
-                </span>
-              ` : ''}
-            </div>
+            ` : ''}
           </div>
         </div>
       </div>

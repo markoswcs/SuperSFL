@@ -3,12 +3,12 @@
  * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
-import Storage from './storage.js?v=103';
-import API from './api.js?v=103';
-import Farm from './farm.js?v=103';
-import UI from './ui.js?v=103';
-import Notifications from './notifications.js?v=103';
-import i18n from './i18n.js?v=103';
+import Storage from './storage.js?v=104';
+import API from './api.js?v=104';
+import Farm from './farm.js?v=104';
+import UI from './ui.js?v=104';
+import Notifications from './notifications.js?v=104';
+import i18n from './i18n.js?v=104';
 
 // --- State ---
 const State = {
@@ -235,8 +235,10 @@ function loadCachedState() {
   const landInfo = farmId ? Storage.getCache(`land_info_${farmId}`, true) : null;
 
   if (farmData) {
+    State.rawFarm = farmData;
     State.parsedFarm = Farm.parseFarm(farmData, landInfo);
   } else if (landInfo) {
+    State.rawFarm = landInfo;
     State.parsedFarm = Farm.parseLandInfo(landInfo);
     if (State.parsedFarm) {
       State.parsedFarm.isPartial = true;
@@ -290,6 +292,7 @@ async function refreshData(force = false) {
 
     if (farmData) {
       // Full game state
+      State.rawFarm = farmData;
       State.parsedFarm = Farm.parseFarm(farmData, landInfo);
       State.hasKeyError = false;
 
@@ -326,6 +329,7 @@ async function refreshData(force = false) {
       }
     } else if (landInfo) {
       // Land info only
+      State.rawFarm = landInfo;
       State.parsedFarm = Farm.parseLandInfo(landInfo);
       if (State.parsedFarm) {
         State.parsedFarm.isPartial = true;

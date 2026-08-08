@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=103';
-import { NOTIF_TYPES } from './notifications.js?v=103';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=103';
-import { t } from './i18n.js?v=103';
-import Farm from './farm.js?v=103';
+import Storage from './storage.js?v=104';
+import { NOTIF_TYPES } from './notifications.js?v=104';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=104';
+import { t } from './i18n.js?v=104';
+import Farm from './farm.js?v=104';
 
 // duplicate removed
 
@@ -1021,30 +1021,64 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
 
   let entries = [];
   
-  if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
-    const inv = window.__app.State.parsedFarm.inventory;
-    const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
+  if (window.__app.State.rawFarm) {
+    const rawFarm = window.__app.State.rawFarm;
+    const rawInv = rawFarm.inventory || {};
+    const equipped = rawFarm.bumpkin?.equipped || {};
+    const wardrobe = rawFarm.wardrobe || {};
     
-    allOwned.forEach(item => {
-      const priceInSfl = p2p[item.name];
-      if (priceInSfl && item.qty > 0) {
-        const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(item.name) : 0;
-        const totalValue = item.qty * priceInSfl;
-        const unitProfit = priceInSfl - baseCost;
-        const totalProfit = unitProfit * item.qty;
-        const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 100;
-
-        entries.push({
-          name: item.name,
-          qty: item.qty,
-          priceInSfl: priceInSfl,
-          baseCost,
-          unitProfit,
-          totalProfit,
-          profitMargin,
-          totalValue
-        });
+    const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');
+    const purchaseStats = {};
+    salesLog.forEach(log => {
+      if (log.type === 'purchase') {
+        if (!purchaseStats[log.item]) purchaseStats[log.item] = { totalCost: 0, totalQty: 0 };
+        purchaseStats[log.item].totalCost += log.cost;
+        purchaseStats[log.item].totalQty += log.qty;
       }
+    });
+
+    const getAvgCost = (name) => purchaseStats[name] ? (purchaseStats[name].totalCost / purchaseStats[name].totalQty) : 0;
+
+    const allItemsMap = {};
+    Object.entries(rawInv).forEach(([name, qty]) => {
+      allItemsMap[name] = (allItemsMap[name] || 0) + (parseFloat(qty) || 0);
+    });
+    Object.entries(equipped).forEach(([part, name]) => {
+      if (name) allItemsMap[name] = (allItemsMap[name] || 0) + 1;
+    });
+    Object.entries(wardrobe).forEach(([name, qty]) => {
+      allItemsMap[name] = (allItemsMap[name] || 0) + (parseFloat(qty) || 0);
+    });
+
+    Object.entries(allItemsMap).forEach(([name, qty]) => {
+      if (qty <= 0) return;
+      
+      let priceInSfl = p2p[name];
+      const hasPurchase = !!purchaseStats[name];
+      const avgCost = getAvgCost(name);
+      
+      if (!priceInSfl && hasPurchase) {
+        priceInSfl = avgCost;
+      }
+      
+      if (!priceInSfl && !hasPurchase) return;
+
+      const baseCost = avgCost > 0 ? avgCost : (window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(name) : 0);
+      const totalValue = qty * priceInSfl;
+      const unitProfit = priceInSfl - baseCost;
+      const totalProfit = unitProfit * qty;
+      const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 100;
+
+      entries.push({
+        name,
+        qty,
+        priceInSfl,
+        baseCost,
+        unitProfit,
+        totalProfit,
+        profitMargin,
+        totalValue
+      });
     });
   }
 

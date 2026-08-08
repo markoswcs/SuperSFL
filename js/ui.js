@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=129';
-import { NOTIF_TYPES } from './notifications.js?v=129';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=129';
-import { t } from './i18n.js?v=129';
-import Farm from './farm.js?v=129';
+import Storage from './storage.js?v=130';
+import { NOTIF_TYPES } from './notifications.js?v=130';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=130';
+import { t } from './i18n.js?v=130';
+import Farm from './farm.js?v=130';
 
 // duplicate removed
 
@@ -1131,20 +1131,29 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
 
     const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
 
+    let savedCost = 0;
+    try { savedCost = JSON.parse(localStorage.getItem('sfl_base_cost') || '{}')[item.name]; } catch(e) {}
+    
+    const hasCustomCost = savedCost > 0;
+    const costToUse = hasCustomCost ? savedCost : item.priceInSfl;
+    
     // Profit target stored per item in localStorage
     const profitTarget = (() => {
       try { return JSON.parse(localStorage.getItem('sfl_profit_pct') || '{}'); } catch(e) { return {}; }
     })();
     const itemProfitPct = profitTarget[item.name] || 0;
-    // Target price needed to hit the stored profit % (cost * (1 + pct/100) / (1 - taxRate))
-    const farm = window.__app.State.parsedFarm || {};
+    
     let farmTaxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
     if (farm.isVip) farmTaxPct = farmTaxPct * 0.5;
     const farmTaxRate = farmTaxPct / 100;
     
-    const targetPriceNeeded = item.baseCost > 0 && itemProfitPct > 0
-      ? (item.baseCost * (1 + itemProfitPct / 100)) / (1 - farmTaxRate)
+    // Calculate target and profits based on market cost, not seed cost
+    const targetPriceNeeded = hasCustomCost && itemProfitPct > 0
+      ? (costToUse * (1 + itemProfitPct / 100)) / (1 - farmTaxRate)
       : null;
+      
+    const unitProfit = hasCustomCost ? (item.priceInSfl * (1 - farmTaxRate)) - costToUse : 0;
+    const profitMargin = hasCustomCost && costToUse > 0 ? (unitProfit / costToUse) * 100 : 0;
     const isTargetHit = targetAlert
       ? item.priceInSfl >= targetAlert.threshold
       : (targetPriceNeeded !== null ? item.priceInSfl >= targetPriceNeeded : false);
@@ -1200,17 +1209,17 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         <!-- Bottom Section: Costs & Margins -->
         <div style="display:flex; justify-content:space-between; align-items:center; z-index:1; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Custo:</span>
-            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">${item.baseCost > 0 ? item.baseCost.toFixed(4) : '--'}</span>
+            <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Custo Médio:</span>
+            <span style="font-size:11px; font-weight:800; color:${hasCustomCost ? 'var(--text-secondary)' : 'var(--text-tertiary)'};">${hasCustomCost ? costToUse.toFixed(4) : 'não definido'}</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Lucro:</span>
-            <span style="font-size:11px; font-weight:800; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">
-              ${item.unitProfit >= 0 ? '+' : ''}${item.unitProfit.toFixed(4)} SFL
+            <span style="font-size:11px; font-weight:800; color:${hasCustomCost ? (unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)') : 'var(--text-tertiary)'};">
+              ${hasCustomCost ? (unitProfit >= 0 ? '+' : '') + unitProfit.toFixed(4) + ' SFL' : '---'}
             </span>
-            ${item.baseCost > 0 ? `
-              <span style="background:${item.unitProfit >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${item.unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">
-                ${item.unitProfit >= 0 ? '+' : ''}${item.profitMargin.toFixed(0)}%
+            ${hasCustomCost ? `
+              <span style="background:${unitProfit >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">
+                ${unitProfit >= 0 ? '+' : ''}${profitMargin.toFixed(0)}%
               </span>
             ` : ''}
           </div>
@@ -1255,24 +1264,25 @@ function openP2pCalc(itemName, priceInSfl) {
   const taxRate = taxPct / 100;
   const taxColour = taxPct <= 15 ? 'var(--emerald)' : taxPct <= 20 ? 'var(--amber)' : 'var(--coral)';
 
-  // Cost per unit
-  const cost = (window.__app.getEstimatedCost && window.__app.getEstimatedCost(itemName)) || 0;
+  // Load saved cost or use current market price (SFL)
+  let savedCost = 0;
+  try { savedCost = JSON.parse(localStorage.getItem('sfl_base_cost') || '{}')[itemName]; } catch(e) {}
+  const cost = savedCost > 0 ? savedCost : priceInSfl;
 
   // Derived per-unit metrics AT CURRENT PRICE
   const netPerUnit    = priceInSfl * (1 - taxRate);
-  const profitPerUnit = cost > 0 ? netPerUnit - cost : 0;
-  const marginPct     = cost > 0 ? (profitPerUnit / cost) * 100 : 0;
+  const profitPerUnit = netPerUnit - cost;
+  const marginPct     = (profitPerUnit / cost) * 100;
   const col = (v) => v > 0 ? 'var(--emerald)' : v < 0 ? 'var(--coral)' : 'var(--text-secondary)';
 
   const defaultQty = inventoryQty > 0 ? inventoryQty : 10;
-  const hasCost = cost > 0;
 
   // Load saved profit target for this item
   let savedPct = 0;
   try { savedPct = JSON.parse(localStorage.getItem('sfl_profit_pct') || '{}')[itemName] || 0; } catch(e) {}
 
   // Pre-compute target prices for the 3 buttons
-  const tp = (pct) => hasCost ? (cost * (1 + pct / 100)) / (1 - taxRate) : 0;
+  const tp = (pct) => (cost * (1 + pct / 100)) / (1 - taxRate);
 
   showModal(`📊 ${itemName}`, `
 
@@ -1288,17 +1298,21 @@ function openP2pCalc(itemName, priceInSfl) {
         <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--amber);line-height:1;">${priceInSfl.toFixed(4)}</div>
         <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">SFL / unidade</div>
       </div>
-      ${hasCost ? `
+      
+      <!-- EDITABLE COST -->
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;" id="stat-card-cost">
-        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">🌱 Vender por</div>
-        <div id="stat-cost-val" style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--text-secondary);line-height:1;">${cost.toFixed(4)}</div>
-        <div id="stat-cost-sub" style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">preço mercado atual</div>
+        <div style="font-size:9px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">🌱 Seu Preço de Compra</div>
+        <input type="number" id="calc-base-cost" value="${cost.toFixed(4)}" step="0.0001" min="0.00001"
+          style="width:100%; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.1); color:var(--text-secondary); font-family:var(--font-mono); font-size:20px; font-weight:800; padding:2px 0; outline:none;"
+          oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, this.value, window.__calc_selected_pct||0, '${itemName}')">
+        <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">toque para editar (SFL)</div>
       </div>
+      
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;" id="stat-card-profit">
-        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">📈 Lucro/Unid.</div>
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">📈 Lucro/Unid. Atual</div>
         <div id="stat-profit-val" style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:${col(profitPerUnit)};line-height:1;">${(profitPerUnit >= 0 ? '+' : '') + profitPerUnit.toFixed(4)}</div>
         <div id="stat-profit-sub" style="font-size:9px;color:${col(marginPct)};margin-top:2px;font-weight:700;">${(marginPct >= 0 ? '+' : '') + marginPct.toFixed(1)}% margem</div>
-      </div>` : ''}
+      </div>
     </div>
 
     <!-- ── ISLAND BADGE ── -->
@@ -1334,20 +1348,18 @@ function openP2pCalc(itemName, priceInSfl) {
           <span>Taxa (${taxPct.toFixed(1)}%)</span>
           <span id="calc-tax" style="font-family:var(--font-mono);">- 0 SFL</span>
         </div>
-        ${hasCost ? `
         <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
-          <span>Custo sementes</span>
+          <span>Custo total</span>
           <span id="calc-cost-total" style="font-family:var(--font-mono);">- 0 SFL</span>
-        </div>` : ''}
+        </div>
         <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;
           border-top:2px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:2px;">
-          <span id="calc-net-label" style="color:var(--text-primary);">💰 ${hasCost ? 'Lucro líquido' : 'Receita líquida'}</span>
+          <span id="calc-net-label" style="color:var(--text-primary);">💰 Lucro líquido</span>
           <span id="calc-net" style="font-family:var(--font-mono);color:var(--emerald);">0 SFL</span>
         </div>
       </div>
     </div>
 
-    ${hasCost ? `
     <!-- ── META DE LUCRO ── -->
     <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;margin-top:10px;">
       <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">🎯 Meta de Lucro</div>
@@ -1377,7 +1389,7 @@ function openP2pCalc(itemName, priceInSfl) {
       <div id="calc-target-msg" style="padding:10px;background:rgba(0,0,0,0.2);
         border:1px solid rgba(255,255,255,0.06);border-radius:10px;display:none;font-size:12px;">
       </div>
-    </div>` : ''}
+    </div>
 
   `);
 
@@ -1387,11 +1399,25 @@ function openP2pCalc(itemName, priceInSfl) {
 }
 
 
-function updateP2pCalc(price, taxRate, cost, profitPct, itemName) {
+function updateP2pCalc(price, taxRate, passedCost, profitPct, itemName) {
   const qtyInput = $('#calc-qty');
+  const costInput = $('#calc-base-cost');
   if (!qtyInput) return;
 
   profitPct = parseFloat(profitPct) || 0;
+  
+  let cost = passedCost !== undefined ? parseFloat(passedCost) : 0;
+  // If the user typed into the input, save it to local storage
+  if (costInput && cost > 0 && itemName) {
+    try {
+      const store = JSON.parse(localStorage.getItem('sfl_base_cost') || '{}');
+      store[itemName] = cost;
+      localStorage.setItem('sfl_base_cost', JSON.stringify(store));
+    } catch(e) {}
+  } else if (!costInput) {
+    // modal wasn't fully rendered yet or fallback
+    cost = parseFloat(passedCost) || 0;
+  }
 
   const qty = parseFloat(qtyInput.value) || 0;
   const gross = qty * price;
@@ -1404,7 +1430,7 @@ function updateP2pCalc(price, taxRate, cost, profitPct, itemName) {
   setText('#calc-gross', gross.toFixed(4) + ' SFL');
   setText('#calc-tax', '- ' + tax.toFixed(4) + ' SFL');
   const costEl = $('#calc-cost-total');
-  if (costEl && cost > 0) costEl.innerText = '- ' + totalCost.toFixed(4) + ' SFL';
+  if (costEl) costEl.innerText = '- ' + totalCost.toFixed(4) + ' SFL';
 
   const netEl = $('#calc-net');
   const msgEl = $('#calc-target-msg');
@@ -1449,11 +1475,9 @@ function updateP2pCalc(price, taxRate, cost, profitPct, itemName) {
       netEl.style.color = targetProfit > 0 ? 'var(--emerald)' : 'var(--coral)';
     }
 
-    // Update "Vender por" stat card (3rd card)
-    const statCostVal = $('#stat-cost-val');
-    const statCostSub = $('#stat-cost-sub');
-    if (statCostVal) { statCostVal.innerText = tup.toFixed(4); statCostVal.style.color = isReached ? 'var(--emerald)' : 'var(--amber)'; }
-    if (statCostSub) { statCostSub.innerText = isReached ? '✅ mercado atingiu' : `⏳ falta +${diff.toFixed(4)} SFL`; statCostSub.style.color = isReached ? 'var(--emerald)' : 'var(--coral)'; }
+    // Since they want to see target profit, update the label
+    const netLabel = $('#calc-net-label');
+    if (netLabel) netLabel.innerHTML = `💰 Lucro alvo (+${profitPct}%)`;
 
     // Update "Lucro/Unid." stat card (4th card)
     const statProfitVal = $('#stat-profit-val');
@@ -1475,17 +1499,25 @@ function updateP2pCalc(price, taxRate, cost, profitPct, itemName) {
         </div>
       `;
     }
+    
+    // Also update the buttons dynamically to show new target values when cost changes
+    [2, 5, 10].forEach(p => {
+      const btn = document.getElementById(`pct-btn-${p}`);
+      if (btn) {
+        const spanTp = btn.querySelectorAll('span')[1];
+        if (spanTp) spanTp.innerText = ((cost * (1 + p / 100)) / (1 - taxRate)).toFixed(4) + ' SFL';
+      }
+    });
+
   } else {
     // No % selected: show actual current profit
     if (netEl) {
-      if (cost > 0) {
-        netEl.innerText = (rawProfit >= 0 ? '+' : '') + rawProfit.toFixed(4) + ' SFL';
-        netEl.style.color = rawProfit > 0 ? 'var(--emerald)' : rawProfit < 0 ? 'var(--coral)' : 'var(--text-primary)';
-      } else {
-        netEl.innerText = net.toFixed(4) + ' SFL';
-        netEl.style.color = 'var(--emerald)';
-      }
+      netEl.innerText = (rawProfit >= 0 ? '+' : '') + rawProfit.toFixed(4) + ' SFL';
+      netEl.style.color = rawProfit > 0 ? 'var(--emerald)' : rawProfit < 0 ? 'var(--coral)' : 'var(--text-primary)';
     }
+    const netLabel = $('#calc-net-label');
+    if (netLabel) netLabel.innerHTML = `💰 Lucro líquido`;
+    
     if (msgEl) msgEl.style.display = 'none';
   }
 }

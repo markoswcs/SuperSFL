@@ -1,13 +1,70 @@
-self.addEventListener('install', function(e) {
+/**
+ * sw.js — Service Worker para SFL Hub PWA
+ * Garante que o app seja instalável no celular/desktop
+ */
+
+const CACHE_NAME = 'sflhub-v113';
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/css/styles.css',
+  '/js/app.js',
+  '/js/ui.js',
+  '/js/farm.js',
+  '/js/api.js',
+  '/js/storage.js',
+  '/js/market-costs.js',
+  '/js/i18n.js',
+  '/js/notifications.js',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+];
+
+// Install: cache core assets
+self.addEventListener('install', (e) => {
   self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+  );
 });
 
-self.addEventListener('activate', function(e) {
-  self.registration.unregister()
-    .then(function() {
-      return self.clients.matchAll();
-    })
-    .then(function(clients) {
-      clients.forEach(client => client.navigate(client.url))
-    });
+// Activate: clean old caches
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Fetch: network-first, fallback to cache
+self.addEventListener('fetch', (e) => {
+  // Only handle GET requests for same origin or sfl assets
+  if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+
+  // For API/external calls: network only (never cache live data)
+  if (
+    url.hostname.includes('sunflower-land.com') ||
+    url.hostname.includes('sfl.world') ||
+    url.hostname.includes('corsproxy') ||
+    url.hostname.includes('exchangerate-api')
+  ) {
+    return; // Let browser handle it normally
+  }
+
+  // For app shell (same origin): network-first, cache fallback
+  e.respondWith(
+    fetch(e.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cloned));
+        }
+        return response;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });

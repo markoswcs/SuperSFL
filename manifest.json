@@ -1,26 +1,42 @@
 {
-  "name": "Sunflower Super App",
+  "name": "SFL Hub — Sunflower Land Dashboard",
   "short_name": "SFL Hub",
-  "description": "Dashboard completo para Sunflower Land — preços, fazenda, notificações e mercado P2P.",
-  "start_url": "/",
+  "description": "Dashboard completo para Sunflower Land: preços, fazenda, alertas e mercado P2P.",
+  "start_url": "/SuperSFL/",
+  "scope": "/SuperSFL/",
+  "id": "/SuperSFL/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0A0D12",
   "theme_color": "#F59E0B",
   "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["games", "utilities", "finance"],
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["games", "utilities"],
   "screenshots": []
 }

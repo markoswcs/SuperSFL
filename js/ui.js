@@ -5,11 +5,11 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
-import Storage from './storage.js?v=123';
-import { NOTIF_TYPES } from './notifications.js?v=123';
-import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=123';
-import { t } from './i18n.js?v=123';
-import Farm from './farm.js?v=123';
+import Storage from './storage.js?v=124';
+import { NOTIF_TYPES } from './notifications.js?v=124';
+import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=124';
+import { t } from './i18n.js?v=124';
+import Farm from './farm.js?v=124';
 
 // duplicate removed
 
@@ -180,10 +180,10 @@ function renderHome(exchange, prices, parsedFarm) {
         </div>
 
         <!-- RIGHT: Converter -->
-        <div style="flex:1;max-width:240px;background:rgba(0,0,0,0.15);border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,0.05);">
+        <div style="flex:1;max-width:250px;background:rgba(0,0,0,0.15);border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,0.05);">
           <div style="display:flex;align-items:center;gap:8px;">
             <!-- Input -->
-            <div style="position:relative;width:45%;flex-shrink:0;">
+            <div style="position:relative;width:95px;flex-shrink:0;">
               <input type="number" id="flw-converter-input" placeholder="0"
                 oninput="window.__app.convertFlower(this.value, ${sflBrl}, ${sflUsd})"
                 style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:8px 32px 8px 8px;font-size:16px;font-weight:700;color:var(--text-primary);font-family:var(--font-mono);outline:none;-webkit-appearance:none;appearance:none;text-align:right;">
@@ -191,8 +191,8 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             
             <!-- Result -->
-            <div id="flw-converter-result" style="flex:1;min-width:0;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px;font-size:15px;font-weight:700;color:var(--amber);font-family:var(--font-mono);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.2;">
-              R$ 0.00
+            <div id="flw-converter-result" style="flex:1;min-width:0;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px;font-size:clamp(13px,3.5vw,15px);font-weight:700;color:var(--amber);font-family:var(--font-mono);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              R$&nbsp;0.00
               <span style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">($0.00)</span>
             </div>
           </div>

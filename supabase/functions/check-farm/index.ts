@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0"
 import webpush from "https://esm.sh/web-push@3.6.6"
+import { parseFarm } from "./farm.js"
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') || "BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo";
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') || "BEj6GsZR9yQJ7FWMEjF3OU_2QLb-L3kwSa8-jZnWgPQ";
@@ -48,37 +49,65 @@ serve(async (req) => {
         const state = farmData?.state;
         if (!state) continue;
 
-        const notificationsToSend = [];
+        // Use the exact same logic as the frontend!
+        const parsedFarm = parseFarm(farmData);
+        let readyMessages = [];
+        let attentionNeeded = false;
+        let notifIdParts = [];
 
-        // Simple heuristic for checking ready items
-        // In a real scenario, this uses the exact timings from the game (which are complex due to skills/boosts).
-        // Here we use a simplified approach for demonstration, or we notify when items exceed base times.
-        // For accurate times, we just check if current time > plantedAt + max_possible_duration
+        // Helper to check categories
+        const checkCategory = (items, itemNameFunc, messagePrefix) => {
+          let readyCount = 0;
+          let firstItemName = '';
+          
+          if (!items) return;
+          
+          if (Array.isArray(items)) {
+            items.forEach(item => {
+              if (item.status === 'ready') {
+                readyCount++;
+                if (!firstItemName) firstItemName = itemNameFunc(item);
+                notifIdParts.push(item.id || firstItemName);
+              }
+            });
+          } else {
+            Object.values(items).forEach(item => {
+              if (item.status === 'ready') {
+                readyCount++;
+                if (!firstItemName) firstItemName = itemNameFunc(item);
+                notifIdParts.push(item.id || firstItemName);
+              }
+            });
+          }
+
+          if (readyCount > 0) {
+            attentionNeeded = true;
+            if (readyCount === 1) {
+              readyMessages.push(`${messagePrefix} ${firstItemName} está pronto(a).`);
+            } else {
+              readyMessages.push(`${readyCount} ${messagePrefix}s estão prontos(as).`);
+            }
+          }
+        };
+
+        checkCategory(parsedFarm.crops, c => c.name, 'Plantação de');
+        checkCategory(parsedFarm.animals, a => a.type, 'Animal');
+        checkCategory(parsedFarm.fruitPatches, f => f.name, 'Fruta');
+        checkCategory(parsedFarm.trees, () => 'Madeira', 'Recurso');
+        checkCategory(parsedFarm.stones, () => 'Pedra', 'Recurso');
+        checkCategory(parsedFarm.iron, () => 'Ferro', 'Recurso');
+        checkCategory(parsedFarm.gold, () => 'Ouro', 'Recurso');
         
-        const now = Date.now();
+        // Disable notifications for chores/mushrooms/deliveries on the backend to avoid spam, unless requested.
 
-        // Check Crops (Simplified)
-        if (state.crops) {
-          Object.values(state.crops).forEach((c: any) => {
-             if (c.crop && c.crop.plantedAt) {
-                 const name = c.crop.name;
-                 const plantedAt = c.crop.plantedAt;
-                 // As a quick fallback, if it's been more than 48 hours, it's definitely ready. 
-                 // But ideally, we should map base times. 
-                 // To make this perfect, we'd port the getCropTime logic here.
-                 // For now, we will notify if plantedAt > 0 and we haven't notified.
-                 // Actually, if we just send a generic "Farm needs attention" if we detect old timestamps.
-             }
-          });
-        }
-        
-        // This is a placeholder for the farm logic. 
-        // For the sake of the implementation, let's assume we have a logic block that evaluates:
-        const needsAttention = true; // Replace with actual logic
-
-        if (needsAttention) {
-            // Check if we already notified for this state
-            const notifId = `farm-${farmId}-attention-${Math.floor(now / 3600000)}`; // e.g. hourly throttle
+        if (attentionNeeded) {
+            // Generate a unique ID based on what is exactly ready
+            // So if new things get ready, a new notification is sent
+            // Sort to ensure consistency
+            notifIdParts.sort();
+            // Hash the parts roughly
+            const notifHash = notifIdParts.join('-').substring(0, 50);
+            const notifId = `farm-${farmId}-${notifHash}`;
             
             const { data: existingLog } = await supabase
                .from('notification_logs')
@@ -97,9 +126,12 @@ serve(async (req) => {
                   }
                 };
 
+                let bodyText = readyMessages.join('\n');
+                if (bodyText.length > 100) bodyText = bodyText.substring(0, 97) + '...';
+
                 const payload = JSON.stringify({
-                  title: "Sunflower Land",
-                  body: "Sua fazenda precisa de atenção! (Colheitas ou animais prontos)",
+                  title: "SFL Pro: Coisas Prontas!",
+                  body: bodyText,
                   icon: "https://sfl.world/favicon.ico",
                   tag: "general-farm"
                 });
@@ -112,7 +144,7 @@ serve(async (req) => {
                    notification_id: notifId
                 });
 
-                results.push({ farmId, status: "Sent" });
+                results.push({ farmId, status: "Sent", messages: readyMessages });
             }
         }
       } catch (err) {

@@ -3,22 +3,22 @@
  * Garante que o app seja instalável no celular/desktop
  */
 
-const CACHE_NAME = 'sflpro-v141';
+const CACHE_NAME = 'sflpro-v142';
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/ui.js',
-  '/js/farm.js',
-  '/js/api.js',
-  '/js/storage.js',
-  '/js/market-costs.js',
-  '/js/i18n.js',
-  '/js/notifications.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './js/ui.js',
+  './js/farm.js',
+  './js/api.js',
+  './js/storage.js',
+  './js/market-costs.js',
+  './js/i18n.js',
+  './js/notifications.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 // Install: cache core assets

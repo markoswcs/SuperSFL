@@ -694,27 +694,43 @@ function parseAgingShed(farm) {
   const now = Date.now();
   const items = [];
   const racks = farm.agingShed.racks;
-  const rackTypes = ['aging', 'fermentation', 'spice'];
-  rackTypes.forEach((rackType) => {
-    if (Array.isArray(racks[rackType])) {
-      racks[rackType].forEach((slot) => {
-        if (slot.readyAt) {
-          const msLeft = slot.readyAt - now;
-          items.push({
-            id: `agingshed-${rackType}-${slot.id}`,
-            name: `Galpão de Envelhecimento (${slot.recipe})`,
-            readyAt: slot.readyAt,
-            msLeft,
-            status: getTimerClass(msLeft),
-            countdown: formatCountdown(msLeft),
-            type: 'agingshed',
-          });
-        }
+
+  // aging racks use "fish" as the item name field
+  // fermentation and spice racks use "recipe" as the item name field
+  const rackTypes = [
+    { key: 'aging',         nameField: 'fish',   label: 'Aging Shed' },
+    { key: 'fermentation',  nameField: 'recipe', label: 'Fermentation' },
+    { key: 'spice',         nameField: 'recipe', label: 'Spice' },
+  ];
+
+  rackTypes.forEach(({ key, nameField, label }) => {
+    if (!Array.isArray(racks[key])) return;
+    racks[key].forEach((slot) => {
+      if (!slot.readyAt) return;
+
+      // readyAt may be in seconds (< 1e12) or ms — normalize to ms
+      let readyAt = slot.readyAt;
+      if (readyAt < 1e12) readyAt = readyAt * 1000;
+
+      const msLeft = readyAt - now;
+      const itemName = slot[nameField] || slot.recipe || slot.fish || label;
+
+      items.push({
+        id: `agingshed-${key}-${slot.id || readyAt}`,
+        name: itemName,
+        label,
+        readyAt,
+        msLeft,
+        status: getTimerClass(msLeft),
+        countdown: formatCountdown(msLeft),
+        type: 'agingshed',
       });
-    }
+    });
   });
+
   return items.sort((a, b) => a.msLeft - b.msLeft);
 }
+
 
 /**
  * Parse Salt Farm

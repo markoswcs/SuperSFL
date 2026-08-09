@@ -94,32 +94,34 @@ serve(async (req) => {
           }
         };
 
-        checkCategory(parsedFarm.crops, c => c.name, 'Plantação de');
-        checkCategory(parsedFarm.animals, a => a.type, 'Animal');
-        checkCategory(parsedFarm.fruits, f => f.name, 'Fruta');
-        checkCategory(parsedFarm.trees, () => 'Madeira', 'Recurso');
-        checkCategory(parsedFarm.rocks, r => r.name, 'Recurso');
-        checkCategory(parsedFarm.beehives, () => 'Mel', 'Recurso');
-        checkCategory(parsedFarm.flowers, f => f.name, 'Flor');
-        checkCategory(parsedFarm.oil, () => 'Óleo', 'Recurso');
-        checkCategory(parsedFarm.composting, c => c.name, 'Composteira');
-        checkCategory(parsedFarm.greenhouse, g => g.name, 'Estufa');
-        checkCategory(parsedFarm.buildings, b => b.name, 'Construção');
-        checkCategory(parsedFarm.cropMachine, c => c.name, 'Máquina');
-        checkCategory(parsedFarm.crabTraps, c => c.name, 'Armadilha');
-        checkCategory(parsedFarm.shrines, s => s.name, 'Santuário');
-        checkCategory(parsedFarm.agingShed, a => a.name, 'Galpão');
-        checkCategory(parsedFarm.saltFarm, s => s.name, 'Salina');
+        const prefs = sub.preferences || {};
+
+        if (prefs.crops !== false) checkCategory(parsedFarm.crops, c => c.name, 'Plantação de');
+        if (prefs.animals !== false) checkCategory(parsedFarm.animals, a => a.type, 'Animal');
+        if (prefs.fruits !== false) checkCategory(parsedFarm.fruits, f => f.name, 'Fruta');
+        if (prefs.trees !== false) checkCategory(parsedFarm.trees, () => 'Madeira', 'Recurso');
+        if (prefs.rocks !== false) checkCategory(parsedFarm.rocks, r => r.name, 'Recurso');
+        if (prefs.beehives !== false) checkCategory(parsedFarm.beehives, () => 'Mel', 'Recurso');
+        if (prefs.flowers !== false) checkCategory(parsedFarm.flowers, f => f.name, 'Flor');
+        if (prefs.oil !== false) checkCategory(parsedFarm.oil, () => 'Óleo', 'Recurso');
+        if (prefs.composting !== false) checkCategory(parsedFarm.composting, c => c.name, 'Composteira');
+        if (prefs.greenhouse !== false) checkCategory(parsedFarm.greenhouse, g => g.name, 'Estufa');
+        if (prefs.buildings !== false) checkCategory(parsedFarm.buildings, b => b.name, 'Construção');
+        if (prefs.cropMachine !== false) checkCategory(parsedFarm.cropMachine, c => c.name, 'Máquina');
+        if (prefs.crabTraps !== false) checkCategory(parsedFarm.crabTraps, c => c.name, 'Armadilha');
+        if (prefs.shrines !== false) checkCategory(parsedFarm.shrines, s => s.name, 'Santuário');
+        if (prefs.agingShed !== false) checkCategory(parsedFarm.agingShed, a => a.name, 'Galpão');
+        if (prefs.saltFarm !== false) checkCategory(parsedFarm.saltFarm, s => s.name, 'Salina');
         
         // Mushrooms and Chores
-        checkCategory(parsedFarm.mushrooms, () => 'Cogumelo', 'Recurso');
+        if (prefs.mushrooms !== false) checkCategory(parsedFarm.mushrooms, () => 'Cogumelo', 'Recurso');
         // checkCategory(parsedFarm.chores, (c) => c.npc, 'Tarefa para');
 
         // Check for Daily Reset (00:00 UTC -> 21:00 BRT)
         const nowUtc = new Date();
         const isDailyResetTime = nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15;
         
-        if (isDailyResetTime) {
+        if (isDailyResetTime && prefs.dailyReset !== false) {
            const resetDateStr = nowUtc.toISOString().split('T')[0];
            const dailyNotifId = `farm-${farmId}-dailyreset-${resetDateStr}`;
            

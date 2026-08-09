@@ -10,9 +10,22 @@ const DEFAULT_PREFS = {
   crops: true,
   animals: true,
   fruits: true,
-  resources: true,
+  trees: true,
+  rocks: true,
+  beehives: true,
+  flowers: true,
+  oil: true,
+  composting: true,
+  greenhouse: true,
+  buildings: true,
+  cropMachine: true,
+  crabTraps: true,
+  shrines: true,
+  agingShed: true,
+  saltFarm: true,
+  deliveries: true,
   market: true,
-  deliveries: true
+  dailyReset: true
 };
 
 class NotificationEngine {
@@ -57,6 +70,38 @@ class NotificationEngine {
     // If enabling master, ask for permission
     if (key === 'master' && value === true) {
       this.requestPermission();
+    } else {
+      this.syncPrefsToSupabase();
+    }
+
+    if (window.__app?.ui) {
+      window.__app.ui.renderNotificationSettings();
+    }
+  }
+
+  async syncPrefsToSupabase() {
+    if (!this.prefs.master) return;
+    const farmId = window.__app?.State?.farmId;
+    if (!farmId) return;
+
+    try {
+      const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
+      const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
+      
+      await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?farm_id=eq.${farmId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`
+        },
+        body: JSON.stringify({
+          preferences: this.prefs
+        })
+      });
+      console.log('Preferências sincronizadas com a nuvem.');
+    } catch(e) {
+      console.error('Erro ao sincronizar prefs', e);
     }
   }
 
@@ -271,38 +316,74 @@ class NotificationEngine {
                 icon: img
               });
               this.notifiedIds.add(uid);
-            }
+    // 4. RESOURCES & BUILDINGS
+    const checkRes = (list, tag, title) => {
+      if (!list) return;
+      list.forEach(res => {
+        if (res.status === 'ready') {
+          const timeKey = res.readyAt !== undefined ? res.readyAt : res.msLeft;
+          const uid = `res-${res.id || res.name}-${timeKey}`;
+          activeIdsThisTick.add(uid);
+          if (!this.notifiedIds.has(uid)) {
+            let imgName = res.name;
+            if (res.name.includes('Tree')) imgName = 'Wood';
+            else if (res.name.includes('Stone')) imgName = 'Stone';
+            else if (res.name.includes('Iron')) imgName = 'Iron';
+            else if (res.name.includes('Gold')) imgName = 'Gold';
+            else if (res.name.includes('Crimstone')) imgName = 'Crimstone';
+            else if (res.name.includes('Sunstone')) imgName = 'Sunstone';
+            else if (res.name.includes('Beehive')) imgName = 'Honey';
+            else if (res.name.includes('Oil')) imgName = 'Oil';
+            else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
+            
+            const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
+            const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
+            
+            this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
+              body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
+              tag: tag,
+              icon: img
+            });
+            this.notifiedIds.add(uid);
           }
-        });
-      };
-      checkRes(parsedFarm.trees, 'trees', 'Madeira');
-      checkRes(parsedFarm.rocks, 'rocks', 'Recurso');
-      checkRes(parsedFarm.beehives, 'beehives', 'Mel');
-      checkRes(parsedFarm.flowers, 'flowers', 'Flor');
-      checkRes(parsedFarm.oil, 'oil', 'Óleo');
-      checkRes(parsedFarm.composting, 'composting', 'Composteira');
-      checkRes(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
-      checkRes(parsedFarm.buildings, 'buildings', 'Construção');
-      checkRes(parsedFarm.cropMachine, 'cropMachine', 'Máquina');
-      checkRes(parsedFarm.crabTraps, 'crabTraps', 'Armadilha');
-      checkRes(parsedFarm.shrines, 'shrines', 'Santuário');
-      checkRes(parsedFarm.agingShed, 'agingShed', 'Galpão');
-      checkRes(parsedFarm.saltFarm, 'saltFarm', 'Salina');
-    }
+        }
+      });
+    };
+    if (parsedFarm.trees && this.prefs.trees) checkRes(parsedFarm.trees, 'trees', 'Árvore');
+    if (parsedFarm.stones && this.prefs.rocks) checkRes(parsedFarm.stones, 'stones', 'Pedra');
+    if (parsedFarm.iron && this.prefs.rocks) checkRes(parsedFarm.iron, 'iron', 'Ferro');
+    if (parsedFarm.gold && this.prefs.rocks) checkRes(parsedFarm.gold, 'gold', 'Ouro');
+    if (parsedFarm.crimstones && this.prefs.rocks) checkRes(parsedFarm.crimstones, 'crimstones', 'Crimstone');
+    if (parsedFarm.sunstones && this.prefs.rocks) checkRes(parsedFarm.sunstones, 'sunstones', 'Sunstone');
+    if (parsedFarm.beehives && this.prefs.beehives) checkRes(parsedFarm.beehives, 'beehives', 'Colmeia');
+    if (parsedFarm.flowers && this.prefs.flowers) checkRes(parsedFarm.flowers, 'flowers', 'Flor');
+    if (parsedFarm.oil && this.prefs.oil) checkRes(parsedFarm.oil, 'oil', 'Óleo');
+    
+    if (parsedFarm.composting && this.prefs.composting) checkRes(parsedFarm.composting, 'composting', 'Composteira');
+    if (parsedFarm.greenhouse && this.prefs.greenhouse) checkRes(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
+    if (parsedFarm.buildings && this.prefs.buildings) checkRes(parsedFarm.buildings, 'buildings', 'Construção');
+    if (parsedFarm.cropMachine && this.prefs.cropMachine) checkRes(parsedFarm.cropMachine, 'cropMachine', 'Crop Machine');
+    
+    if (parsedFarm.crabTraps && this.prefs.crabTraps) checkRes(parsedFarm.crabTraps, 'crabTraps', 'Armadilha');
+    if (parsedFarm.shrines && this.prefs.shrines) checkRes(parsedFarm.shrines, 'shrines', 'Santuário');
+    if (parsedFarm.agingShed && this.prefs.agingShed) checkRes(parsedFarm.agingShed, 'agingShed', 'Galpão');
+    if (parsedFarm.saltFarm && this.prefs.saltFarm) checkRes(parsedFarm.saltFarm, 'saltFarm', 'Salina');
 
     // Daily Reset (00:00 UTC)
-    const nowUtc = new Date();
-    if (nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15) {
-      const resetDateStr = nowUtc.toISOString().split('T')[0];
-      const uid = `dailyreset-${resetDateStr}`;
-      activeIdsThisTick.add(uid);
-      if (!this.notifiedIds.has(uid)) {
-        this.sendPush(`Daily Reset!`, {
-          body: `Your farm has been reset. Time to start a new day!`,
-          tag: 'general-farm',
-          icon: `https://sfl.world/favicon.ico`
-        });
-        this.notifiedIds.add(uid);
+    if (this.prefs.dailyReset) {
+      const nowUtc = new Date();
+      if (nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15) {
+        const resetDateStr = nowUtc.toISOString().split('T')[0];
+        const uid = `dailyreset-${resetDateStr}`;
+        activeIdsThisTick.add(uid);
+        if (!this.notifiedIds.has(uid)) {
+          this.sendPush(`Daily Reset!`, {
+            body: `Your farm has been reset. Time to start a new day!`,
+            tag: 'general-farm',
+            icon: `https://sfl.world/favicon.ico`
+          });
+          this.notifiedIds.add(uid);
+        }
       }
     }
 

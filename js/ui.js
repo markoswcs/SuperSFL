@@ -1654,30 +1654,82 @@ function renderAlertsPage() {
         </label>
       </div>
       
-      <div style="padding:8px 0;">
+      <div style="padding:8px 0; max-height: 50vh; overflow-y: auto;">
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
           <span style="font-size:13px; font-weight:700;">🌽 Plantações (Colheitas)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crops', this.checked)" ${prefs.crops ? 'checked' : ''}><span class="slider round"></span></label>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crops', this.checked)" ${prefs.crops !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
           <span style="font-size:13px; font-weight:700;">🐔 Animais (Fome / Coleta)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('animals', this.checked)" ${prefs.animals ? 'checked' : ''}><span class="slider round"></span></label>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('animals', this.checked)" ${prefs.animals !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
           <span style="font-size:13px; font-weight:700;">🍎 Árvores Frutíferas</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('fruits', this.checked)" ${prefs.fruits ? 'checked' : ''}><span class="slider round"></span></label>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('fruits', this.checked)" ${prefs.fruits !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">🪨 Recursos Naturais</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('resources', this.checked)" ${prefs.resources ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">🌳 Árvores (Madeira)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('trees', this.checked)" ${prefs.trees !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🪨 Rochas (Pedra/Ferro/Ouro)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('rocks', this.checked)" ${prefs.rocks !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🍯 Colmeias (Mel)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('beehives', this.checked)" ${prefs.beehives !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🌸 Flores</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('flowers', this.checked)" ${prefs.flowers !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🛢️ Poços de Óleo</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('oil', this.checked)" ${prefs.oil !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">♻️ Composteiras</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('composting', this.checked)" ${prefs.composting !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🪴 Estufa (Greenhouse)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('greenhouse', this.checked)" ${prefs.greenhouse !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🍳 Construções (Forno, etc)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('buildings', this.checked)" ${prefs.buildings !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🚜 Máquina de Plantação</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('cropMachine', this.checked)" ${prefs.cropMachine !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🦀 Armadilhas (Crab Traps)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crabTraps', this.checked)" ${prefs.crabTraps !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">⛩️ Santuários</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('shrines', this.checked)" ${prefs.shrines !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🍷 Galpão de Envelhecimento</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('agingShed', this.checked)" ${prefs.agingShed !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🧂 Fazenda de Sal</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('saltFarm', this.checked)" ${prefs.saltFarm !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
           <span style="font-size:13px; font-weight:700;">📈 Mercado (Metas / Pump)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('market', this.checked)" ${prefs.market ? 'checked' : ''}><span class="slider round"></span></label>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('market', this.checked)" ${prefs.market !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">📦 Entregas Prontas</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('deliveries', this.checked)" ${prefs.deliveries !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:13px; font-weight:700;">📦 Entregas Prontas</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('deliveries', this.checked)" ${prefs.deliveries ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">⏰ Daily Reset (00:00 UTC)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('dailyReset', this.checked)" ${prefs.dailyReset !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
       </div>
     </div>

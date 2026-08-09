@@ -286,36 +286,6 @@ class NotificationEngine {
       });
     }
 
-    // 4. RESOURCES (Wood, Stone, Iron, Gold, Beehives)
-    if (this.prefs.resources) {
-      const checkRes = (list, tag, title) => {
-        if (!list) return;
-        list.forEach(res => {
-          if (res.status === 'ready') {
-            const timeKey = res.readyAt !== undefined ? res.readyAt : res.msLeft;
-            const uid = `res-${res.id || res.name}-${timeKey}`;
-            activeIdsThisTick.add(uid);
-            if (!this.notifiedIds.has(uid)) {
-              let imgName = res.name;
-              if (res.name.includes('Tree')) imgName = 'Wood';
-              else if (res.name.includes('Stone')) imgName = 'Stone';
-              else if (res.name.includes('Iron')) imgName = 'Iron';
-              else if (res.name.includes('Gold')) imgName = 'Gold';
-              else if (res.name.includes('Crimstone')) imgName = 'Crimstone';
-              else if (res.name.includes('Sunstone')) imgName = 'Sunstone';
-              else if (res.name.includes('Beehive')) imgName = 'Honey';
-              else if (res.name.includes('Oil')) imgName = 'Oil';
-              else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
-              
-              const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
-              const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
-              
-              this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
-                body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
-                tag: tag,
-                icon: img
-              });
-              this.notifiedIds.add(uid);
     // 4. RESOURCES & BUILDINGS
     const checkRes = (list, tag, title) => {
       if (!list) return;

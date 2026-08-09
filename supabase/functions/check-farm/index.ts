@@ -118,7 +118,6 @@ serve(async (req) => {
         // Check for Daily Reset (00:00 UTC -> 21:00 BRT)
         const nowUtc = new Date();
         const isDailyResetTime = nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15;
-        let dailyResetTriggered = false;
         
         if (isDailyResetTime) {
            const resetDateStr = nowUtc.toISOString().split('T')[0];
@@ -131,18 +130,30 @@ serve(async (req) => {
                .eq('notification_id', dailyNotifId)
                .single();
                
-           if (!existingResetLog) {
-               // Log it immediately to prevent duplicates
-               await supabase.from('notification_logs').insert({
-                   farm_id: farmId,
-                   notification_id: dailyNotifId
-               });
-               
-               attentionNeeded = true;
-               dailyResetTriggered = true;
-               readyMessages.push("⏰ Reset Diário! O mercado, limites e mutantes foram atualizados.");
-               notifIdParts.push(`dailyreset-${resetDateStr}`);
-           }
+               if (!existingResetLog) {
+                   // Log it immediately to prevent duplicates
+                   await supabase.from('notification_logs').insert({
+                       farm_id: farmId,
+                       notification_id: dailyNotifId
+                   });
+                   
+                   const pushSubscription = {
+                       endpoint: sub.endpoint,
+                       keys: {
+                           p256dh: sub.p256dh,
+                           auth: sub.auth
+                       }
+                   };
+                   
+                   const payload = JSON.stringify({
+                       title: "Daily Reset!",
+                       body: "Your farm has been reset. Time to start a new day!",
+                       icon: "https://sfl.world/favicon.ico",
+                       tag: "daily-reset"
+                   });
+                   
+                   await webpush.sendNotification(pushSubscription, payload).catch(console.error);
+               }
         }
 
         if (attentionNeeded) {
@@ -175,9 +186,7 @@ serve(async (req) => {
                 if (bodyText.length > 100) bodyText = bodyText.substring(0, 97) + '...';
 
                 let iconUrl = "https://sfl.world/favicon.ico";
-                if (dailyResetTriggered) {
-                  iconUrl = "https://sfl.world/img/source/Goblin.png"; // Um ícone legal para o reset
-                } else if (firstReadyItemName) {
+                if (firstReadyItemName) {
                   let imgName = firstReadyItemName;
                   if (imgName.includes('Wood')) imgName = 'Wood';
                   if (imgName.includes('Stone')) imgName = 'Stone';
@@ -189,7 +198,7 @@ serve(async (req) => {
                 }
 
                 const payload = JSON.stringify({
-                  title: dailyResetTriggered && readyMessages.length === 1 ? "SFL Pro: Reset Diário! 🌙" : "SFL Pro: Coisas Prontas!",
+                  title: "SFL Pro: Coisas Prontas!",
                   body: bodyText,
                   icon: iconUrl,
                   tag: "general-farm"

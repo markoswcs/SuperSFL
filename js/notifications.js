@@ -288,6 +288,22 @@ class NotificationEngine {
       checkRes(parsedFarm.saltFarm, 'saltFarm', 'Salina');
     }
 
+    // Daily Reset (00:00 UTC)
+    const nowUtc = new Date();
+    if (nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15) {
+      const resetDateStr = nowUtc.toISOString().split('T')[0];
+      const uid = `dailyreset-${resetDateStr}`;
+      activeIdsThisTick.add(uid);
+      if (!this.notifiedIds.has(uid)) {
+        this.sendPush(`Daily Reset!`, {
+          body: `Your farm has been reset. Time to start a new day!`,
+          tag: 'general-farm',
+          icon: `https://sfl.world/favicon.ico`
+        });
+        this.notifiedIds.add(uid);
+      }
+    }
+
     // 5. DELIVERIES
     if (this.prefs.deliveries && parsedFarm.deliveries) {
       parsedFarm.deliveries.forEach(deliv => {

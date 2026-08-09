@@ -219,8 +219,8 @@ class NotificationEngine {
    */
   async scheduleToSupabase(parsedFarm) {
     if (!this.prefs.master) return;
-    const farmId = window.__app?.State?.farmId;
-    if (!farmId || !parsedFarm) return;
+    const farmId = parseInt(window.__app?.State?.farmId, 10);
+    if (!farmId || isNaN(farmId) || !parsedFarm) return;
 
     const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
     const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
@@ -277,7 +277,7 @@ class NotificationEngine {
       });
 
       // Upsert all new schedules in one batch
-      await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules`, {
+      const postResp = await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +288,12 @@ class NotificationEngine {
         body: JSON.stringify(schedules)
       });
 
-      console.log(`[SFL Pro] ✅ ${schedules.length} alarmes agendados no servidor.`);
+      if (!postResp.ok) {
+        const errText = await postResp.text();
+        console.error(`[SFL Pro] ❌ Erro ao salvar schedules (${postResp.status}):`, errText);
+      } else {
+        console.log(`[SFL Pro] ✅ ${schedules.length} alarmes agendados no servidor (farm ${farmId}).`);
+      }
     } catch(e) {
       console.error('[SFL Pro] Erro ao agendar notificações:', e);
     }

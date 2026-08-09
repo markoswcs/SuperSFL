@@ -1,235 +1,160 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0"
 import webpush from "https://esm.sh/web-push@3.6.6"
-import { parseFarm } from "./farm.js"
 
-const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') || "BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo";
+const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')  || "BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo";
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') || "BEj6GsZR9yQJ7FWMEjF3OU_2QLb-L3kwSa8-jZnWgPQ";
 
-// Config VAPID
-webpush.setVapidDetails(
-  'mailto:mw64097@gmail.com',
-  VAPID_PUBLIC,
-  VAPID_PRIVATE
-);
+webpush.setVapidDetails('mailto:mw64097@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
-serve(async (req) => {
+serve(async () => {
   try {
-    // 1. Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || "";
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || "";
-    
     if (!supabaseUrl || !supabaseKey) {
-       return new Response(JSON.stringify({ error: "Missing Supabase env vars" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Missing Supabase env vars" }), { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const now = new Date().toISOString();
 
-    // 2. Fetch all push subscriptions
-    const { data: subs, error } = await supabase
-      .from('push_subscriptions')
-      .select('*');
+    // 1. Cleanup: remove sent notifications older than 24h to keep table clean
+    await supabase
+      .from('farm_schedules')
+      .delete()
+      .eq('notification_sent', true)
+      .lt('ready_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-    if (error || !subs) {
-      return new Response(JSON.stringify({ error: error?.message }), { status: 500 });
+    // 2. Find all items that are NOW ready and not yet notified
+    //    (ready_at <= now AND notification_sent = false)
+    const { data: dueItems, error } = await supabase
+      .from('farm_schedules')
+      .select('*, push_subscriptions!inner(endpoint, p256dh, auth, preferences)')
+      .lte('ready_at', now)
+      .eq('notification_sent', false);
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+
+    if (!dueItems || dueItems.length === 0) {
+      return new Response(JSON.stringify({ success: true, sent: 0, message: "Nothing due" }));
+    }
+
+    // 3. Group by farm_id so we send one push per farm (with all ready items listed)
+    const byFarm = new Map<number, typeof dueItems>();
+    for (const item of dueItems) {
+      const list = byFarm.get(item.farm_id) || [];
+      list.push(item);
+      byFarm.set(item.farm_id, list);
     }
 
     const results = [];
+    const sentIds: string[] = [];
 
-    // 3. For each subscription, check their farm
-    for (const sub of subs) {
+    for (const [farmId, items] of byFarm) {
       try {
-        const farmId = sub.farm_id;
-        
-        // Call SFL API (Note: Public visit API. No auth needed for public profile)
-        const sflRes = await fetch(`https://api.sunflower-land.com/visit/${farmId}`);
-        if (!sflRes.ok) continue;
-        
-        const farmData = await sflRes.json();
-        const state = farmData?.state;
-        if (!state) continue;
+        const sub = items[0].push_subscriptions;
 
-        // Use the exact same logic as the frontend!
-        const parsedFarm = parseFarm(farmData);
-        let readyMessages = [];
-        let attentionNeeded = false;
-        let notifIdParts = [];
+        // Build message grouping by category
+        const byCat = new Map<string, string[]>();
+        for (const item of items) {
+          const cat = item.item_category;
+          const list = byCat.get(cat) || [];
+          list.push(item.item_name);
+          byCat.set(cat, list);
+        }
 
-        let firstReadyItemName = '';
-
-        // Helper to check categories
-        const checkCategory = (items, itemNameFunc, messagePrefix) => {
-          let readyCount = 0;
-          let firstItemName = '';
-          
-          if (!items) return;
-          
-          if (Array.isArray(items)) {
-            items.forEach(item => {
-              if (item.status === 'ready') {
-                readyCount++;
-                if (!firstItemName) firstItemName = itemNameFunc(item);
-                if (!firstReadyItemName) firstReadyItemName = itemNameFunc(item);
-                notifIdParts.push(item.id || firstItemName);
-              }
-            });
+        const lines: string[] = [];
+        for (const [cat, names] of byCat) {
+          if (names.length === 1) {
+            lines.push(`${names[0]} (${cat}) pronto!`);
           } else {
-            Object.values(items).forEach(item => {
-              if (item.status === 'ready') {
-                readyCount++;
-                if (!firstItemName) firstItemName = itemNameFunc(item);
-                if (!firstReadyItemName) firstReadyItemName = itemNameFunc(item);
-                notifIdParts.push(item.id || firstItemName);
-              }
-            });
+            lines.push(`${names.length}x ${cat} prontos!`);
           }
+        }
 
-          if (readyCount > 0) {
-            attentionNeeded = true;
-            if (readyCount === 1) {
-              readyMessages.push(`${messagePrefix} ${firstItemName} está pronto(a).`);
-            } else {
-              readyMessages.push(`${readyCount} ${messagePrefix}s estão prontos(as).`);
-            }
-          }
+        let bodyText = lines.join('\n');
+        if (bodyText.length > 120) bodyText = bodyText.substring(0, 117) + '...';
+
+        // Icon from first item
+        const firstName = items[0].item_name;
+        const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(firstName)}.png`;
+
+        const payload = JSON.stringify({
+          title: `🌻 SFL Pro: ${items.length} item${items.length > 1 ? 's' : ''} pronto${items.length > 1 ? 's' : ''}!`,
+          body: bodyText,
+          icon: iconUrl,
+          tag: "farm-ready"
+        });
+
+        const pushSub = {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth }
         };
 
-        const prefs = sub.preferences || {};
+        await webpush.sendNotification(pushSub, payload);
 
-        if (prefs.crops !== false) checkCategory(parsedFarm.crops, c => c.name, 'Plantação de');
-        if (prefs.animals !== false) checkCategory(parsedFarm.animals, a => a.type, 'Animal');
-        if (prefs.fruits !== false) checkCategory(parsedFarm.fruits, f => f.name, 'Fruta');
-        if (prefs.trees !== false) checkCategory(parsedFarm.trees, () => 'Madeira', 'Recurso');
-        if (prefs.rocks !== false) checkCategory(parsedFarm.rocks, r => r.name, 'Recurso');
-        if (prefs.beehives !== false) checkCategory(parsedFarm.beehives, () => 'Mel', 'Recurso');
-        if (prefs.flowers !== false) checkCategory(parsedFarm.flowers, f => f.name, 'Flor');
-        if (prefs.oil !== false) checkCategory(parsedFarm.oil, () => 'Óleo', 'Recurso');
-        if (prefs.composting !== false) checkCategory(parsedFarm.composting, c => c.name, 'Composteira');
-        if (prefs.greenhouse !== false) checkCategory(parsedFarm.greenhouse, g => g.name, 'Estufa');
-        if (prefs.buildings !== false) checkCategory(parsedFarm.buildings, b => b.name, 'Construção');
-        if (prefs.cropMachine !== false) checkCategory(parsedFarm.cropMachine, c => c.name, 'Máquina');
-        if (prefs.crabTraps !== false) checkCategory(parsedFarm.crabTraps, c => c.name, 'Armadilha');
-        if (prefs.shrines !== false) checkCategory(parsedFarm.shrines, s => s.name, 'Santuário');
-        if (prefs.agingShed !== false) checkCategory(parsedFarm.agingShed, a => a.name, 'Galpão');
-        if (prefs.saltFarm !== false) checkCategory(parsedFarm.saltFarm, s => s.name, 'Salina');
-        
-        // Mushrooms and Chores
-        if (prefs.mushrooms !== false) checkCategory(parsedFarm.mushrooms, () => 'Cogumelo', 'Recurso');
-        // checkCategory(parsedFarm.chores, (c) => c.npc, 'Tarefa para');
+        // Mark all sent items
+        sentIds.push(...items.map(i => i.id));
+        results.push({ farmId, sent: items.length, items: items.map(i => i.item_name) });
 
-        // Check for Daily Reset (00:00 UTC -> 21:00 BRT)
-        const nowUtc = new Date();
-        const isDailyResetTime = nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 15;
-        
-        if (isDailyResetTime && prefs.dailyReset !== false) {
-           const resetDateStr = nowUtc.toISOString().split('T')[0];
-           const dailyNotifId = `farm-${farmId}-dailyreset-${resetDateStr}`;
-           
-           const { data: existingResetLog } = await supabase
-               .from('notification_logs')
-               .select('id')
-               .eq('farm_id', farmId)
-               .eq('notification_id', dailyNotifId)
-               .single();
-               
-               if (!existingResetLog) {
-                   // Log it immediately to prevent duplicates
-                   await supabase.from('notification_logs').insert({
-                       farm_id: farmId,
-                       notification_id: dailyNotifId
-                   });
-                   
-                   const pushSubscription = {
-                       endpoint: sub.endpoint,
-                       keys: {
-                           p256dh: sub.p256dh,
-                           auth: sub.auth
-                       }
-                   };
-                   
-                   const payload = JSON.stringify({
-                       title: "Daily Reset!",
-                       body: "Your farm has been reset. Time to start a new day!",
-                       icon: "https://sfl.world/favicon.ico",
-                       tag: "daily-reset"
-                   });
-                   
-                   await webpush.sendNotification(pushSubscription, payload).catch(console.error);
-               }
-        }
-
-        if (attentionNeeded) {
-            // Generate a unique ID based on what is exactly ready
-            notifIdParts.sort();
-            const notifHash = notifIdParts.join('-').substring(0, 50);
-            const notifId = `farm-${farmId}-${notifHash}`;
-            
-            // Only suppress if we sent this EXACT same notification within the last 4 hours
-            // This ensures: if new items become ready -> new hash -> new notification
-            // And after 4h, a reminder is sent even if items weren't collected
-            const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-            
-            const { data: existingLog } = await supabase
-               .from('notification_logs')
-               .select('id')
-               .eq('farm_id', farmId)
-               .eq('notification_id', notifId)
-               .gte('created_at', fourHoursAgo)
-               .maybeSingle();
-
-            if (!existingLog) {
-                // Send Web Push
-                const pushSubscription = {
-                  endpoint: sub.endpoint,
-                  keys: {
-                    p256dh: sub.p256dh,
-                    auth: sub.auth
-                  }
-                };
-
-                let bodyText = readyMessages.join('\n');
-                if (bodyText.length > 100) bodyText = bodyText.substring(0, 97) + '...';
-
-                let iconUrl = "https://sfl.world/favicon.ico";
-                if (firstReadyItemName) {
-                  let imgName = firstReadyItemName;
-                  if (imgName.includes('Wood')) imgName = 'Wood';
-                  if (imgName.includes('Stone')) imgName = 'Stone';
-                  if (imgName.includes('Iron')) imgName = 'Iron';
-                  if (imgName.includes('Gold')) imgName = 'Gold';
-                  if (imgName.includes('Egg')) imgName = 'Chicken';
-                  
-                  iconUrl = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
-                }
-
-                const payload = JSON.stringify({
-                  title: "🌻 SFL Pro: Coisas Prontas!",
-                  body: bodyText,
-                  icon: iconUrl,
-                  tag: "general-farm"
-                });
-
-                await webpush.sendNotification(pushSubscription, payload);
-                
-                // Log it (upsert to avoid duplicates from race conditions)
-                await supabase.from('notification_logs').insert({
-                   farm_id: farmId,
-                   notification_id: notifId
-                }).select();
-
-                results.push({ farmId, status: "Sent", messages: readyMessages });
-            } else {
-                results.push({ farmId, status: "Suppressed (sent within 4h)", notifId });
-            }
-        }
       } catch (err) {
-        console.error(`Error processing farm ${sub.farm_id}:`, err);
+        console.error(`Error sending push for farm ${farmId}:`, err);
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed: subs.length, results }), {
-      headers: { "Content-Type": "application/json" },
+    // 4. Mark as sent in bulk
+    if (sentIds.length > 0) {
+      await supabase
+        .from('farm_schedules')
+        .update({ notification_sent: true })
+        .in('id', sentIds);
+    }
+
+    // 5. Handle Daily Reset (00:00 UTC)
+    const nowUtc = new Date();
+    if (nowUtc.getUTCHours() === 0 && nowUtc.getUTCMinutes() < 2) {
+      const resetDateStr = nowUtc.toISOString().split('T')[0];
+      const resetId = `dailyreset-${resetDateStr}`;
+
+      // Check if already sent today
+      const { data: alreadySent } = await supabase
+        .from('farm_schedules')
+        .select('id')
+        .eq('item_id', resetId)
+        .eq('notification_sent', true)
+        .maybeSingle();
+
+      if (!alreadySent) {
+        // Send to all subscriptions
+        const { data: allSubs } = await supabase.from('push_subscriptions').select('*');
+        for (const sub of allSubs || []) {
+          const prefs = sub.preferences || {};
+          if (prefs.dailyReset === false) continue;
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              JSON.stringify({ title: "🌅 Daily Reset!", body: "A fazenda foi resetada. Bom dia!", icon: "https://sfl.world/favicon.ico", tag: "daily-reset" })
+            );
+          } catch (e) { console.error(e); }
+        }
+        // Mark daily reset as sent
+        await supabase.from('farm_schedules').upsert({
+          farm_id: 0,
+          item_id: resetId,
+          item_name: 'Daily Reset',
+          item_category: 'daily',
+          ready_at: new Date(Date.now()).toISOString(),
+          notification_sent: true
+        }, { onConflict: 'farm_id,item_id' });
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, sent: sentIds.length, results }), {
+      headers: { "Content-Type": "application/json" }
     });
+
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }

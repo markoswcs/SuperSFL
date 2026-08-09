@@ -201,16 +201,96 @@ class NotificationEngine {
     };
 
     try {
-      // If service worker is active, use it (better support for mobile PWA)
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.ready;
         reg.showNotification(title, { ...defaultOptions, ...options });
       } else {
-        // Fallback for desktop standard
         new Notification(title, { ...defaultOptions, ...options });
       }
     } catch (e) {
       console.error('Push Error:', e);
+    }
+  }
+
+  /**
+   * Envia os readyAt FUTUROS de todos os itens para o Supabase.
+   * Isso permite que a Edge Function saiba EXATAMENTE quando cada item fica pronto
+   * e dispare a notificação no momento certo — igual ao AlarmManager do SFL Browser.
+   */
+  async scheduleToSupabase(parsedFarm) {
+    if (!this.prefs.master) return;
+    const farmId = window.__app?.State?.farmId;
+    if (!farmId || !parsedFarm) return;
+
+    const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
+    const now = Date.now();
+
+    const schedules = [];
+
+    const addItems = (items, category) => {
+      if (!items) return;
+      const list = Array.isArray(items) ? items : Object.values(items);
+      for (const item of list) {
+        // Only schedule FUTURE items (not yet ready)
+        if (!item.readyAt || item.readyAt <= now) continue;
+        if (item.status === 'ready') continue;
+
+        // Check user preference for this category
+        if (this.prefs[category] === false) continue;
+
+        schedules.push({
+          farm_id: farmId,
+          item_id: item.id || `${category}-${item.name || item.type}-${item.readyAt}`,
+          item_name: item.name || item.type || category,
+          item_category: category,
+          ready_at: new Date(item.readyAt).toISOString(),
+          notification_sent: false
+        });
+      }
+    };
+
+    addItems(parsedFarm.crops,       'crops');
+    addItems(parsedFarm.animals,     'animals');
+    addItems(parsedFarm.fruits,      'fruits');
+    addItems(parsedFarm.trees,       'trees');
+    addItems(parsedFarm.rocks,       'rocks');
+    addItems(parsedFarm.beehives,    'beehives');
+    addItems(parsedFarm.flowers,     'flowers');
+    addItems(parsedFarm.oil,         'oil');
+    addItems(parsedFarm.composting,  'composting');
+    addItems(parsedFarm.greenhouse,  'greenhouse');
+    addItems(parsedFarm.buildings,   'buildings');
+    addItems(parsedFarm.cropMachine, 'cropMachine');
+    addItems(parsedFarm.crabTraps,   'crabTraps');
+    addItems(parsedFarm.shrines,     'shrines');
+    addItems(parsedFarm.agingShed,   'agingShed');
+    addItems(parsedFarm.saltFarm,    'saltFarm');
+
+    if (schedules.length === 0) return;
+
+    try {
+      // First delete old unsent schedules for this farm (stale data)
+      await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules?farm_id=eq.${farmId}&notification_sent=eq.false`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+      });
+
+      // Upsert all new schedules in one batch
+      await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(schedules)
+      });
+
+      console.log(`[SFL Pro] ✅ ${schedules.length} alarmes agendados no servidor.`);
+    } catch(e) {
+      console.error('[SFL Pro] Erro ao agendar notificações:', e);
     }
   }
 
@@ -461,6 +541,8 @@ class NotificationEngine {
     // Mark first run as done AFTER recording all current state
     if (this.isFirstRun) {
       this.isFirstRun = false;
+      // On first run: schedule all future items to Supabase (like AlarmManager)
+      this.scheduleToSupabase(parsedFarm);
     }
 
     // CLEANUP: remove IDs for items that are no longer ready (already collected)
@@ -472,6 +554,12 @@ class NotificationEngine {
     });
     this.notifiedIds = toKeep;
     this.saveNotifiedIds();
+
+    // Re-sync schedules every 10 ticks (~10 min) to catch newly planted items
+    this._tickCount = (this._tickCount || 0) + 1;
+    if (this._tickCount % 10 === 0) {
+      this.scheduleToSupabase(parsedFarm);
+    }
   }
 }
 

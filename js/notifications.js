@@ -263,8 +263,10 @@ class NotificationEngine {
               else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
               
               const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
-              this.sendPush(`${title} Pronta! ${res.emoji}`, { 
-                body: `Seu recurso ${res.name} (${res.amount} un) está pronto para coletar.`,
+              const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
+              
+              this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
+                body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
                 tag: tag,
                 icon: img
               });

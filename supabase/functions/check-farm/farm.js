@@ -299,6 +299,7 @@ function parseTrees(farm) {
       id,
       name:  'Tree',
       emoji: '🌳',
+      readyAt,
       msLeft: msLeft < 0 ? -1 : msLeft,
       status:    choppedAt ? getTimerClass(msLeft) : 'ready',
       countdown: choppedAt ? formatCountdown(msLeft) : 'Standing',
@@ -327,6 +328,7 @@ function parseRocks(farm) {
         id: `${name}-${id}`,
         name,
         emoji,
+        readyAt,
         msLeft: msLeft,
         status:    minedAt ? getTimerClass(msLeft) : 'ready',
         countdown: minedAt ? formatCountdown(msLeft) : 'Available',
@@ -364,6 +366,7 @@ function parseMushrooms(farm) {
       id,
       name: m.name || 'Wild Mushroom',
       emoji: '🍄',
+      readyAt: readyAt,
       msLeft,
       status:    msLeft <= 0 ? 'ready' : getTimerClass(msLeft),
       countdown: msLeft <= 0 ? 'Pronto!' : formatCountdown(msLeft),
@@ -501,6 +504,7 @@ function parseBeehives(farm) {
       id,
       name:     `Beehive #${parseInt(id) + 1}`,
       emoji:    '🍯',
+      readyAt,
       msLeft,
       status:    getTimerClass(msLeft),
       countdown: formatCountdown(msLeft),
@@ -597,6 +601,7 @@ function parseComposting(farm) {
         id:        `${type}-${id}`,
         name:      type,
         producing: Object.keys(bin.producing.items || {}).join(', '),
+        readyAt:   bin.producing.readyAt,
         msLeft:    msLeft,
         status:    getTimerClass(msLeft),
         countdown: formatCountdown(msLeft),
@@ -751,6 +756,7 @@ function parseOil(farm) {
       id,
       name:     `Oil Reserve #${parseInt(id) + 1}`,
       emoji:    '🛢',
+      readyAt,
       msLeft,
       status:    drilledAt ? getTimerClass(msLeft) : 'ready',
       countdown: drilledAt ? formatCountdown(msLeft) : 'Available',
@@ -758,71 +764,6 @@ function parseOil(farm) {
       amount:    res.oil?.amount ?? 0,
     };
   }).sort((a, b) => a.msLeft - b.msLeft);
-}
-
-/**
- * Parse composting bins
- */
-function parseComposting(farm) {
-  const items = [];
-  const now = Date.now();
-  
-  if (!farm?.buildings) return items;
-
-  const composterTypes = ['Compost Bin', 'Turbo Composter', 'Premium Composter'];
-  const emojis = {
-    'Compost Bin': '♻️',
-    'Turbo Composter': '🚀',
-    'Premium Composter': '💎'
-  };
-
-  composterTypes.forEach(type => {
-    const instances = farm.buildings[type];
-    if (Array.isArray(instances)) {
-      instances.forEach((bin, i) => {
-        const produce = bin.producing || bin.produce;
-        
-        let itemName = 'Vazia';
-        let amount = 0;
-        let readyAt = 0;
-        let msLeft = -1;
-        let status = 'idle';
-        let countdown = '-';
-
-        if (produce) {
-          readyAt = produce.readyAt || 0;
-          msLeft = readyAt > 0 ? readyAt - now : -1;
-          status = readyAt > 0 ? getTimerClass(msLeft) : 'ready';
-          countdown = readyAt > 0 ? formatCountdown(msLeft) : 'Pronta!';
-
-          itemName = produce.name || type;
-          amount = produce.amount || 1;
-
-          if (produce.items) {
-            const keys = Object.keys(produce.items);
-            if (keys.length > 0) {
-              itemName = keys[0];
-              amount = produce.items[keys[0]];
-            }
-          }
-        }
-
-        items.push({
-          id: `${type}-${i}`,
-          name: type,
-          emoji: emojis[type],
-          msLeft,
-          status,
-          countdown,
-          type: itemName, // Show the fertilizer name in subtitle
-          amount,
-          readyAt
-        });
-      });
-    }
-  });
-
-  return items.sort((a, b) => (a.msLeft < 0 ? -1 : a.msLeft) - (b.msLeft < 0 ? -1 : b.msLeft));
 }
 
 /**
@@ -844,6 +785,7 @@ function parseFlowers(farm) {
       id,
       name,
       emoji: getGenericEmoji(name) ?? '🌸',
+      readyAt,
       msLeft,
       status: getTimerClass(msLeft),
       countdown: formatCountdown(msLeft),
@@ -874,6 +816,7 @@ function parseCropMachine(farm) {
         id: `cropmachine-${i}`,
         name: `Crop Machine (${active.crop})`,
         emoji: '🚜',
+        readyAt: active.readyAt,
         msLeft,
         status: getTimerClass(msLeft),
         countdown: formatCountdown(msLeft),

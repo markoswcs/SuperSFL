@@ -247,7 +247,8 @@ class NotificationEngine {
         if (!list) return;
         list.forEach(res => {
           if (res.status === 'ready') {
-            const uid = `res-${res.name}-${res.readyAt || res.msLeft}`;
+            const timeKey = res.readyAt !== undefined ? res.readyAt : res.msLeft;
+            const uid = `res-${res.id || res.name}-${timeKey}`;
             activeIdsThisTick.add(uid);
             if (!this.notifiedIds.has(uid)) {
               let imgName = res.name;

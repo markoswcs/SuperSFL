@@ -160,19 +160,22 @@ serve(async (req) => {
 
         if (attentionNeeded) {
             // Generate a unique ID based on what is exactly ready
-            // So if new things get ready, a new notification is sent
-            // Sort to ensure consistency
             notifIdParts.sort();
-            // Hash the parts roughly
             const notifHash = notifIdParts.join('-').substring(0, 50);
             const notifId = `farm-${farmId}-${notifHash}`;
+            
+            // Only suppress if we sent this EXACT same notification within the last 4 hours
+            // This ensures: if new items become ready -> new hash -> new notification
+            // And after 4h, a reminder is sent even if items weren't collected
+            const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
             
             const { data: existingLog } = await supabase
                .from('notification_logs')
                .select('id')
                .eq('farm_id', farmId)
                .eq('notification_id', notifId)
-               .single();
+               .gte('created_at', fourHoursAgo)
+               .maybeSingle();
 
             if (!existingLog) {
                 // Send Web Push
@@ -200,7 +203,7 @@ serve(async (req) => {
                 }
 
                 const payload = JSON.stringify({
-                  title: "SFL Pro: Coisas Prontas!",
+                  title: "🌻 SFL Pro: Coisas Prontas!",
                   body: bodyText,
                   icon: iconUrl,
                   tag: "general-farm"
@@ -208,13 +211,15 @@ serve(async (req) => {
 
                 await webpush.sendNotification(pushSubscription, payload);
                 
-                // Log it
+                // Log it (upsert to avoid duplicates from race conditions)
                 await supabase.from('notification_logs').insert({
                    farm_id: farmId,
                    notification_id: notifId
-                });
+                }).select();
 
                 results.push({ farmId, status: "Sent", messages: readyMessages });
+            } else {
+                results.push({ farmId, status: "Suppressed (sent within 4h)", notifId });
             }
         }
       } catch (err) {

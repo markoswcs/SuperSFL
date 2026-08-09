@@ -32,6 +32,7 @@ class NotificationEngine {
   constructor() {
     this.prefs = { ...DEFAULT_PREFS };
     this.notifiedIds = this.loadNotifiedIds();
+    this.isFirstRun = true; // suppress notifications on page load
     this.loadPrefs();
   }
 
@@ -217,6 +218,7 @@ class NotificationEngine {
     if (!this.prefs.master || Notification.permission !== 'granted' || !parsedFarm) return;
     
     const activeIdsThisTick = new Set();
+    const suppressNotif = this.isFirstRun; // on first run, just mark as seen
     const now = Date.now();
 
     // 1. CROPS
@@ -228,12 +230,14 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
-            const img = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
-            this.sendPush(`Colheita Pronta! ${crop.emoji}`, { 
-              body: `Suas plantações de ${crop.name} (${crop.amount} un) estão prontas para colher.`,
-              tag: 'crops',
-              icon: img
-            });
+            if (!suppressNotif) {
+              const img = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
+              this.sendPush(`Colheita Pronta! ${crop.emoji}`, { 
+                body: `Suas plantações de ${crop.name} (${crop.amount} un) estão prontas para colher.`,
+                tag: 'crops',
+                icon: img
+              });
+            }
             this.notifiedIds.add(uid);
           }
         }
@@ -252,14 +256,16 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
-            let msg = '';
-            if (isReady) msg = `${animal.name} tem recursos para coletar!`;
-            if (isHungry) msg = `${animal.name} está com fome.`;
-            if (needsLove) msg = `${animal.name} precisa de carinho.`;
-            
-            let imgName = animal.type || animal.name.split(' ')[0];
-            const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
-            this.sendPush(`Aviso Animal! ${animal.emoji}`, { body: msg, tag: 'animals', icon: img });
+            if (!suppressNotif) {
+              let msg = '';
+              if (isReady) msg = `${animal.name} tem recursos para coletar!`;
+              if (isHungry) msg = `${animal.name} está com fome.`;
+              if (needsLove) msg = `${animal.name} precisa de carinho.`;
+              
+              let imgName = animal.type || animal.name.split(' ')[0];
+              const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
+              this.sendPush(`Aviso Animal! ${animal.emoji}`, { body: msg, tag: 'animals', icon: img });
+            }
             this.notifiedIds.add(uid);
           }
         }
@@ -274,12 +280,14 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
-            const img = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
-            this.sendPush(`Fruta Pronta! ${fruit.emoji}`, { 
-              body: `Suas árvores de ${fruit.name} (${fruit.amount} un) estão prontas para colher.`,
-              tag: 'fruits',
-              icon: img
-            });
+            if (!suppressNotif) {
+              const img = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
+              this.sendPush(`Fruta Pronta! ${fruit.emoji}`, { 
+                body: `Suas árvores de ${fruit.name} (${fruit.amount} un) estão prontas para colher.`,
+                tag: 'fruits',
+                icon: img
+              });
+            }
             this.notifiedIds.add(uid);
           }
         }
@@ -295,25 +303,27 @@ class NotificationEngine {
           const uid = `res-${res.id || res.name}-${timeKey}`;
           activeIdsThisTick.add(uid);
           if (!this.notifiedIds.has(uid)) {
-            let imgName = res.name;
-            if (res.name.includes('Tree')) imgName = 'Wood';
-            else if (res.name.includes('Stone')) imgName = 'Stone';
-            else if (res.name.includes('Iron')) imgName = 'Iron';
-            else if (res.name.includes('Gold')) imgName = 'Gold';
-            else if (res.name.includes('Crimstone')) imgName = 'Crimstone';
-            else if (res.name.includes('Sunstone')) imgName = 'Sunstone';
-            else if (res.name.includes('Beehive')) imgName = 'Honey';
-            else if (res.name.includes('Oil')) imgName = 'Oil';
-            else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
-            
-            const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
-            const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
-            
-            this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
-              body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
-              tag: tag,
-              icon: img
-            });
+            if (!suppressNotif) {
+              let imgName = res.name;
+              if (res.name.includes('Tree')) imgName = 'Wood';
+              else if (res.name.includes('Stone')) imgName = 'Stone';
+              else if (res.name.includes('Iron')) imgName = 'Iron';
+              else if (res.name.includes('Gold')) imgName = 'Gold';
+              else if (res.name.includes('Crimstone')) imgName = 'Crimstone';
+              else if (res.name.includes('Sunstone')) imgName = 'Sunstone';
+              else if (res.name.includes('Beehive')) imgName = 'Honey';
+              else if (res.name.includes('Oil')) imgName = 'Oil';
+              else if (res.name.includes('Mushroom')) imgName = 'Wild Mushroom';
+              
+              const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
+              const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
+              
+              this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
+                body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
+                tag: tag,
+                icon: img
+              });
+            }
             this.notifiedIds.add(uid);
           }
         }
@@ -347,11 +357,13 @@ class NotificationEngine {
         const uid = `dailyreset-${resetDateStr}`;
         activeIdsThisTick.add(uid);
         if (!this.notifiedIds.has(uid)) {
-          this.sendPush(`Daily Reset!`, {
-            body: `Your farm has been reset. Time to start a new day!`,
-            tag: 'general-farm',
-            icon: `https://sfl.world/favicon.ico`
-          });
+          if (!suppressNotif) {
+            this.sendPush(`Daily Reset!`, {
+              body: `Your farm has been reset. Time to start a new day!`,
+              tag: 'general-farm',
+              icon: `https://sfl.world/favicon.ico`
+            });
+          }
           this.notifiedIds.add(uid);
         }
       }
@@ -365,11 +377,13 @@ class NotificationEngine {
           activeIdsThisTick.add(uid);
           
           if (!this.notifiedIds.has(uid)) {
-            this.sendPush(`Entrega Disponível! 📦`, { 
-              body: `NPC ${deliv.npc} está pronto para receber sua entrega.`,
-              tag: 'deliveries',
-              icon: `https://sfl.world/img/source/${encodeURIComponent(deliv.npc || 'bumpkin')}.png`
-            });
+            if (!suppressNotif) {
+              this.sendPush(`Entrega Disponível! 📦`, { 
+                body: `NPC ${deliv.npc} está pronto para receber sua entrega.`,
+                tag: 'deliveries',
+                icon: `https://sfl.world/img/source/${encodeURIComponent(deliv.npc || 'bumpkin')}.png`
+              });
+            }
             this.notifiedIds.add(uid);
           }
         }
@@ -444,7 +458,12 @@ class NotificationEngine {
       }
     }
 
-    // CLEANUP
+    // Mark first run as done AFTER recording all current state
+    if (this.isFirstRun) {
+      this.isFirstRun = false;
+    }
+
+    // CLEANUP: remove IDs for items that are no longer ready (already collected)
     const toKeep = new Set();
     this.notifiedIds.forEach(uid => {
       if (activeIdsThisTick.has(uid)) {

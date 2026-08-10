@@ -464,6 +464,12 @@ function parseAnimals(farm) {
     });
   };
 
+  if (farm?.animals) {
+    Object.entries(farm.animals).forEach(([id, animal]) => {
+      const type = animal.type ?? 'Animal';
+      addAnimals({ [id]: animal }, type);
+    });
+  }
   if (farm?.henHouse?.animals) {
     Object.entries(farm.henHouse.animals).forEach(([id, animal]) => {
       const type   = animal.type ?? 'Chicken';
@@ -921,6 +927,56 @@ function parseLandInfo(landInfo) {
 /**
  * Master parser — parses full game state (requires community API key)
  */
+
+const SHRINE_DURATIONS = {
+  'Boar Shrine': 7 * 24 * 60 * 60 * 1000, // 7 days
+  'Hound Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Sparrow Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Fox Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Toucan Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Collie Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Moth Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Badger Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Mole Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Tortoise Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Stag Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Bear Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Bantam Shrine': 7 * 24 * 60 * 60 * 1000,
+  'Legendary Shrine': 1 * 24 * 60 * 60 * 1000, // 1 day
+  'Trading Shrine': 30 * 24 * 60 * 60 * 1000, // 30 days
+  'Obsidian Shrine': 14 * 24 * 60 * 60 * 1000, // 14 days
+};
+
+function parseShrines(farm) {
+  const items = [];
+  if (!farm?.collectibles) return items;
+  
+  Object.entries(SHRINE_DURATIONS).forEach(([shrineName, durationMs]) => {
+    const shrineInstances = farm.collectibles[shrineName];
+    if (Array.isArray(shrineInstances)) {
+      shrineInstances.forEach((shrine, idx) => {
+        if (shrine.createdAt) {
+          const createdAtMs = shrine.createdAt > 100000000000 ? shrine.createdAt : shrine.createdAt * 1000;
+          const expiresAt = createdAtMs + durationMs;
+          const msLeft = expiresAt - Date.now();
+          if (msLeft > 0) {
+            items.push({
+              id: "shrine_" + shrineName.replace(/\s+/g, '') + "_" + idx,
+              name: shrineName,
+              type: 'Shrine',
+              emoji: '??',
+              readyAt: expiresAt,
+              msLeft: msLeft,
+              status: msLeft <= 0 ? 'ready' : 'processing'
+            });
+          }
+        }
+      });
+    }
+  });
+  return items;
+}
+
 function parseSaltFarm(farm) {
   const items = [];
   const nodes = farm.saltFarm?.nodes || {};
@@ -1073,6 +1129,7 @@ function parseFarm(farmData) {
       agingShed:   parseAgingShed(farm),
       deliveries:  parseDeliveries(farm),
       dailyReset:  parseDailyReset(farm),
+      shrines:     parseShrines(farm),
     rawInventory: (function() {
       // Flat name->qty map for fast lookup (e.g. rawInventory['Pumpkin'] = 42)
       const raw = {};
@@ -1093,4 +1150,6 @@ function parseFarm(farmData) {
 // Export timer utilities for use in UI update loop
 export { formatCountdown, getTimerClass, parseFarm, parseLandInfo, CROP_EMOJI, getGenericEmoji };
 export default { parseFarm, parseLandInfo, formatCountdown, getTimerClass, CROP_EMOJI, getGenericEmoji };
+
+
 

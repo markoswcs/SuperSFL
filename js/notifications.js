@@ -131,6 +131,13 @@ class NotificationEngine {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         this.setPref('master', false);
+        const modal = document.getElementById('permission-blocked-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        } else {
+          alert('Por favor, ative as notificações nas configurações do seu celular para o aplicativo SFL Pro.');
+        }
         return false;
       }
 

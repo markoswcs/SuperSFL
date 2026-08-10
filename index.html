@@ -138,7 +138,31 @@
     </div>
   </div>
 
-  <!-- Dependencies -->
+  <!-- Notification Permission Blocked Modal -->
+  <div id="permission-blocked-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm p-4">
+    <div class="bg-gray-900 border-2 border-yellow-500 rounded-xl max-w-sm w-full p-6 text-center shadow-2xl relative">
+      <div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-bell-slash text-gray-900 text-3xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-white mb-2">Notificações Bloqueadas!</h3>
+      <p class="text-gray-300 text-sm mb-4">
+        O seu celular está bloqueando os avisos da fazenda. Para o SFL Pro funcionar 100% 24h, precisamos da sua permissão:
+      </p>
+      <div class="bg-gray-800 rounded-lg p-3 text-left mb-6 border border-gray-700">
+        <ol class="text-gray-300 text-sm space-y-2 list-decimal list-inside">
+          <li>Abra as <b>Configurações</b> do seu celular</li>
+          <li>Vá em <b>Aplicativos</b></li>
+          <li>Procure e clique no <b>SFL Pro</b></li>
+          <li>Clique em <b>Notificações</b> e ligue tudo!</li>
+        </ol>
+      </div>
+      <button onclick="document.getElementById('permission-blocked-modal').classList.add('hidden'); document.getElementById('permission-blocked-modal').classList.remove('flex');" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold py-3 rounded-lg shadow-lg transition-transform transform active:scale-95">
+        Entendi, vou ativar agora!
+      </button>
+    </div>
+  </div>
+
+  <!-- External Libraries -->
   <script src="js/Sortable.min.js"></script>
 
   <!-- App Entry Point -->

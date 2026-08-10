@@ -1,4 +1,4 @@
-﻿/**
+/**
  * app.js â€” Controlador Principal
  * Gerencia o estado da aplicaÃ§Ã£o, roteamento das abas e ciclo de vida
  */
@@ -542,10 +542,22 @@ function updateSyncBadge() {
 function setupAutoRefresh() {
   if (State.refreshTimer) clearInterval(State.refreshTimer);
   
-  // Instead of auto-fetching, we just update the badge status every 5 seconds
+  // Instead of auto-fetching API, we just update the badge status every 5 seconds
   State.refreshTimer = setInterval(() => {
     updateSyncBadge();
   }, 5000);
+
+  if (State.localProcessTimer) clearInterval(State.localProcessTimer);
+  
+  // Re-process local data every 30 seconds for local push notifications
+  State.localProcessTimer = setInterval(() => {
+    if (State.farmData && window.__app.FarmData && window.__app.NotificationEngine) {
+      // Re-parse the cached raw data to update 'ready' statuses based on current time
+      State.parsedFarm = window.__app.FarmData.parse(State.farmData);
+      window.__app.NotificationEngine.process(State.parsedFarm);
+      renderCurrentTab(); // Update UI timers
+    }
+  }, 30000);
 }
 
 // =====================================================

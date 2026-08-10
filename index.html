@@ -156,7 +156,7 @@
     // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/SuperSFL/sw.js', { scope: '/SuperSFL/' })
+        navigator.serviceWorker.register('/SuperSFL/sw.js?v=' + Date.now(), { scope: '/SuperSFL/' })
           .then(reg => console.log('[SW] Registered:', reg.scope))
           .catch(err => console.warn('[SW] Registration failed:', err));
       });

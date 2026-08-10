@@ -6,7 +6,7 @@
   "scope": "/SuperSFL/",
   "id": "/SuperSFL/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "background_color": "#0A0D12",
   "theme_color": "#F59E0B",
   "orientation": "portrait-primary",

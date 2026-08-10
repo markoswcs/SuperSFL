@@ -2021,7 +2021,9 @@ function bindSettingsEvents() {
       if (!confirm('ATENÇÃO: Isso vai apagar completamente todos os dados salvos do aplicativo. Tem certeza?')) return;
       btnReset.innerHTML = 'Apagando...';
       try {
-        if (window.__app?.NotificationEngine) await window.__app.NotificationEngine.setPref('master', false);
+        if (window.__app?.NotificationEngine) {
+          await window.__app.NotificationEngine.disablePush();
+        }
         localStorage.clear();
         sessionStorage.clear();
         if ('serviceWorker' in navigator) {

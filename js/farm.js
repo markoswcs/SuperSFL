@@ -921,6 +921,82 @@ function parseLandInfo(landInfo) {
 /**
  * Master parser — parses full game state (requires community API key)
  */
+function parseSaltFarm(farm) {
+  const items = [];
+  const nodes = farm.saltFarm?.nodes || {};
+  Object.entries(nodes).forEach(([id, node]) => {
+    const readyAt = node.salt?.nextChargeAt || 0;
+    const msLeft = readyAt > 0 ? readyAt - Date.now() : 0;
+    if (readyAt > 0) {
+      items.push({
+        id, name: 'Salt Node', type: 'Salt', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: msLeft <= 0 ? 'ready' : 'processing'
+      });
+    }
+  });
+  return items;
+}
+
+function parseCrabTraps(farm) {
+  const items = [];
+  const spots = farm.crabTraps?.trapSpots || {};
+  Object.entries(spots).forEach(([id, spot]) => {
+    if (!spot.waterTrap) return;
+    const readyAt = spot.waterTrap.readyAt || 0;
+    const msLeft = readyAt > 0 ? readyAt - Date.now() : 0;
+    if (readyAt > 0) {
+      items.push({
+        id, name: spot.waterTrap.type || 'Crab Trap', type: 'CrabTrap', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: msLeft <= 0 ? 'ready' : 'processing'
+      });
+    }
+  });
+  return items;
+}
+
+function parseAgingShed(farm) {
+  const items = [];
+  const racks = farm.agingShed?.racks || {};
+  (racks.aging || []).forEach((job) => {
+    const readyAt = job.readyAt || 0;
+    const msLeft = readyAt > 0 ? readyAt - Date.now() : 0;
+    if (readyAt > 0) {
+      items.push({ id: job.id, name: 'Aged Fish', type: 'Aging', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: msLeft <= 0 ? 'ready' : 'processing' });
+    }
+  });
+  (racks.fermentation || []).forEach((job) => {
+    const readyAt = job.readyAt || 0;
+    const msLeft = readyAt > 0 ? readyAt - Date.now() : 0;
+    if (readyAt > 0) {
+      items.push({ id: job.id, name: 'Fermentation', type: 'Ferment', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: msLeft <= 0 ? 'ready' : 'processing' });
+    }
+  });
+  return items;
+}
+
+function parseDeliveries(farm) {
+  const items = [];
+  const orders = farm.delivery?.orders || [];
+  orders.forEach((order) => {
+    if (order.completedAt) return; // already done
+    const readyAt = order.readyAt || 0;
+    const msLeft = readyAt > 0 ? readyAt - Date.now() : 0;
+    if (readyAt > 0) {
+      items.push({ id: order.id, name: 'New Delivery', type: 'Delivery', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: msLeft <= 0 ? 'ready' : 'processing' });
+    }
+  });
+  return items;
+}
+
+function parseDailyReset(farm) {
+  const items = [];
+  // Daily reset is 00:00 UTC
+  const now = new Date();
+  const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+  const readyAt = nextReset.getTime();
+  const msLeft = readyAt - Date.now();
+  items.push({ id: 'daily-reset', name: 'Daily Reset', type: 'Reset', emoji: '??', readyAt, msLeft: Math.max(0, msLeft), status: 'processing' });
+  return items;
+}
+
 function parseFarm(farmData) {
   if (!farmData) return null;
   const farm = farmData.farm || farmData;
@@ -992,6 +1068,11 @@ function parseFarm(farmData) {
     flowers:     parseFlowers(farm),
     cropMachine: parseCropMachine(farm),
     bumpkin:     parseBumpkin(farm),
+      saltFarm:    parseSaltFarm(farm),
+      crabTraps:   parseCrabTraps(farm),
+      agingShed:   parseAgingShed(farm),
+      deliveries:  parseDeliveries(farm),
+      dailyReset:  parseDailyReset(farm),
     rawInventory: (function() {
       // Flat name->qty map for fast lookup (e.g. rawInventory['Pumpkin'] = 42)
       const raw = {};
@@ -1012,3 +1093,4 @@ function parseFarm(farmData) {
 // Export timer utilities for use in UI update loop
 export { formatCountdown, getTimerClass, parseFarm, parseLandInfo, CROP_EMOJI, getGenericEmoji };
 export default { parseFarm, parseLandInfo, formatCountdown, getTimerClass, CROP_EMOJI, getGenericEmoji };
+

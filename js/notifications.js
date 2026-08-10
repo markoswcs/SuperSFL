@@ -164,7 +164,7 @@ class NotificationEngine {
       const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
       const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
 
-      await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=farm_id`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

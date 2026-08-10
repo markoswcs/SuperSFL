@@ -1971,6 +1971,12 @@ function renderSettingsPage() {
     <div class="sett-footer">
       🌻 Sunflower Super App v1.0 &nbsp;·&nbsp; Unofficial community tool
     </div>
+    
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.05);margin:24px 0;">
+    
+    <button id="btn-reset-app" style="width:100%;padding:14px;background:var(--coral);color:#fff;border:none;border-radius:12px;font-weight:bold;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:20px;">
+      ⚠️ Resetar Aplicativo (Sair)
+    </button>
   `);
 
   bindSettingsEvents();
@@ -2006,6 +2012,27 @@ function bindSettingsEvents() {
   if (farmInput) {
     farmInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') window.__app.saveAndGoToFarm();
+    });
+  }
+
+  const btnReset = document.getElementById('btn-reset-app');
+  if (btnReset) {
+    btnReset.addEventListener('click', async () => {
+      if (!confirm('ATENÇÃO: Isso vai apagar completamente todos os dados salvos do aplicativo. Tem certeza?')) return;
+      btnReset.innerHTML = 'Apagando...';
+      try {
+        if (window.__app?.NotificationEngine) await window.__app.NotificationEngine.setPref('master', false);
+        localStorage.clear();
+        sessionStorage.clear();
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (let r of regs) await r.unregister();
+        }
+        window.location.reload(true);
+      } catch (e) {
+        localStorage.clear();
+        window.location.reload(true);
+      }
     });
   }
 }
@@ -2767,5 +2794,3 @@ window.__app.promptManualPurchase = () => {
     window.location.reload();
   }
 };
-
-

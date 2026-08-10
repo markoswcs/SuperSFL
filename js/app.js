@@ -286,6 +286,43 @@ async function init() {
   switchTab('farm');
   setupAutoRefresh();
 
+  // First-run Push Notification Prompt
+  setTimeout(() => {
+    const hasSeenPrompt = localStorage.getItem('sfl_seen_push_prompt');
+    if (!hasSeenPrompt && window.__app.UI && window.__app.UI.showModal) {
+      const promptHtml = `
+        <div style="text-align:center; padding: 10px;">
+          <div style="font-size:40px; margin-bottom:12px;">🔔</div>
+          <p style="color:var(--text-secondary); margin-bottom: 20px;">Ative as notificações para ser avisado quando suas Plantações, Animais e Recursos estiverem prontos! Nunca mais perca tempo de jogo.</p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button id="btn-activate-push" class="btn btn-primary" style="background:var(--emerald);color:#000;font-weight:bold;padding:12px;border-radius:12px;border:none;cursor:pointer;">Ativar Notificações 24/7</button>
+            <button id="btn-skip-push" class="btn btn-secondary" style="background:rgba(255,255,255,0.1);color:var(--text-tertiary);padding:12px;border-radius:12px;border:none;cursor:pointer;">Agora Não</button>
+          </div>
+        </div>
+      `;
+      window.__app.UI.showModal('Notificações 24/7', promptHtml);
+      
+      setTimeout(() => {
+        const btnActive = document.getElementById('btn-activate-push');
+        const btnSkip = document.getElementById('btn-skip-push');
+        
+        if (btnActive) btnActive.addEventListener('click', () => {
+          window.__app.UI.hideModal();
+          localStorage.setItem('sfl_seen_push_prompt', 'true');
+          if (window.__app?.NotificationEngine) {
+            window.__app.NotificationEngine.setPref('master', true);
+            window.__app.switchTab('settings');
+          }
+        });
+        
+        if (btnSkip) btnSkip.addEventListener('click', () => {
+           window.__app.UI.hideModal();
+           localStorage.setItem('sfl_seen_push_prompt', 'true');
+        });
+      }, 100);
+    }
+  }, 2000);
+
   // (Badge updates removed, using Web Push directly)
 }
 

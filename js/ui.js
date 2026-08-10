@@ -2767,3 +2767,4 @@ window.__app.promptManualPurchase = () => {
     window.location.reload();
   }
 };
+

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0"
-import webpush from "https://esm.sh/web-push@3.6.6"
+import webpush from "npm:web-push@3.6.7"
 
 const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')  || "BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo";
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') || "BEj6GsZR9yQJ7FWMEjF3OU_2QLb-L3kwSa8-jZnWgPQ";
@@ -100,26 +100,33 @@ serve(async () => {
         if (bodyText.length > 120) bodyText = bodyText.substring(0, 117) + '...';
 
         const firstName = allowedItems[0].item_name;
-        const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(firstName)}.png`;
+        // Use a safe fallback PNG icon to prevent Android Chrome from dropping the push if the image 404s or is an ICO
+        const iconUrl = 'https://sfl.world/icons/icon-192.png';
 
         const payload = JSON.stringify({
           title: `🌻 SFL Pro: ${allowedItems.length === 1 ? firstName + ' pronto!' : allowedItems.length + ' itens prontos!'}`,
           body: bodyText,
           icon: iconUrl,
-          badge: 'https://sfl.world/favicon.ico',
-          tag: "farm-ready"
+          badge: 'https://sfl.world/icons/icon-192.png',
+          tag: "farm-ready-" + Date.now()
         });
 
-        await webpush.sendNotification(
+        const sendResult = await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
+          payload,
+          { 
+            TTL: 86400,
+            urgency: 'high'
+          }
         );
+        console.log(`Push sent for ${farmId}. Status:`, sendResult?.statusCode, sendResult?.headers);
 
         sentIds.push(...allowedItems.map(i => i.id));
         results.push({ farmId, sent: allowedItems.length, items: allowedItems.map(i => i.item_name) });
 
       } catch (err) {
         console.error(`Error sending push for farm ${farmId}:`, err);
+        console.error(`Error details:`, JSON.stringify(err));
         // If subscription expired/invalid, remove it
         if (err.statusCode === 410 || err.statusCode === 404) {
           await supabase.from('push_subscriptions').delete().eq('farm_id', farmId);

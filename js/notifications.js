@@ -71,6 +71,8 @@ class NotificationEngine {
     // If enabling master, ask for permission
     if (key === 'master' && value === true) {
       this.requestPermission();
+    } else if (key === 'master' && value === false) {
+      this.disablePush();
     } else {
       this.syncPrefsToSupabase();
     }
@@ -209,6 +211,33 @@ class NotificationEngine {
       }
     } catch (e) {
       console.error('Push Error:', e);
+    }
+  }
+
+  async disablePush() {
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.getSubscription();
+        if (subscription) {
+          await subscription.unsubscribe();
+          console.log('[SFL Pro] Inscrição FCM local removida.');
+        }
+      }
+      
+      const farmId = parseInt(window.__app?.State?.farmId, 10);
+      if (farmId && !isNaN(farmId)) {
+        const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
+        const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
+        await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?farm_id=eq.${farmId}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+        });
+        console.log('[SFL Pro] Inscrição removida do servidor.');
+      }
+      this.syncPrefsToSupabase();
+    } catch (e) {
+      console.error('[SFL Pro] Erro ao desativar push:', e);
     }
   }
 

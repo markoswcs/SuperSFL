@@ -101,13 +101,13 @@ serve(async () => {
 
         const firstName = allowedItems[0].item_name;
         // Use a safe fallback PNG icon to prevent Android Chrome from dropping the push if the image 404s or is an ICO
-        const iconUrl = 'https://sfl.world/icons/icon-192.png';
+        let iconUrl = "https://markoswcs.github.io/SuperSFL/icons/icon-192.png";
 
         const payload = JSON.stringify({
           title: `🌻 SFL Pro: ${allowedItems.length === 1 ? firstName + ' pronto!' : allowedItems.length + ' itens prontos!'}`,
           body: bodyText,
           icon: iconUrl,
-          badge: 'https://sfl.world/icons/icon-192.png',
+          badge: 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
           tag: "farm-ready-" + Date.now()
         });
 
@@ -116,7 +116,9 @@ serve(async () => {
           payload,
           { 
             TTL: 86400,
-            urgency: 'high'
+            headers: {
+              'Urgency': 'high'
+            }
           }
         );
         console.log(`Push sent for ${farmId}. Status:`, sendResult?.statusCode, sendResult?.headers);

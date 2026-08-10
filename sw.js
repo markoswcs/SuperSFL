@@ -3,7 +3,7 @@
  * Garante que o app seja instalável no celular/desktop
  */
 
-const CACHE_NAME = 'sflpro-v144';
+const CACHE_NAME = 'sflpro-v145';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -96,9 +96,9 @@ self.addEventListener('push', (event) => {
       const title = data.title || 'SFL Pro';
       const options = {
         body: data.body || '',
-        icon: data.icon || 'https://sfl.world/icons/icon-192.png',
+        icon: data.icon || 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
         tag: data.tag || ('sfl-push-' + Date.now()),
-        badge: 'https://sfl.world/icons/icon-192.png',
+        badge: 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
         renotify: true,
         vibrate: [200, 100, 200]
       };

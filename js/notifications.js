@@ -131,10 +131,28 @@ class NotificationEngine {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         this.setPref('master', false);
-        const modal = document.getElementById('permission-blocked-modal');
-        if (modal) {
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
+        const modalHtml = `
+          <div style="text-align:center; padding: 10px;">
+            <div style="font-size:40px; margin-bottom:12px;">🔕</div>
+            <h3 style="font-size:18px; font-weight:bold; margin-bottom:12px; color:var(--text-primary);">Notificações Bloqueadas!</h3>
+            <p style="color:var(--text-secondary); margin-bottom: 20px;">O seu celular está bloqueando os avisos da fazenda. Para o SFL Pro funcionar 100% 24h, precisamos da sua permissão:</p>
+            <div style="background:var(--surface-2); padding:16px; border-radius:12px; text-align:left; margin-bottom:20px; font-size:14px; color:var(--text-secondary);">
+              <ol style="margin-left:20px; display:flex; flex-direction:column; gap:8px;">
+                <li>Abra as <b>Configurações</b> do seu celular</li>
+                <li>Vá em <b>Aplicativos</b></li>
+                <li>Procure e clique no <b>SFL Pro</b></li>
+                <li>Clique em <b>Notificações</b> e ligue tudo!</li>
+              </ol>
+            </div>
+            <button id="btn-understood" class="btn btn-primary" style="width:100%;background:var(--amber);color:#000;font-weight:bold;padding:14px;border-radius:12px;border:none;cursor:pointer;">Entendi, vou ativar agora!</button>
+          </div>
+        `;
+        if (window.__app && window.__app.UI && window.__app.UI.showModal) {
+          window.__app.UI.showModal('Atenção', modalHtml);
+          setTimeout(() => {
+            const btn = document.getElementById('btn-understood');
+            if (btn) btn.addEventListener('click', () => window.__app.UI.hideModal());
+          }, 100);
         } else {
           alert('Por favor, ative as notificações nas configurações do seu celular para o aplicativo SFL Pro.');
         }

@@ -313,7 +313,7 @@ class NotificationEngine {
       });
 
       // Upsert all new schedules in one batch
-      const postResp = await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules`, {
+      const postResp = await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules?on_conflict=farm_id,item_id`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

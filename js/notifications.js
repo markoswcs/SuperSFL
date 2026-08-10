@@ -302,6 +302,8 @@ class NotificationEngine {
     addItems(parsedFarm.shrines,     'shrines');
     addItems(parsedFarm.agingShed,   'agingShed');
     addItems(parsedFarm.saltFarm,    'saltFarm');
+    addItems(parsedFarm.deliveries,  'deliveries');
+    addItems(parsedFarm.dailyReset,  'dailyReset');
 
     if (schedules.length === 0) return;
 
@@ -605,3 +607,4 @@ class NotificationEngine {
 }
 
 window.__app.NotificationEngine = new NotificationEngine();
+

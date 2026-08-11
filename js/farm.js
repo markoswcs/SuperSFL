@@ -464,25 +464,35 @@ function parseAnimals(farm) {
     });
   };
 
+  const hasBuilding = (name) => {
+    const hasInv = farm?.inventory?.[name];
+    const hasBld = farm?.buildings?.[name];
+    return (hasInv && parseFloat(hasInv) > 0) || (hasBld && hasBld.length > 0);
+  };
+
   if (farm?.animals) {
     Object.entries(farm.animals).forEach(([id, animal]) => {
       const type = animal.type ?? 'Animal';
       addAnimals({ [id]: animal }, type);
     });
   }
-  if (farm?.henHouse?.animals) {
-    Object.entries(farm.henHouse.animals).forEach(([id, animal]) => {
-      const type   = animal.type ?? 'Chicken';
-      addAnimals({ [id]: animal }, type);
-    });
-  } else if (farm?.chickens) {
-    addAnimals(farm.chickens, 'Chicken');
+  if (hasBuilding('Hen House')) {
+    if (farm?.henHouse?.animals) {
+      Object.entries(farm.henHouse.animals).forEach(([id, animal]) => {
+        const type   = animal.type ?? 'Chicken';
+        addAnimals({ [id]: animal }, type);
+      });
+    } else if (farm?.chickens) {
+      addAnimals(farm.chickens, 'Chicken');
+    }
   }
-  if (farm?.barn?.animals) {
-    Object.entries(farm.barn.animals).forEach(([id, animal]) => {
-      const type   = animal.type ?? 'Cow';
-      addAnimals({ [id]: animal }, type);
-    });
+  if (hasBuilding('Barn')) {
+    if (farm?.barn?.animals) {
+      Object.entries(farm.barn.animals).forEach(([id, animal]) => {
+        const type   = animal.type ?? 'Cow';
+        addAnimals({ [id]: animal }, type);
+      });
+    }
   }
 
   return items.sort((a, b) => {

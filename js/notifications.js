@@ -152,38 +152,45 @@ class NotificationEngine {
       await PushNotifications.register();
 
       return new Promise((resolve) => {
-        PushNotifications.addListener('registration', async (token) => {
-          console.log('FCM Token:', token.value);
-          this.hasPermission = true;
+        if (!this._registrationListenerAdded) {
+          this._registrationListenerAdded = true;
+          PushNotifications.addListener('registration', async (token) => {
+            console.log('FCM Token:', token.value);
+            this.hasPermission = true;
 
-          const farmId = window.__app && window.__app.State && window.__app.State.farmId;
-          if (farmId) {
-            try {
-              await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?on_conflict=farm_id', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': SUPABASE_ANON,
-                  'Authorization': 'Bearer ' + SUPABASE_ANON,
-                  'Prefer': 'resolution=merge-duplicates'
-                },
-                body: JSON.stringify({
-                  farm_id: farmId,
-                  endpoint: 'fcm://' + token.value,
-                  p256dh: '',
-                  auth: '',
-                  preferences: this.prefs
-                })
-              });
-              console.log('FCM subscription salva no Supabase!');
-            } catch(e) {
-              console.error('Erro ao salvar FCM token:', e);
+            const farmId = window.__app && window.__app.State && window.__app.State.farmId;
+            if (farmId) {
+              try {
+                await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?on_conflict=farm_id', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON,
+                    'Authorization': 'Bearer ' + SUPABASE_ANON,
+                    'Prefer': 'resolution=merge-duplicates'
+                  },
+                  body: JSON.stringify({
+                    farm_id: farmId,
+                    endpoint: 'fcm://' + token.value,
+                    p256dh: '',
+                    auth: '',
+                    preferences: this.prefs
+                  })
+                });
+                console.log('FCM subscription salva no Supabase!');
+              } catch(e) {
+                console.error('Erro ao salvar FCM token:', e);
+              }
             }
-          }
 
-          this.sendPush('SFL Pro Ativado!', { body: 'Voce recebera alertas mesmo com o app fechado!' });
+            this.sendPush('SFL Pro Ativado!', { body: 'Voce recebera alertas mesmo com o app fechado!' });
+            resolve(true);
+          });
+        } else {
+          // If already listening, it will trigger from the register() call above.
+          // We can just resolve immediately since they already have permission.
           resolve(true);
-        });
+        }
 
         PushNotifications.addListener('registrationError', (error) => {
           console.error('Push register error:', error);

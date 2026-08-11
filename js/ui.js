@@ -1835,6 +1835,9 @@ function renderNotifSettings(notifPermission) {
     <div class="notif-permission-banner mb-4" style="border-color:rgba(34,197,94,0.3)">
       <span style="font-size:24px">🔔</span>
       <p><strong style="color:var(--emerald)">${t('notif_status_granted')}</strong><br>${t('notif_status_granted_desc')}</p>
+      <button id="btn-test-notif" class="btn-primary" style="margin-top:8px;font-size:12px;padding:6px 12px;background:var(--emerald)">
+        Testar Notificação Local
+      </button>
     </div>
   `;
 
@@ -1968,6 +1971,15 @@ function bindNotifToggles() {
         const perm = await window.__app.Notifications.getPermissionState();
         if (!enabled) showToast('Não foi possível ativar as notificações. Verifique as permissões do aparelho.', 'error');
         renderNotifSettings(perm);
+      }
+    });
+  }
+
+  const testBtn = $('#btn-test-notif');
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      if (window.__app?.Notifications) {
+        window.__app.Notifications.sendPush('Teste SFL Pro', { body: 'As notificações locais estão funcionando perfeitamente!' });
       }
     });
   }

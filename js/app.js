@@ -1,6 +1,6 @@
-/**
- * app.js Ã¢â‚¬â€ Controlador Principal
- * Gerencia o estado da aplicaÃƒÂ§ÃƒÂ£o, roteamento das abas e ciclo de vida
+﻿/**
+ * app.js ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Controlador Principal
+ * Gerencia o estado da aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o, roteamento das abas e ciclo de vida
  */
 
 import Storage from './storage.js?v=141';
@@ -30,7 +30,7 @@ const $$ = (sel) => [...document.querySelectorAll(sel)];
 // =====================================================
 
 async function init() {
-  console.log('Ã°Å¸Å’Â» Sunflower Super App init...');
+  console.log('ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â» Sunflower Super App init...');
 
   // Init i18n
   i18n.initI18n();
@@ -103,7 +103,7 @@ async function init() {
     promptGlobalAlerts: () => {
       const html = `
         <div style="padding:16px;">
-          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina automaticamente um alvo de venda para <b>TODOS</b> os itens do seu estoque baseados no preÃƒÂ§o atual de mercado.</div>
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina automaticamente um alvo de venda para <b>TODOS</b> os itens do seu estoque baseados no preÃƒÆ’Ã‚Â§o atual de mercado.</div>
           
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button onclick="window.__app.applyGlobalAlerts(1.10)" class="btn" style="border:1px solid var(--emerald); background:transparent; color:var(--emerald); padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">+10% de Lucro</button>
@@ -112,11 +112,11 @@ async function init() {
           </div>
           
           <div style="margin-top:16px;font-size:11px;color:var(--text-tertiary);text-align:center;">
-            Isso vai substituir os alvos que vocÃƒÂª definiu manualmente.
+            Isso vai substituir os alvos que vocÃƒÆ’Ã‚Âª definiu manualmente.
           </div>
         </div>
       `;
-      UI.showModal('Ã°Å¸Å¡â‚¬ EstratÃƒÂ©gia Global', html);
+      UI.showModal('ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬ EstratÃƒÆ’Ã‚Â©gia Global', html);
     },
     applyGlobalAlerts: (multiplier) => {
       const inv = State.parsedFarm?.inventory;
@@ -145,10 +145,10 @@ async function init() {
 
       const html = `
         <div style="padding:16px;">
-          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preÃƒÂ§o alvo (SFL) para vender <b>${item}</b>. O card ficarÃƒÂ¡ destacado quando o mercado atingir este valor.</div>
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preÃƒÆ’Ã‚Â§o alvo (SFL) para vender <b>${item}</b>. O card ficarÃƒÆ’Ã‚Â¡ destacado quando o mercado atingir este valor.</div>
           <div style="font-size:12px;margin-bottom:16px; display:flex; justify-content:space-between;">
-            <span>PreÃƒÂ§o atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></span>
-            ${maxPrice ? `<span>MÃƒÂ¡x HistÃƒÂ³rico: <span style="color:var(--emerald);font-weight:700;">${maxPrice} SFL</span></span>` : ''}
+            <span>PreÃƒÆ’Ã‚Â§o atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></span>
+            ${maxPrice ? `<span>MÃƒÆ’Ã‚Â¡x HistÃƒÆ’Ã‚Â³rico: <span style="color:var(--emerald);font-weight:700;">${maxPrice} SFL</span></span>` : ''}
           </div>
           <input type="number" id="prompt-alert-input" step="0.0001" placeholder="Ex: ${autoPrice}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);margin-bottom:16px;">
           <div style="display:flex; gap:8px;">
@@ -157,7 +157,7 @@ async function init() {
           </div>
         </div>
       `;
-      UI.showModal('Ã°Å¸Å½Â¯ Alvo de Venda', html);
+      UI.showModal('ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Alvo de Venda', html);
       setTimeout(() => {
         const btnSave = document.getElementById('prompt-alert-save');
         const btnAuto = document.getElementById('prompt-alert-auto');
@@ -177,7 +177,7 @@ async function init() {
                 UI.renderMarketPage(State.prices, State.exchange);
               }
             } else {
-              UI.showToast('Valor invÃƒÂ¡lido', 'error');
+              UI.showToast('Valor invÃƒÆ’Ã‚Â¡lido', 'error');
             }
           };
         }
@@ -185,11 +185,11 @@ async function init() {
     },
     addPriceAlert: (item, type, threshold) => {
       if (!item || !type || isNaN(threshold) || threshold <= 0) {
-        UI.showToast('Insira um valor vÃƒÂ¡lido para o alerta!', 'error');
+        UI.showToast('Insira um valor vÃƒÆ’Ã‚Â¡lido para o alerta!', 'error');
         return;
       }
       Storage.savePriceAlert({ item, type, threshold });
-      UI.showToast(`Alerta salvo: ${item} ${type === 'up' ? 'Ã¢â€“Â²' : 'Ã¢â€“Â¼'} ${threshold} SFL Ã¢Å“â€¦`);
+      UI.showToast(`Alerta salvo: ${item} ${type === 'up' ? 'ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â²' : 'ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â¼'} ${threshold} SFL ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦`);
       UI.hideModal();
       if (State.currentTab === 'alerts') UI.renderAlertsPage();
     },
@@ -222,7 +222,7 @@ async function init() {
           <button id="manual-purchase-save" class="btn btn-primary" style="width:100%; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Registrar Compra</button>
         </div>
       `;
-      UI.showModal('Ã°Å¸â€ºâ€™ Registrar Compra', html);
+      UI.showModal('ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ¢â‚¬â„¢ Registrar Compra', html);
       setTimeout(() => {
         const btnSave = document.getElementById('manual-purchase-save');
         if (btnSave) {
@@ -292,15 +292,15 @@ async function init() {
     if (!hasSeenPrompt && window.__app.UI && window.__app.UI.showModal) {
       const promptHtml = `
           <div style="text-align:center; padding: 10px;">
-            <div style="font-size:40px; margin-bottom:12px;">ðŸ””</div>
-            <p style="color:var(--text-secondary); margin-bottom: 20px;">Ative as notificaÃ§Ãµes para ser avisado quando suas PlantaÃ§Ãµes, Animais e Recursos estiverem prontos! Nunca mais perca tempo de jogo.</p>
+            <div style="font-size:40px; margin-bottom:12px;">Ã°Å¸â€â€</div>
+            <p style="color:var(--text-secondary); margin-bottom: 20px;">Ative as notificaÃƒÂ§ÃƒÂµes para ser avisado quando suas PlantaÃƒÂ§ÃƒÂµes, Animais e Recursos estiverem prontos! Nunca mais perca tempo de jogo.</p>
             <div style="display:flex; flex-direction:column; gap:10px;">
-              <button id="btn-activate-push" class="btn btn-primary" style="background:var(--emerald);color:#000;font-weight:bold;padding:12px;border-radius:12px;border:none;cursor:pointer;">Ativar NotificaÃ§Ãµes 24/7</button>
-              <button id="btn-skip-push" class="btn btn-secondary" style="background:rgba(255,255,255,0.1);color:var(--text-tertiary);padding:12px;border-radius:12px;border:none;cursor:pointer;">Agora NÃ£o</button>
+              <button id="btn-activate-push" class="btn btn-primary" style="background:var(--emerald);color:#000;font-weight:bold;padding:12px;border-radius:12px;border:none;cursor:pointer;">Ativar NotificaÃƒÂ§ÃƒÂµes 24/7</button>
+              <button id="btn-skip-push" class="btn btn-secondary" style="background:rgba(255,255,255,0.1);color:var(--text-tertiary);padding:12px;border-radius:12px;border:none;cursor:pointer;">Agora NÃƒÂ£o</button>
             </div>
           </div>
         `;
-      window.__app.UI.showModal('NotificaÃ§Ãµes 24/7', promptHtml);
+      window.__app.UI.showModal('NotificaÃƒÂ§ÃƒÂµes 24/7', promptHtml);
       
       setTimeout(() => {
         const btnActive = document.getElementById('btn-activate-push');
@@ -309,10 +309,10 @@ async function init() {
         if (btnActive) btnActive.addEventListener('click', async () => {
           window.__app.UI.hideModal();
           localStorage.setItem('sfl_seen_push_prompt', 'true');
-          if (window.__app?.NotificationEngine) {
+          if (window.__app?.Notifications) {
             window.__app.UI.showToast('Processando...', 'info');
-            await window.__app.NotificationEngine.setPref('master', true);
-            if (window.__app.NotificationEngine.prefs.master) { window.__app.UI.showToast('Notificações ativadas com sucesso!', 'success'); }
+            await window.__app.Notifications.setPref('master', true);
+            if (window.__app.Notifications.prefs.master) { window.__app.UI.showToast('NotificaÃ§Ãµes ativadas com sucesso!', 'success'); }
             window.__app.switchTab('settings');
           }
         });
@@ -384,7 +384,7 @@ async function refreshData(force = false) {
     if (errors.length > 0) {
       console.warn('API partial failures:', errors);
       if (hasKeyError) {
-        UI.showToast('Chave de API InvÃƒÂ¡lida ou Expirada!', 'error');
+        UI.showToast('Chave de API InvÃƒÆ’Ã‚Â¡lida ou Expirada!', 'error');
         State.lastErrorMessage = 'API Key invalid/expired';
       }
     }
@@ -412,7 +412,7 @@ async function refreshData(force = false) {
           prevListings.forEach(prev => {
             const stillExists = currentListings.find(c => c.id === prev.id);
             if (!stillExists) {
-              // Listing disappeared Ã¢â‚¬â€ likely sold
+              // Listing disappeared ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â likely sold
               const itemName = Object.keys(prev.items || {})[0];
               const qty      = itemName ? (prev.items[itemName] || 0) : 0;
               const sflEarned = parseFloat(prev.sfl || 0) * (1 - (prev.tax || 0.1));
@@ -489,8 +489,8 @@ async function refreshData(force = false) {
       // State.parsedFarm = null;
     }
 
-    if (State.parsedFarm && window.__app.NotificationEngine) {
-      window.__app.NotificationEngine.process(State.parsedFarm);
+    if (State.parsedFarm && window.__app.Notifications) {
+      window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
     }
 
     renderCurrentTab();
@@ -500,7 +500,7 @@ async function refreshData(force = false) {
     Storage.setCache('last_sync_time', State.lastSyncTime, 86400000 * 365);
     updateSyncBadge();
 
-    if (force) UI.showToast('Data synced! Ã¢Å“â€¦');
+    if (force) UI.showToast('Data synced! ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦');
   } catch (err) {
     console.error('Refresh Error:', err);
     if (force) UI.showToast(`Sync Failed: ${err.message}`, 'error');
@@ -540,7 +540,7 @@ function updateSyncBadge() {
 function setupAutoRefresh() {
   if (State.refreshTimer) clearInterval(State.refreshTimer);
   
-  // Update UI timers and auto-fetch from API every 60 seconds (Piloto AutomÃ¡tico)
+  // Update UI timers and auto-fetch from API every 60 seconds (Piloto AutomÃƒÂ¡tico)
   State.refreshTimer = setInterval(() => {
     updateSyncBadge();
     // Only auto-sync if we have a farm ID and not already refreshing
@@ -553,10 +553,10 @@ function setupAutoRefresh() {
   
   // Re-process local data every 30 seconds for local push notifications
   State.localProcessTimer = setInterval(() => {
-    if (State.farmData && window.__app.FarmData && window.__app.NotificationEngine) {
+    if (State.farmData && window.__app.FarmData && window.__app.Notifications) {
       // Re-parse the cached raw data to update 'ready' statuses based on current time
       State.parsedFarm = window.__app.FarmData.parse(State.farmData);
-      window.__app.NotificationEngine.process(State.parsedFarm);
+      window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
       renderCurrentTab(); // Update UI timers
     }
   }, 30000);
@@ -609,7 +609,7 @@ function renderCurrentTab() {
 
     case 'alerts':
       UI.renderAlertsPage();
-      const perm = (typeof Notification !== "undefined") ? Notification.permission : (window.__app.NotificationEngine?.prefs?.master ? "granted" : "default");
+      const perm = (typeof Notification !== "undefined") ? Notification.permission : (window.__app.Notifications?.prefs?.master ? "granted" : "default");
       UI.renderNotifSettings(perm);
       break;
     case 'settings':

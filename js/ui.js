@@ -1,7 +1,7 @@
-const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405,22905,27905,33655,40155,47405,55405,64155,73905,84655,96405,109155,122905,137405,152905,169405,186905,205405,225405,246905,269905,294405,320405,348405,378405,410405,444405,480405,518905,559905,603405,649405,697905,749405,803905,861405,921905,985405,1053905,1127405,1205905,1289405,1377905,1476405,1584905,1703405,1831905,1970405,2128905,2287405,2485905,2704405,2942905,3221405,3539905,3898405,4296905,4735405,5233905,5743905,6263905,6793905,7333905,7883905,8443905,9013905,9593905,10183905,10783905,11393905,12013905,12643905,13283905,13933905,14593905,15263905,15943905,16633905,17333905,18043905,18763905,19493905,20233905,20983905,21743905,22513905,23293905,24083905,24893905,25723905,26573905,27443905,28333905,29243905,30173905,31123905,32093905,33083905,34093905,35123905,36173905,37243905,38333905,39443905,40573905,41723905,42893905,44083905,45293905,46523905,47773905,49043905,50333905,51653905,53003905,54383905,55793905,57233905,58708905,60218905,61763905,63343905,64958905,66613905,68308905,70043905,71818905,73633905,75493905,77398905,79348905,81343905,83383905,85473905,87613905,89803905,92043905,94333905,95662605,97031166,98440783,99892688,101388150,102928475,104515009,106149139,107832292,109565939,111351595,113190820,115085221,117036454,119046223,121116285,123248448,125444575,127706585,130036455,132436221,134907979,137453889,140076176,142777131,145559114,148424556,151375961,154415908,157547053,160772132,164093963,167515448,171039577,174669429,178408176,182259085,186225521,190310950,194518941,198853171,203317427,207915610,212651738,217529949,222554506,227729799,233060350,238550817,244206000];
+﻿const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405,22905,27905,33655,40155,47405,55405,64155,73905,84655,96405,109155,122905,137405,152905,169405,186905,205405,225405,246905,269905,294405,320405,348405,378405,410405,444405,480405,518905,559905,603405,649405,697905,749405,803905,861405,921905,985405,1053905,1127405,1205905,1289405,1377905,1476405,1584905,1703405,1831905,1970405,2128905,2287405,2485905,2704405,2942905,3221405,3539905,3898405,4296905,4735405,5233905,5743905,6263905,6793905,7333905,7883905,8443905,9013905,9593905,10183905,10783905,11393905,12013905,12643905,13283905,13933905,14593905,15263905,15943905,16633905,17333905,18043905,18763905,19493905,20233905,20983905,21743905,22513905,23293905,24083905,24893905,25723905,26573905,27443905,28333905,29243905,30173905,31123905,32093905,33083905,34093905,35123905,36173905,37243905,38333905,39443905,40573905,41723905,42893905,44083905,45293905,46523905,47773905,49043905,50333905,51653905,53003905,54383905,55793905,57233905,58708905,60218905,61763905,63343905,64958905,66613905,68308905,70043905,71818905,73633905,75493905,77398905,79348905,81343905,83383905,85473905,87613905,89803905,92043905,94333905,95662605,97031166,98440783,99892688,101388150,102928475,104515009,106149139,107832292,109565939,111351595,113190820,115085221,117036454,119046223,121116285,123248448,125444575,127706585,130036455,132436221,134907979,137453889,140076176,142777131,145559114,148424556,151375961,154415908,157547053,160772132,164093963,167515448,171039577,174669429,178408176,182259085,186225521,190310950,194518941,198853171,203317427,207915610,212651738,217529949,222554506,227729799,233060350,238550817,244206000];
 
 /**
- * ui.js â€” RenderizaÃ§Ã£o completa da interface do Sunflower Super App
+ * ui.js Ã¢â‚¬â€ RenderizaÃƒÂ§ÃƒÂ£o completa da interface do Sunflower Super App
  * Todos os componentes visuais: home, farm, market, alerts, settings
  */
 
@@ -33,7 +33,7 @@ const ASSETS = {
 // =====================================================
 
 function formatNumber(n, decimals = 2) {
-  if (n === null || n === undefined || isNaN(n)) return 'â€”';
+  if (n === null || n === undefined || isNaN(n)) return 'Ã¢â‚¬â€';
   const num = Number(n);
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000)     return `${(num / 1_000).toFixed(1)}K`;
@@ -63,8 +63,8 @@ function timeAgo(ms) {
   const h = Math.floor(m / 60);
   
   const isPt = t('nav_farm') === 'Fazenda';
-  if (h > 0) return isPt ? `hÃ¡ ${h}h` : `${h}h ago`;
-  if (m > 0) return isPt ? `hÃ¡ ${m}m` : `${m}m ago`;
+  if (h > 0) return isPt ? `hÃƒÂ¡ ${h}h` : `${h}h ago`;
+  if (m > 0) return isPt ? `hÃƒÂ¡ ${m}m` : `${m}m ago`;
   return isPt ? `agora` : `just now`;
 }
 
@@ -139,12 +139,12 @@ function renderPriceStrip(exchange) {
     </div>
     <div class="price-strip-sep"></div>
     <div class="price-strip-item">
-      <span class="price-token-label">ðŸ’Ž GEM</span>
+      <span class="price-token-label">Ã°Å¸â€™Å½ GEM</span>
       <span class="price-token-value">$${gem.toFixed(3)}</span>
     </div>
     <div class="price-strip-sep"></div>
     <div class="price-strip-item">
-      <span class="price-token-label">ðŸª™ COIN</span>
+      <span class="price-token-label">Ã°Å¸Âªâ„¢ COIN</span>
       <span class="price-token-value">$${coins.toFixed(5)}</span>
     </div>
   `);
@@ -250,11 +250,11 @@ function renderHome(exchange, prices, parsedFarm) {
     let animalDetailsText = parsedFarm.isPartial ? '-' : `${parsedFarm.animals.length} ${t('home_total')}`;
     if (!parsedFarm.isPartial) {
         const details = [];
-        if (animalTypes['Chicken']) details.push(`ðŸ” ${animalTypes['Chicken']}`);
-        if (animalTypes['Cow']) details.push(`ðŸ„ ${animalTypes['Cow']}`);
-        if (animalTypes['Sheep']) details.push(`ðŸ‘ ${animalTypes['Sheep']}`);
+        if (animalTypes['Chicken']) details.push(`Ã°Å¸Ââ€ ${animalTypes['Chicken']}`);
+        if (animalTypes['Cow']) details.push(`Ã°Å¸Ââ€ž ${animalTypes['Cow']}`);
+        if (animalTypes['Sheep']) details.push(`Ã°Å¸Ââ€˜ ${animalTypes['Sheep']}`);
         if (details.length > 0) {
-           animalDetailsText = details.join(' â€¢ ');
+           animalDetailsText = details.join(' Ã¢â‚¬Â¢ ');
         }
     }
 
@@ -267,11 +267,11 @@ function renderHome(exchange, prices, parsedFarm) {
       if (msLeft <= 0) {
         expansionValue = "Pronta!";
         expansionClass = "emerald";
-        expansionSub = `ExpansÃ£o ${parsedFarm.level + 1}`;
+        expansionSub = `ExpansÃƒÂ£o ${parsedFarm.level + 1}`;
       } else {
         expansionValue = Farm.formatCountdown ? Farm.formatCountdown(msLeft) : "Em obra";
         expansionClass = "amber";
-        expansionSub = `ExpansÃ£o ${parsedFarm.level + 1}`;
+        expansionSub = `ExpansÃƒÂ£o ${parsedFarm.level + 1}`;
       }
     }
 
@@ -300,12 +300,12 @@ function renderHome(exchange, prices, parsedFarm) {
 
     const islandSub = parsedFarm.isPartial ? '-' :
       (totalIslandReady > 0 ? `${totalIslandReady} pronto${totalIslandReady > 1 ? 's' : ''} para coletar` :
-       (nextIslandRes ? `PrÃ³ximo em ${nextIslandRes.countdown}` : 'Tudo disponÃ­vel'));
+       (nextIslandRes ? `PrÃƒÂ³ximo em ${nextIslandRes.countdown}` : 'Tudo disponÃƒÂ­vel'));
 
 
     setHtml('#home-farm-summary', `
       <div class="section-header">
-        <div class="section-title">ðŸšœ ${t('home_farm_summary')}</div>
+        <div class="section-title">Ã°Å¸Å¡Å“ ${t('home_farm_summary')}</div>
         ${totalReady > 0 ? `<div class="section-badge coral">${totalReady}</div>` : `<div class="section-badge">${t('home_up_to_date')}</div>`}
       </div>
       
@@ -325,7 +325,7 @@ function renderHome(exchange, prices, parsedFarm) {
         <div class="stat-card spring-in stagger-2" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.COINS}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-            <span style="font-size:18px;display:none">ðŸª™</span>
+            <span style="font-size:18px;display:none">Ã°Å¸Âªâ„¢</span>
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_coins')}</div>
@@ -356,21 +356,21 @@ function renderHome(exchange, prices, parsedFarm) {
             <div class="stat-value ${parsedFarm.isVip ? 'amber' : ''}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isVip ? 'Ativo' : 'Inativo'}
             </div>
-            <div class="stat-sub" style="margin-top:2px;">${!parsedFarm.isVip ? 'Sem passe' : (parsedFarm.vipLifetime ? 'VitalÃ­cio' : (parsedFarm.vipDaysLeft > 0 ? `Expira em ${parsedFarm.vipDaysLeft} dias` : 'Expirando...'))}</div>
+            <div class="stat-sub" style="margin-top:2px;">${!parsedFarm.isVip ? 'Sem passe' : (parsedFarm.vipLifetime ? 'VitalÃƒÂ­cio' : (parsedFarm.vipDaysLeft > 0 ? `Expira em ${parsedFarm.vipDaysLeft} dias` : 'Expirando...'))}</div>
           </div>
         </div>
         <!-- Crops -->
-        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantaÃ§Ãµes"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantaÃ§Ãµes"'}>
+        <div class="stat-card spring-in stagger-5" onclick="window.__app && window.__app.showCropsModal && window.__app.showCropsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantaÃƒÂ§ÃƒÂµes"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes das plantaÃƒÂ§ÃƒÂµes"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${cropIconUrl}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_crops')}</div>
             <div class="stat-value ${readyCrops > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
-              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">ðŸ”’ ${t('farm_missing_key')}</span>` : 
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">Ã°Å¸â€â€™ ${t('farm_missing_key')}</span>` : 
                 (readyCrops > 0 ? readyCrops + (readyCrops > 1 ? ' prontos!' : ' pronto!') : (nextCrop ? nextCrop.countdown : t('home_growing')))}
             </div>
-            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyCrops === 0 && nextCrop ? `Ã s ${new Date(nextCrop.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} â€¢ ${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots}` : `${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots} canteiros`)}</div>
+            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyCrops === 0 && nextCrop ? `ÃƒÂ s ${new Date(nextCrop.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} Ã¢â‚¬Â¢ ${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots}` : `${parsedFarm.crops.totalPlanted}/${parsedFarm.crops.totalPlots} canteiros`)}</div>
           </div>
           
         </div>
@@ -382,10 +382,10 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">FRUTAS</div>
             <div class="stat-value ${readyFruits > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
-              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">ðŸ”’ ${t('farm_missing_key')}</span>` : 
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">Ã°Å¸â€â€™ ${t('farm_missing_key')}</span>` : 
                 (readyFruits > 0 ? readyFruits + (readyFruits > 1 ? ' prontas!' : ' pronta!') : (nextFruit ? nextFruit.countdown : t('home_growing')))}
             </div>
-            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `Ã s ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} â€¢ ${parsedFarm.fruits.length} pÃ©s` : `${parsedFarm.fruits.length} pÃ©s de fruta`)}</div>
+            <div class="stat-sub" style="margin-top:2px;">${parsedFarm.isPartial ? '-' : (readyFruits === 0 && nextFruit ? `ÃƒÂ s ${new Date(nextFruit.readyAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} Ã¢â‚¬Â¢ ${parsedFarm.fruits.length} pÃƒÂ©s` : `${parsedFarm.fruits.length} pÃƒÂ©s de fruta`)}</div>
           </div>
           
         </div>
@@ -397,8 +397,8 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_animals')}</div>
             <div class="stat-value ${collectAnimals > 0 ? 'emerald' : (attnAnimals > 0 ? 'coral' : '')}" style="font-size:18px; line-height:1;">
-              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">ðŸ”’ ${t('farm_missing_key')}</span>` : 
-                (collectAnimals > 0 ? collectAnimals + ' pronto!' : (attnAnimals > 0 ? attnAnimals + ' atenÃ§Ã£o' : parsedFarm.animals.length + ' ' + t('home_ok')))}
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">Ã°Å¸â€â€™ ${t('farm_missing_key')}</span>` : 
+                (collectAnimals > 0 ? collectAnimals + ' pronto!' : (attnAnimals > 0 ? attnAnimals + ' atenÃƒÂ§ÃƒÂ£o' : parsedFarm.animals.length + ' ' + t('home_ok')))}
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${animalDetailsText}</div>
           </div>
@@ -413,7 +413,7 @@ function renderHome(exchange, prices, parsedFarm) {
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">COMPOSTEIRAS</div>
             <div class="stat-value ${readyCompost > 0 ? 'emerald' : ''}" style="font-size:18px; line-height:1;">
-              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">ðŸ”’ ${t('farm_missing_key')}</span>` : 
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">Ã°Å¸â€â€™ ${t('farm_missing_key')}</span>` : 
                 (readyCompost > 0 ? readyCompost + (readyCompost > 1 ? ' prontas!' : ' pronta!') : (parsedFarm.composting.some(c => c.status !== 'idle') ? 'Preparando...' : (parsedFarm.composting.length > 0 ? 'Vazias' : 'Nenhuma')))}
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${parsedFarm.isPartial ? '-' : `${parsedFarm.composting.length} Composteiras`}</div>
@@ -426,7 +426,7 @@ function renderHome(exchange, prices, parsedFarm) {
             <img src="https://sfl.world/img/source/Wood.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1; min-width:0;">
-            <div class="stat-label" style="font-size:12px; margin-bottom:5px;">ðŸŒ¿ RECURSOS DA ILHA</div>
+            <div class="stat-label" style="font-size:12px; margin-bottom:5px;">Ã°Å¸Å’Â¿ RECURSOS DA ILHA</div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
               ${[
                 {img:'Wood', count: treesReady, total: treesTotal, label:'Madeira'},
@@ -436,7 +436,7 @@ function renderHome(exchange, prices, parsedFarm) {
                 {img:'Crimstone', count: crimsReady, total: islandRocks.filter(r=>r.name==='Crimstone').length, label:'Crimstone'},
                 {img:'Sunstone', count: sunReady, total: islandRocks.filter(r=>r.name==='Sunstone').length, label:'Sunstone'},
                 {img:'Wild Mushroom', count: mushReady, total: islandMush.length, label:'Cogumelo'},
-                {img:'Oil', count: oilReady, total: islandOil.length, label:'PetrÃ³leo'},
+                {img:'Oil', count: oilReady, total: islandOil.length, label:'PetrÃƒÂ³leo'},
               ].filter(r => r.total > 0).map(r => `
                 <div title="${r.label}" style="display:flex;align-items:center;gap:4px;background:${r.count>0?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.04)'};border:1px solid ${r.count>0?'rgba(16,185,129,0.3)':'rgba(255,255,255,0.08)'};border-radius:8px;padding:4px 8px;">
                   <img src="https://sfl.world/img/source/${encodeURIComponent(r.img)}.png" style="width:16px;height:16px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
@@ -446,18 +446,18 @@ function renderHome(exchange, prices, parsedFarm) {
             </div>
             <div class="stat-sub" style="margin-top:5px;font-size:11px;color:var(--text-tertiary);">${islandSub}</div>
           </div>
-          <div style="color:var(--text-tertiary);font-size:20px;">â€º</div>
+          <div style="color:var(--text-tertiary);font-size:20px;">Ã¢â‚¬Âº</div>
         </div>
 
         <!-- Expansion -->
-        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="grid-column: 1 / -1; opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansÃ£o"' : 'style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansÃ£o"'}>
+        <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showExpansionModal && window.__app.showExpansionModal()" ${parsedFarm.isPartial ? 'style="grid-column: 1 / -1; opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansÃƒÂ£o"' : 'style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes da expansÃƒÂ£o"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${ASSETS.ISLAND}'">
           </div>
           <div style="flex:1; min-width:0;">
-            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃƒO</div>
+            <div class="stat-label" style="font-size:12px; margin-bottom:2px;">EXPANSÃƒÆ’O</div>
             <div class="stat-value ${expansionClass}" style="font-size:18px; line-height:1;">
-              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">ðŸ”’ ${t('farm_missing_key')}</span>` : expansionValue}
+              ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">Ã°Å¸â€â€™ ${t('farm_missing_key')}</span>` : expansionValue}
             </div>
             <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${expansionSub}</div>
           </div>
@@ -559,11 +559,11 @@ function renderHome(exchange, prices, parsedFarm) {
                   <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     ${parsedFarm.isVip ? `<div class="profile-tag tag-vip">
                       <i class="bi bi-star-fill" style="font-size:10px;"></i> 
-                      VIP ${parsedFarm.vipLifetime ? '(VitalÃ­cio)' : (parsedFarm.vipDaysLeft > 0 ? `(${parsedFarm.vipDaysLeft}d)` : '')}
+                      VIP ${parsedFarm.vipLifetime ? '(VitalÃƒÂ­cio)' : (parsedFarm.vipDaysLeft > 0 ? `(${parsedFarm.vipDaysLeft}d)` : '')}
                     </div>` : ''}
                     <div class="profile-tag tag-island" style="display:flex; align-items:center; gap:6px;">
                       <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${parsedFarm.islandType || 'basic'}.webp" style="height:14px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));" onerror="this.src='https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/island.png'" />
-                      ${parsedFarm.islandType === 'desert' ? 'Deserto' : (parsedFarm.islandType === 'spring' ? 'Primavera' : 'BÃ¡sica')}
+                      ${parsedFarm.islandType === 'desert' ? 'Deserto' : (parsedFarm.islandType === 'spring' ? 'Primavera' : 'BÃƒÂ¡sica')}
                     </div>
                   </div>
                 </div>
@@ -583,7 +583,7 @@ function renderHome(exchange, prices, parsedFarm) {
                   
                   return `
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                      <div class="level-text">Bumpkin NÃ­vel ${level}</div>
+                      <div class="level-text">Bumpkin NÃƒÂ­vel ${level}</div>
                       <div style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); font-family: 'SF Mono', Consolas, monospace;">
                         <span style="color: #fff;">${currentXpStr}</span> XP
                       </div>
@@ -592,7 +592,7 @@ function renderHome(exchange, prices, parsedFarm) {
                       <div class="xp-bar-fill" style="width: ${Math.min(100, Math.max(0, computedProgress * 100))}%;"></div>
                     </div>
                     <div style="text-align: right; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.5); font-family: 'SF Mono', Consolas, monospace;">
-                      Faltam <span style="color: #60a5fa; font-weight: bold;">${missingXpStr} XP</span> para NÃ­vel ${nextLevel}
+                      Faltam <span style="color: #60a5fa; font-weight: bold;">${missingXpStr} XP</span> para NÃƒÂ­vel ${nextLevel}
                     </div>
                   `;
                 })()}
@@ -604,7 +604,7 @@ function renderHome(exchange, prices, parsedFarm) {
         ${parsedFarm.charm !== undefined && parsedFarm.charm > 0 ? `
         <div class="stat-card spring-in stagger-8" style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px;">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
-            <span style="font-size:24px;line-height:1">âœ¨</span>
+            <span style="font-size:24px;line-height:1">Ã¢Å“Â¨</span>
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">ENCANTO</div>
@@ -642,7 +642,7 @@ function renderHome(exchange, prices, parsedFarm) {
   } else {
     setHtml('#home-farm-summary', `
       <div class="empty-state">
-        <span class="empty-state-icon">ðŸŒ»</span>
+        <span class="empty-state-icon">Ã°Å¸Å’Â»</span>
         <div class="empty-state-title">${t('home_no_farm')}</div>
         <div class="empty-state-sub">${t('home_no_farm_sub')}</div>
         <button class="btn-primary" style="margin-top:16px;padding:10px 24px;font-size:13px;" onclick="window.__app.switchTab('settings')">
@@ -662,7 +662,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   if (!parsedFarm) {
     setHtml('#farm-content', `
       <div class="empty-state">
-        <span class="empty-state-icon">ðŸ¡</span>
+        <span class="empty-state-icon">Ã°Å¸ÂÂ¡</span>
         <div class="empty-state-title">${t('farm_enter_id')}</div>
         <div class="empty-state-sub">${t('farm_enter_id_sub')}</div>
       </div>
@@ -684,11 +684,11 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
           attentionAnimalsArr.forEach(a => { attentionAnimalTypes[a.type] = (attentionAnimalTypes[a.type] || 0) + 1; });
           
           let details = [];
-          if (attentionAnimalTypes['Chicken']) details.push(`ðŸ” ${attentionAnimalTypes['Chicken']}`);
-          if (attentionAnimalTypes['Cow']) details.push(`ðŸ„ ${attentionAnimalTypes['Cow']}`);
-          if (attentionAnimalTypes['Sheep']) details.push(`ðŸ‘ ${attentionAnimalTypes['Sheep']}`);
+          if (attentionAnimalTypes['Chicken']) details.push(`Ã°Å¸Ââ€ ${attentionAnimalTypes['Chicken']}`);
+          if (attentionAnimalTypes['Cow']) details.push(`Ã°Å¸Ââ€ž ${attentionAnimalTypes['Cow']}`);
+          if (attentionAnimalTypes['Sheep']) details.push(`Ã°Å¸Ââ€˜ ${attentionAnimalTypes['Sheep']}`);
           if (details.length > 0) {
-              animalDetailsText = details.join(' â€¢ ');
+              animalDetailsText = details.join(' Ã¢â‚¬Â¢ ');
           }
       } else {
           animalDetailsText = `${animals.length} ${t('home_total')}`;
@@ -707,7 +707,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   const isVip = parsedFarm.isVip ?? false;
   const islandType = parsedFarm.islandType ?? 'basic';
   const islandLabels = {
-    basic: 'BÃ¡sica', petal: 'PÃ©tala', desert: 'Deserto', volcano: 'VulcÃ£o', spring: 'Primavera'
+    basic: 'BÃƒÂ¡sica', petal: 'PÃƒÂ©tala', desert: 'Deserto', volcano: 'VulcÃƒÂ£o', spring: 'Primavera'
   };
   const islandLabel = islandLabels[islandType] || islandType;
 
@@ -721,15 +721,15 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
 
   // Sections
   const allSections = [
-    { id: 'crops', title: `ðŸŒ¾ ${t('farm_crops')}`, badge: crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0), items: crops, badgeClass: 'emerald' },
-    { id: 'fruits', title: `ðŸ‡ ${t('farm_fruits')}`, badge: fruits.filter(f => f.status === 'ready').length, items: fruits, badgeClass: 'emerald' },
-    { id: 'animals', title: `ðŸ” ${t('farm_animals')}`, badge: animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length, items: animals, badgeClass: 'coral' },
-    { id: 'trees', title: `ðŸŒ² Ãrvores & Madeira`, badge: trees.filter(t => t.status === 'ready').length, items: trees, badgeClass: 'emerald' },
-    { id: 'rocks', title: `â›ï¸ MinÃ©rios & Pedras`, badge: rocks.filter(r => r.status === 'ready').length, items: rocks, badgeClass: 'sky' },
-    { id: 'buildings', title: `ðŸ  ${t('farm_buildings')}`, badge: buildings.filter(b => b.status === 'ready').length, items: buildings, badgeClass: 'amber' },
-    { id: 'beehives', title: `ðŸ¯ Colmeias & Mel`, badge: beehives.filter(h => h.status === 'ready').length, items: beehives, badgeClass: 'amber' },
-    { id: 'greenhouse', title: `ðŸ¡ ${t('farm_greenhouse')}`, badge: greenhouse.filter(g => g.status === 'ready').length, items: greenhouse, badgeClass: 'emerald' },
-    { id: 'oil', title: `ðŸ›¢ï¸ PoÃ§os de Ã“leo`, badge: oil.filter(o => o.status === 'ready').length, items: oil, badgeClass: 'sky' },
+    { id: 'crops', title: `Ã°Å¸Å’Â¾ ${t('farm_crops')}`, badge: crops.filter(c => c.status === 'ready').reduce((acc, c) => acc + (c.amount || 1), 0), items: crops, badgeClass: 'emerald' },
+    { id: 'fruits', title: `Ã°Å¸Ââ€¡ ${t('farm_fruits')}`, badge: fruits.filter(f => f.status === 'ready').length, items: fruits, badgeClass: 'emerald' },
+    { id: 'animals', title: `Ã°Å¸Ââ€ ${t('farm_animals')}`, badge: animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length, items: animals, badgeClass: 'coral' },
+    { id: 'trees', title: `Ã°Å¸Å’Â² ÃƒÂrvores & Madeira`, badge: trees.filter(t => t.status === 'ready').length, items: trees, badgeClass: 'emerald' },
+    { id: 'rocks', title: `Ã¢â€ºÂÃ¯Â¸Â MinÃƒÂ©rios & Pedras`, badge: rocks.filter(r => r.status === 'ready').length, items: rocks, badgeClass: 'sky' },
+    { id: 'buildings', title: `Ã°Å¸ÂÂ  ${t('farm_buildings')}`, badge: buildings.filter(b => b.status === 'ready').length, items: buildings, badgeClass: 'amber' },
+    { id: 'beehives', title: `Ã°Å¸ÂÂ¯ Colmeias & Mel`, badge: beehives.filter(h => h.status === 'ready').length, items: beehives, badgeClass: 'amber' },
+    { id: 'greenhouse', title: `Ã°Å¸ÂÂ¡ ${t('farm_greenhouse')}`, badge: greenhouse.filter(g => g.status === 'ready').length, items: greenhouse, badgeClass: 'emerald' },
+    { id: 'oil', title: `Ã°Å¸â€ºÂ¢Ã¯Â¸Â PoÃƒÂ§os de Ãƒâ€œleo`, badge: oil.filter(o => o.status === 'ready').length, items: oil, badgeClass: 'sky' },
   ];
 
   const settings = Storage.getSettings();
@@ -792,7 +792,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   const invHtml = `
     <div class="mb-4">
       <div class="section-header mb-2 mt-4">
-        <div class="section-title">ðŸªµ InventÃ¡rio de Recursos</div>
+        <div class="section-title">Ã°Å¸ÂªÂµ InventÃƒÂ¡rio de Recursos</div>
         ${resItems.length > 0 ? `<div class="section-badge emerald">${resItems.length} Itens</div>` : ''}
       </div>
       ${resItems.length > 0 ? `
@@ -801,7 +801,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
             <div style="text-align:center;position:relative;">
               <div style="width:52px;height:52px;margin:0 auto 6px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.15);">
                 <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-                <span style="font-size:24px;line-height:1;display:none;">ðŸ“¦</span>
+                <span style="font-size:24px;line-height:1;display:none;">Ã°Å¸â€œÂ¦</span>
               </div>
               <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--text-primary);">${formatNumber(item.amount, 0)}</div>
             </div>
@@ -814,7 +814,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
             
           ` : `
             <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-            <span>Insira sua <strong>API Key</strong> em Config para carregar o inventÃ¡rio.</span>
+            <span>Insira sua <strong>API Key</strong> em Config para carregar o inventÃƒÂ¡rio.</span>
           `) : `
             <span style="opacity:0.6;">Nenhum recurso.</span>
           `}
@@ -827,7 +827,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   const choresHtml = chores.length > 0 ? `
     <div class="mb-4">
       <div class="section-header mb-3">
-        <div class="section-title">ðŸ“‹ ${t('farm_chores')}</div>
+        <div class="section-title">Ã°Å¸â€œâ€¹ ${t('farm_chores')}</div>
         <div class="section-badge">${chores.length} ${t('home_active_plots')}</div>
       </div>
       <div class="card">
@@ -835,7 +835,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
           <div class="chore-item">
             <div class="chore-npc">${c.npc}</div>
             <div class="chore-desc">${c.description}</div>
-            <div class="chore-reward">${c.reward?.coins ? `+${formatNumber(c.reward.coins, 0)} ðŸª™` : ''}</div>
+            <div class="chore-reward">${c.reward?.coins ? `+${formatNumber(c.reward.coins, 0)} Ã°Å¸Âªâ„¢` : ''}</div>
           </div>
         `).join('')}
       </div>
@@ -894,7 +894,7 @@ function renderFarmItem(item, index) {
   return `
     <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="animation-delay:${index * 30}ms">
       <img src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" class="farm-item-icon">
-      <span style="font-size:24px;line-height:1;display:none" class="farm-item-emoji">${item.emoji || 'ðŸŒ±'}</span>
+      <span style="font-size:24px;line-height:1;display:none" class="farm-item-emoji">${item.emoji || 'Ã°Å¸Å’Â±'}</span>
       <div class="farm-item-info">
         <div class="farm-item-name">${item.name}</div>
         <div class="farm-item-sub">${item.type ?? ''} ${item.amount ? `x ${item.amount}` : ''}</div>
@@ -958,11 +958,11 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     if (salesLog.length === 0) {
       setHtml('#market-grid', `
         <div class="empty-state" style="grid-column:1/-1">
-          <span class="empty-state-icon">ðŸ“œ</span>
-          <div class="empty-state-title">Nenhum histÃ³rico registrado</div>
+          <span class="empty-state-icon">Ã°Å¸â€œÅ“</span>
+          <div class="empty-state-title">Nenhum histÃƒÂ³rico registrado</div>
           <div class="empty-state-sub" style="margin-top:8px;">
-            As suas vendas comeÃ§arÃ£o a aparecer aqui automaticamente.<br>
-            VocÃª tambÃ©m pode registrar compras manuais.
+            As suas vendas comeÃƒÂ§arÃƒÂ£o a aparecer aqui automaticamente.<br>
+            VocÃƒÂª tambÃƒÂ©m pode registrar compras manuais.
           </div>
           <button onclick="window.__app.promptManualPurchase()" style="margin-top:16px; background:var(--emerald); color:var(--surface-1); border:none; padding:8px 16px; border-radius:8px; font-weight:800; cursor:pointer;">+ Registrar Compra Manual</button>
         </div>
@@ -1021,7 +1021,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${badgeHtml}</div>
-            <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} Ã s ${timeStr}</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${dateStr} ÃƒÂ s ${timeStr}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-size:15px;font-weight:900;color:${valColor};">${valSign}${profit.toFixed(3)} SFL</div>
@@ -1041,7 +1041,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
           <div style="font-size:12px;color:var(--text-tertiary);">${totalSales} vendas / ${totalPurchases} compras</div>
           <div style="display:flex; gap:6px; margin-top:6px; justify-content:flex-end;">
             <button onclick="window.__app.promptManualPurchase()" style="background:var(--emerald-subtle);border:1px solid var(--emerald);color:var(--emerald);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Compra</button>
-            <button onclick="if(confirm('Limpar todo o histÃ³rico?')){localStorage.removeItem('sfl_sales_log');window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);}" style="background:var(--coral-subtle);border:1px solid rgba(239,68,68,0.3);color:var(--coral);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Limpar</button>
+            <button onclick="if(confirm('Limpar todo o histÃƒÂ³rico?')){localStorage.removeItem('sfl_sales_log');window.__app.UI.renderMarketPage(window.__app.State.prices, window.__app.State.exchange);}" style="background:var(--coral-subtle);border:1px solid rgba(239,68,68,0.3);color:var(--coral);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Limpar</button>
           </div>
         </div>
       </div>
@@ -1089,7 +1089,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     });
   }
   if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
-    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1; padding:30px; background:var(--surface-2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); text-align:center;"><span style="font-size:32px; display:block; margin-bottom:12px;">âš ï¸</span><div style="font-size:16px; font-weight:800; color:var(--text-primary);">InventÃ¡rio IndisponÃ­vel</div><div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Configure sua API Key corretamente na aba "Ajustes" para acessar seu estoque e definir metas de lucro.</div></div>');
+    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1; padding:30px; background:var(--surface-2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); text-align:center;"><span style="font-size:32px; display:block; margin-bottom:12px;">Ã¢Å¡Â Ã¯Â¸Â</span><div style="font-size:16px; font-weight:800; color:var(--text-primary);">InventÃƒÂ¡rio IndisponÃƒÂ­vel</div><div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Configure sua API Key corretamente na aba "Ajustes" para acessar seu estoque e definir metas de lucro.</div></div>');
     return;
   }
 
@@ -1123,9 +1123,9 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       const h = history[item.name];
       if (h.trend === 'up') {
         isPump = h.prev && item.priceInSfl > h.prev * 1.10;
-        trendHtml = `<span style="color:var(--emerald); font-size:11px; margin-left:4px;">â–² ${isPump ? 'ðŸ”¥' : ''}</span>`;
+        trendHtml = `<span style="color:var(--emerald); font-size:11px; margin-left:4px;">Ã¢â€“Â² ${isPump ? 'Ã°Å¸â€Â¥' : ''}</span>`;
       } else if (h.trend === 'down') {
-        trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">â–¼</span>';
+        trendHtml = '<span style="color:var(--coral); font-size:11px; margin-left:4px;">Ã¢â€“Â¼</span>';
       }
     }
 
@@ -1171,7 +1171,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         targetFooterHtml = `
           <div style="background:rgba(16,185,129,0.1); border-top:1px solid rgba(16,185,129,0.2); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="background:var(--emerald); color:#000; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">âœ… META +${itemProfitPct}%</span>
+              <span style="background:var(--emerald); color:#000; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">Ã¢Å“â€¦ META +${itemProfitPct}%</span>
               <span style="font-size:11px; font-weight:700; color:var(--emerald);">Atingida!</span>
             </div>
             <div style="font-size:11px; font-weight:800; color:var(--emerald);">Alvo era ${targetPriceNeeded.toFixed(4)}</div>
@@ -1181,7 +1181,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         targetFooterHtml = `
           <div style="background:rgba(0,0,0,0.2); border-top:1px solid rgba(255,255,255,0.04); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">ðŸŽ¯ META +${itemProfitPct}%</span>
+              <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">Ã°Å¸Å½Â¯ META +${itemProfitPct}%</span>
               <span style="font-size:11px; font-weight:700; color:var(--text-tertiary);">Alvo: ${targetPriceNeeded.toFixed(4)}</span>
             </div>
             <div style="font-size:11px; font-weight:800; color:var(--amber);">Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(4)}</div>
@@ -1197,7 +1197,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     return `
       <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; cursor:pointer; transition:all 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
         
-        ${isPump ? `<div style="position:absolute; top:12px; left:60px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP ðŸ”¥</div>` : ''}
+        ${isPump ? `<div style="position:absolute; top:12px; left:60px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP Ã°Å¸â€Â¥</div>` : ''}
 
         <div style="padding:16px; display:flex; gap:14px; position:relative;">
           
@@ -1219,9 +1219,9 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
             
             <!-- Data Grid -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; row-gap:10px; column-gap:8px;">
-              <!-- PreÃ§o -->
+              <!-- PreÃƒÂ§o -->
               <div>
-                <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">PreÃ§o Mercado</div>
+                <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">PreÃƒÂ§o Mercado</div>
                 <div style="font-size:13px; font-weight:800; color:var(--text-secondary); display:flex; align-items:center;">
                   ${item.priceInSfl.toFixed(4)} SFL ${trendHtml}
                 </div>
@@ -1246,7 +1246,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         ${targetFooterHtml}
       </div>
     `;
-  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">ðŸ¤·</span><div class="empty-state-title">Nada no Estoque</div><div class="empty-state-sub" style="margin-top:8px;">VocÃª nÃ£o tem itens nesta categoria com preÃ§os no mercado, ou o seu estoque estÃ¡ zerado.</div></div>`);
+  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">Ã°Å¸Â¤Â·</span><div class="empty-state-title">Nada no Estoque</div><div class="empty-state-sub" style="margin-top:8px;">VocÃƒÂª nÃƒÂ£o tem itens nesta categoria com preÃƒÂ§os no mercado, ou o seu estoque estÃƒÂ¡ zerado.</div></div>`);
 }
 
 // =====================================================
@@ -1273,10 +1273,10 @@ function openP2pCalc(itemName, priceInSfl) {
 
   // Island + Tax
   const islandName = farm.islandType || 'unknown';
-  const ISLAND_LABELS = { 'basic':'BÃ¡sica','spring':'Spring','desert':'Deserto','volcano':'Volcano' };
-  const ISLAND_EMOJI  = { 'basic':'ðŸŒ±','spring':'ðŸŒ¸','desert':'ðŸœï¸','volcano':'ðŸŒ‹' };
+  const ISLAND_LABELS = { 'basic':'BÃƒÂ¡sica','spring':'Spring','desert':'Deserto','volcano':'Volcano' };
+  const ISLAND_EMOJI  = { 'basic':'Ã°Å¸Å’Â±','spring':'Ã°Å¸Å’Â¸','desert':'Ã°Å¸ÂÅ“Ã¯Â¸Â','volcano':'Ã°Å¸Å’â€¹' };
   const islandLabel = ISLAND_LABELS[islandName] || islandName;
-  const islandEmoji = ISLAND_EMOJI[islandName] || 'ðŸï¸';
+  const islandEmoji = ISLAND_EMOJI[islandName] || 'Ã°Å¸ÂÂÃ¯Â¸Â';
 
   let taxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
   const isVip = farm.isVip || false;
@@ -1304,24 +1304,24 @@ function openP2pCalc(itemName, priceInSfl) {
   // Pre-compute target prices for the 3 buttons
   const tp = (pct) => (cost * (1 + pct / 100)) / (1 - taxRate);
 
-  showModal(`ðŸ“Š ${itemName}`, `
+  showModal(`Ã°Å¸â€œÅ  ${itemName}`, `
 
-    <!-- â”€â”€ STATS ROW (top 4 cards â€” cost & profit update when % selected) â”€â”€ -->
+    <!-- Ã¢â€â‚¬Ã¢â€â‚¬ STATS ROW (top 4 cards Ã¢â‚¬â€ cost & profit update when % selected) Ã¢â€â‚¬Ã¢â€â‚¬ -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
-        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ðŸ“¦ Estoque</div>
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Ã°Å¸â€œÂ¦ Estoque</div>
         <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--text-primary);line-height:1;">${inventoryQty}</div>
         <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">${itemName}</div>
       </div>
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;">
-        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ðŸ’° PreÃ§o Mercado</div>
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Ã°Å¸â€™Â° PreÃƒÂ§o Mercado</div>
         <div style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--amber);line-height:1;">${priceInSfl.toFixed(4)}</div>
         <div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">SFL / unidade</div>
       </div>
       
       <!-- EDITABLE COST -->
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;" id="stat-card-cost">
-        <div style="font-size:9px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ðŸŒ± Seu PreÃ§o de Compra</div>
+        <div style="font-size:9px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Ã°Å¸Å’Â± Seu PreÃƒÂ§o de Compra</div>
         <input type="number" id="calc-base-cost" value="${cost.toFixed(4)}" step="0.0001" min="0.00001"
           style="width:100%; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.1); color:var(--text-secondary); font-family:var(--font-mono); font-size:20px; font-weight:800; padding:2px 0; outline:none;"
           oninput="window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, this.value, window.__calc_selected_pct||0, '${itemName}')">
@@ -1329,23 +1329,23 @@ function openP2pCalc(itemName, priceInSfl) {
       </div>
       
       <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px;" id="stat-card-profit">
-        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ðŸ“ˆ Lucro/Unid. Atual</div>
+        <div style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Ã°Å¸â€œË† Lucro/Unid. Atual</div>
         <div id="stat-profit-val" style="font-family:var(--font-mono);font-size:20px;font-weight:800;color:${col(profitPerUnit)};line-height:1;">${(profitPerUnit >= 0 ? '+' : '') + profitPerUnit.toFixed(4)}</div>
         <div id="stat-profit-sub" style="font-size:9px;color:${col(marginPct)};margin-top:2px;font-weight:700;">${(marginPct >= 0 ? '+' : '') + marginPct.toFixed(1)}% margem</div>
       </div>
     </div>
 
-    <!-- â”€â”€ ISLAND BADGE â”€â”€ -->
+    <!-- Ã¢â€â‚¬Ã¢â€â‚¬ ISLAND BADGE Ã¢â€â‚¬Ã¢â€â‚¬ -->
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,0.15);border-radius:9px;padding:7px 12px;margin-bottom:12px;font-size:12px;flex-wrap:wrap;">
       <span>${islandEmoji} Ilha <strong style="color:var(--text-primary);">${islandLabel}</strong></span>
       <span style="color:var(--text-tertiary);">|</span>
       <span>Taxa: <strong style="color:${taxColour};">${taxPct.toFixed(1)}%</strong></span>
-      ${isVip ? '<span style="color:var(--text-tertiary);">|</span><span style="color:var(--emerald);font-weight:700;">â­ VIP</span>' : ''}
+      ${isVip ? '<span style="color:var(--text-tertiary);">|</span><span style="color:var(--emerald);font-weight:700;">Ã¢Â­Â VIP</span>' : ''}
     </div>
 
-    <!-- â”€â”€ SIMULATOR â”€â”€ -->
+    <!-- Ã¢â€â‚¬Ã¢â€â‚¬ SIMULATOR Ã¢â€â‚¬Ã¢â€â‚¬ -->
     <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">ðŸ§® Simular Venda</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Ã°Å¸Â§Â® Simular Venda</div>
 
       <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
         <input type="number" id="calc-qty" class="calc-input" value="${defaultQty}" min="1"
@@ -1355,7 +1355,7 @@ function openP2pCalc(itemName, priceInSfl) {
         <button onclick="document.getElementById('calc-qty').value=${inventoryQty}; window.__app.updateP2pCalc(${priceInSfl}, ${taxRate}, ${cost}, window.__calc_selected_pct||0, '${itemName}')"
           style="background:rgba(245,158,11,0.12);border:1px solid var(--amber);color:var(--amber);
             border-radius:10px;padding:0 12px;cursor:pointer;font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0;">
-          ðŸ“¦ Todo
+          Ã°Å¸â€œÂ¦ Todo
         </button>` : ''}
       </div>
 
@@ -1374,15 +1374,15 @@ function openP2pCalc(itemName, priceInSfl) {
         </div>
         <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;
           border-top:2px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:2px;">
-          <span id="calc-net-label" style="color:var(--text-primary);">ðŸ’° Lucro lÃ­quido</span>
+          <span id="calc-net-label" style="color:var(--text-primary);">Ã°Å¸â€™Â° Lucro lÃƒÂ­quido</span>
           <span id="calc-net" style="font-family:var(--font-mono);color:var(--emerald);">0 SFL</span>
         </div>
       </div>
     </div>
 
-    <!-- â”€â”€ META DE LUCRO â”€â”€ -->
+    <!-- Ã¢â€â‚¬Ã¢â€â‚¬ META DE LUCRO Ã¢â€â‚¬Ã¢â€â‚¬ -->
     <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;margin-top:10px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">ðŸŽ¯ Meta de Lucro</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Ã°Å¸Å½Â¯ Meta de Lucro</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">Toque para selecionar. O resultado e as infos acima atualizam na hora.</div>
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
@@ -1401,7 +1401,7 @@ function openP2pCalc(itemName, priceInSfl) {
               transition:all 0.2s ease;${isActive ? 'box-shadow:0 0 12px rgba(245,158,11,0.4);transform:scale(1.04);' : ''}">
             <span>+${pct}%</span>
             <span style="font-family:var(--font-mono);font-size:10px;opacity:0.8;">${tpVal.toFixed(4)} SFL</span>
-            ${reachable ? '<span style="font-size:9px;opacity:0.8;">âœ… atingÃ­vel</span>' : '<span style="font-size:9px;opacity:0.7;">â³ aguardar</span>'}
+            ${reachable ? '<span style="font-size:9px;opacity:0.8;">Ã¢Å“â€¦ atingÃƒÂ­vel</span>' : '<span style="font-size:9px;opacity:0.7;">Ã¢ÂÂ³ aguardar</span>'}
           </button>`;
         }).join('')}
       </div>
@@ -1497,7 +1497,7 @@ function updateP2pCalc(price, taxRate, passedCost, profitPct, itemName) {
 
     // Since they want to see target profit, update the label
     const netLabel = $('#calc-net-label');
-    if (netLabel) netLabel.innerHTML = `ðŸ’° Lucro alvo (+${profitPct}%)`;
+    if (netLabel) netLabel.innerHTML = `Ã°Å¸â€™Â° Lucro alvo (+${profitPct}%)`;
 
     // Update "Lucro/Unid." stat card (4th card)
     const statProfitVal = $('#stat-profit-val');
@@ -1515,7 +1515,7 @@ function updateP2pCalc(price, taxRate, passedCost, profitPct, itemName) {
           <span style="font-family:var(--font-mono);font-weight:800;color:${isReached ? 'var(--emerald)' : 'var(--amber)'};">${tup.toFixed(4)} SFL/un.</span>
         </div>
         <div style="margin-top:6px;font-size:11px;color:${isReached ? 'var(--emerald)' : 'var(--text-secondary)'};">
-          ${isReached ? 'âœ… O mercado atual jÃ¡ paga esse preÃ§o!' : `Precisa subir <strong style="color:var(--amber);">+${diff.toFixed(4)} SFL</strong> por unidade`}
+          ${isReached ? 'Ã¢Å“â€¦ O mercado atual jÃƒÂ¡ paga esse preÃƒÂ§o!' : `Precisa subir <strong style="color:var(--amber);">+${diff.toFixed(4)} SFL</strong> por unidade`}
         </div>
       `;
     }
@@ -1536,7 +1536,7 @@ function updateP2pCalc(price, taxRate, passedCost, profitPct, itemName) {
       netEl.style.color = rawProfit > 0 ? 'var(--emerald)' : rawProfit < 0 ? 'var(--coral)' : 'var(--text-primary)';
     }
     const netLabel = $('#calc-net-label');
-    if (netLabel) netLabel.innerHTML = `ðŸ’° Lucro lÃ­quido`;
+    if (netLabel) netLabel.innerHTML = `Ã°Å¸â€™Â° Lucro lÃƒÂ­quido`;
     
     if (msgEl) msgEl.style.display = 'none';
   }
@@ -1555,7 +1555,7 @@ function showTargetProfit(profitPct, currentPrice, taxRate, cost) {
   const diff = targetSalePrice - currentPrice;
   const isReached = diff <= 0;
   const diffLabel = isReached
-    ? 'âœ… Mercado jÃ¡ atingiu esse preÃ§o!'
+    ? 'Ã¢Å“â€¦ Mercado jÃƒÂ¡ atingiu esse preÃƒÂ§o!'
     : `Falta subir <strong style="color:var(--amber);">+${diff.toFixed(4)} SFL</strong> do mercado atual`;
 
   el.style.display = 'block';
@@ -1593,27 +1593,27 @@ function showTargetProfit(profitPct, currentPrice, taxRate, cost) {
 function renderToolsPage() {
   setHtml('#tools-content', `
     <div class="section-header mb-3">
-      <div class="section-title">ðŸ› ï¸ External Tools</div>
+      <div class="section-title">Ã°Å¸â€ºÂ Ã¯Â¸Â External Tools</div>
     </div>
     <div class="tools-grid">
       <div class="tool-card" onclick="window.open('https://sfl.world/util/p2p-calc', '_blank')">
-        <div class="tool-card-icon">ðŸ§®</div>
+        <div class="tool-card-icon">Ã°Å¸Â§Â®</div>
         <div class="tool-card-title">P2P Calc (Full)</div>
       </div>
       <div class="tool-card" onclick="window.open('https://sfl.world/util/factions', '_blank')">
-        <div class="tool-card-icon">âš”ï¸</div>
+        <div class="tool-card-icon">Ã¢Å¡â€Ã¯Â¸Â</div>
         <div class="tool-card-title">Factions</div>
       </div>
       <div class="tool-card" onclick="window.open('https://sfl.world/tools/skills/', '_blank')">
-        <div class="tool-card-icon">ðŸ§ </div>
+        <div class="tool-card-icon">Ã°Å¸Â§Â </div>
         <div class="tool-card-title">Skill Trainer</div>
       </div>
       <div class="tool-card" onclick="window.open('https://sfl.world/tools/pet-feed-calc/', '_blank')">
-        <div class="tool-card-icon">ðŸ¶</div>
+        <div class="tool-card-icon">Ã°Å¸ÂÂ¶</div>
         <div class="tool-card-title">Pet Feed Calc</div>
       </div>
       <div class="tool-card" onclick="window.open('https://sfl.world/tools/trade/', '_blank')">
-        <div class="tool-card-icon">ðŸ“ˆ</div>
+        <div class="tool-card-icon">Ã°Å¸â€œË†</div>
         <div class="tool-card-title">Price History</div>
       </div>
     </div>
@@ -1625,111 +1625,111 @@ function renderToolsPage() {
 // =====================================================
 
 function renderAlertsPage() {
-  const prefs = window.__app.NotificationEngine ? window.__app.NotificationEngine.prefs : {};
+  const prefs = window.__app.Notifications ? window.__app.Notifications.prefs : {};
   
   const html = `
     <div class="section-header mb-3">
-      <div class="section-title">Central de NotificaÃ§Ãµes</div>
+      <div class="section-title">Central de NotificaÃƒÂ§ÃƒÂµes</div>
     </div>
     
     <div class="card mb-4" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);">
       <div style="font-size:13px; font-weight:800; color:var(--amber); display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-        ðŸ¤– InteligÃªncia 24/7
+        Ã°Å¸Â¤â€“ InteligÃƒÂªncia 24/7
       </div>
       <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.6;">
-        O SFL Pro agora possui um <b>robÃ´ inteligente na nuvem</b> que monitora a sua fazenda 24 horas por dia.<br><br>
-        VocÃª <b>nÃ£o precisa</b> manter o aplicativo aberto! Pode fechar tudo, e nÃ³s te avisaremos no exato minuto em que suas coisas ficarem prontas.
+        O SFL Pro agora possui um <b>robÃƒÂ´ inteligente na nuvem</b> que monitora a sua fazenda 24 horas por dia.<br><br>
+        VocÃƒÂª <b>nÃƒÂ£o precisa</b> manter o aplicativo aberto! Pode fechar tudo, e nÃƒÂ³s te avisaremos no exato minuto em que suas coisas ficarem prontas.
       </div>
     </div>
 
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="notif-row master" style="padding:16px; background:var(--surface-3); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex; flex-direction:column; gap:2px;">
-          <span style="font-size:15px; font-weight:800; color:var(--text-primary);">Permitir NotificaÃ§Ãµes</span>
+          <span style="font-size:15px; font-weight:800; color:var(--text-primary);">Permitir NotificaÃƒÂ§ÃƒÂµes</span>
           <span style="font-size:11px; font-weight:600; color:var(--text-tertiary);">Ative para receber avisos nativos do celular</span>
         </div>
         <label class="switch">
-          <input type="checkbox" onchange="window.__app.NotificationEngine.setPref('master', this.checked)" ${prefs.master ? 'checked' : ''}>
+          <input type="checkbox" onchange="window.__app.Notifications.setPref('master', this.checked)" ${prefs.master ? 'checked' : ''}>
           <span class="slider round"></span>
         </label>
       </div>
       
       <div style="padding:8px 0; max-height: 50vh; overflow-y: auto;">
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸŒ½ PlantaÃ§Ãµes (Colheitas)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crops', this.checked)" ${prefs.crops !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Å’Â½ PlantaÃƒÂ§ÃƒÂµes (Colheitas)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('crops', this.checked)" ${prefs.crops !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ” Animais (Fome / Coleta)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('animals', this.checked)" ${prefs.animals !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Ââ€ Animais (Fome / Coleta)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('animals', this.checked)" ${prefs.animals !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸŽ Ãrvores FrutÃ­feras</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('fruits', this.checked)" ${prefs.fruits !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂÅ½ ÃƒÂrvores FrutÃƒÂ­feras</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('fruits', this.checked)" ${prefs.fruits !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸŒ³ Ãrvores (Madeira)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('trees', this.checked)" ${prefs.trees !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Å’Â³ ÃƒÂrvores (Madeira)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('trees', this.checked)" ${prefs.trees !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸª¨ Rochas (Pedra/Ferro/Ouro)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('rocks', this.checked)" ${prefs.rocks !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂªÂ¨ Rochas (Pedra/Ferro/Ouro)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('rocks', this.checked)" ${prefs.rocks !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ¯ Colmeias (Mel)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('beehives', this.checked)" ${prefs.beehives !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂÂ¯ Colmeias (Mel)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('beehives', this.checked)" ${prefs.beehives !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸŒ¸ Flores</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('flowers', this.checked)" ${prefs.flowers !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Å’Â¸ Flores</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('flowers', this.checked)" ${prefs.flowers !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ›¢ï¸ PoÃ§os de Ã“leo</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('oil', this.checked)" ${prefs.oil !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸â€ºÂ¢Ã¯Â¸Â PoÃƒÂ§os de Ãƒâ€œleo</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('oil', this.checked)" ${prefs.oil !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">â™»ï¸ Composteiras</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('composting', this.checked)" ${prefs.composting !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã¢â„¢Â»Ã¯Â¸Â Composteiras</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('composting', this.checked)" ${prefs.composting !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸª´ Estufa (Greenhouse)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('greenhouse', this.checked)" ${prefs.greenhouse !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂªÂ´ Estufa (Greenhouse)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('greenhouse', this.checked)" ${prefs.greenhouse !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ³ ConstruÃ§Ãµes (Forno, etc)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('buildings', this.checked)" ${prefs.buildings !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂÂ³ ConstruÃƒÂ§ÃƒÂµes (Forno, etc)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('buildings', this.checked)" ${prefs.buildings !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸšœ MÃ¡quina de PlantaÃ§Ã£o</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('cropMachine', this.checked)" ${prefs.cropMachine !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Å¡Å“ MÃƒÂ¡quina de PlantaÃƒÂ§ÃƒÂ£o</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('cropMachine', this.checked)" ${prefs.cropMachine !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ¦€ Armadilhas (Crab Traps)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('crabTraps', this.checked)" ${prefs.crabTraps !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Â¦â‚¬ Armadilhas (Crab Traps)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('crabTraps', this.checked)" ${prefs.crabTraps !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">â›©ï¸ SantuÃ¡rios</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('shrines', this.checked)" ${prefs.shrines !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã¢â€ºÂ©Ã¯Â¸Â SantuÃƒÂ¡rios</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('shrines', this.checked)" ${prefs.shrines !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ· GalpÃ£o de Envelhecimento</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('agingShed', this.checked)" ${prefs.agingShed !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸ÂÂ· GalpÃƒÂ£o de Envelhecimento</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('agingShed', this.checked)" ${prefs.agingShed !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ§‚ Fazenda de Sal</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('saltFarm', this.checked)" ${prefs.saltFarm !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸Â§â€š Fazenda de Sal</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('saltFarm', this.checked)" ${prefs.saltFarm !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ“ˆ Mercado (Metas / Pump)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('market', this.checked)" ${prefs.market !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸â€œË† Mercado (Metas / Pump)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('market', this.checked)" ${prefs.market !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-          <span style="font-size:13px; font-weight:700;">ðŸ“¦ Entregas Prontas</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('deliveries', this.checked)" ${prefs.deliveries !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã°Å¸â€œÂ¦ Entregas Prontas</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('deliveries', this.checked)" ${prefs.deliveries !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:13px; font-weight:700;">â° Daily Reset (00:00 UTC)</span>
-          <label class="switch"><input type="checkbox" onchange="window.__app.NotificationEngine.setPref('dailyReset', this.checked)" ${prefs.dailyReset !== false ? 'checked' : ''}><span class="slider round"></span></label>
+          <span style="font-size:13px; font-weight:700;">Ã¢ÂÂ° Daily Reset (00:00 UTC)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('dailyReset', this.checked)" ${prefs.dailyReset !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
       </div>
     </div>
@@ -1762,7 +1762,7 @@ function renderNotifSettings(notifPermission) {
 
   const permHtml = notifPermission !== 'granted' ? `
     <div class="notif-permission-banner mb-4">
-      <span style="font-size:24px">ðŸ”•</span>
+      <span style="font-size:24px">Ã°Å¸â€â€¢</span>
       <div>
         <p><strong style="color:var(--amber)">${t('notif_enable')}</strong><br>
         ${t('notif_enable_desc')}</p>
@@ -1773,7 +1773,7 @@ function renderNotifSettings(notifPermission) {
     </div>
   ` : `
     <div class="notif-permission-banner mb-4" style="border-color:rgba(34,197,94,0.3)">
-      <span style="font-size:24px">ðŸ””</span>
+      <span style="font-size:24px">Ã°Å¸â€â€</span>
       <p><strong style="color:var(--emerald)">${t('notif_status_granted')}</strong><br>${t('notif_status_granted_desc')}</p>
     </div>
   `;
@@ -1795,12 +1795,12 @@ function renderNotifSettings(notifPermission) {
   `;
 
   const NOTIF_TYPES = {
-    crops: { key: 'crops', icon: 'ðŸŒ¾', label: 'Colheitas' },
-    animals: { key: 'animals', icon: 'ðŸ¾', label: 'Animais' },
-    fruits: { key: 'fruits', icon: 'ðŸŽ', label: 'Frutas' },
-    resources: { key: 'resources', icon: 'ðŸª¨', label: 'Recursos Naturais' },
-    market: { key: 'market', icon: 'ðŸ“ˆ', label: 'Mercado (Metas / Pump)' },
-    deliveries: { key: 'deliveries', icon: 'ðŸ“¦', label: 'Entregas Prontas' }
+    crops: { key: 'crops', icon: 'Ã°Å¸Å’Â¾', label: 'Colheitas' },
+    animals: { key: 'animals', icon: 'Ã°Å¸ÂÂ¾', label: 'Animais' },
+    fruits: { key: 'fruits', icon: 'Ã°Å¸ÂÅ½', label: 'Frutas' },
+    resources: { key: 'resources', icon: 'Ã°Å¸ÂªÂ¨', label: 'Recursos Naturais' },
+    market: { key: 'market', icon: 'Ã°Å¸â€œË†', label: 'Mercado (Metas / Pump)' },
+    deliveries: { key: 'deliveries', icon: 'Ã°Å¸â€œÂ¦', label: 'Entregas Prontas' }
   };
 
   const typeToggles = Object.values(NOTIF_TYPES).map(typeObj => `
@@ -1818,11 +1818,11 @@ function renderNotifSettings(notifPermission) {
   const settings = Storage.getSettings();
   const priceAlertsHtml = `
     <div class="settings-group mt-4">
-      <div class="settings-group-title">Alertas de PreÃ§o (SFL)</div>
+      <div class="settings-group-title">Alertas de PreÃƒÂ§o (SFL)</div>
       <div class="card" style="padding:16px;">
         <div class="sett-row" style="margin-bottom:12px;">
           <div style="flex:1">
-            <div class="sett-row-label">ðŸ“ˆ Alerta de Alta</div>
+            <div class="sett-row-label">Ã°Å¸â€œË† Alerta de Alta</div>
             <div class="sett-row-sub">SFL subir acima (USD)</div>
           </div>
           <input
@@ -1837,7 +1837,7 @@ function renderNotifSettings(notifPermission) {
         </div>
         <div class="sett-row" style="border-top:1px solid var(--surface-border);padding-top:12px;">
           <div style="flex:1">
-            <div class="sett-row-label">ðŸ“‰ Alerta de Baixa</div>
+            <div class="sett-row-label">Ã°Å¸â€œâ€° Alerta de Baixa</div>
             <div class="sett-row-sub">SFL cair abaixo (USD)</div>
           </div>
           <input
@@ -1892,7 +1892,7 @@ function bindNotifToggles() {
   const requestBtn = $('#btn-request-notif');
   if (requestBtn) {
     requestBtn.addEventListener('click', async () => {
-      const perm = (typeof Notification !== "undefined") ? await Notification.requestPermission() : (window.__app.NotificationEngine?.prefs?.master ? "granted" : "default");
+      const perm = (typeof Notification !== "undefined") ? await Notification.requestPermission() : (window.__app.Notifications?.prefs?.master ? "granted" : "default");
       if (perm === 'granted') {
         Storage.saveNotifPrefs({ enabled: true });
         renderNotifSettings(perm);
@@ -1911,13 +1911,13 @@ function renderSettingsPage() {
 
   setHtml('#settings-content', `
 
-    <!-- â‘  FARM ID CARD -->
+    <!-- Ã¢â€˜Â  FARM ID CARD -->
     <div class="sett-card sett-card--hero">
       <div class="sett-card-label">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 11 11 .9c.6 0 .9.5.8 1.1l-.8 5h-1"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h9l1 7.246"/><path d="M4 11V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="4"/></svg>
         Farm ID
       </div>
-      <div class="sett-card-desc">Sua fazenda no Sunflower Land. Os dados serÃ£o carregados automaticamente.</div>
+      <div class="sett-card-desc">Sua fazenda no Sunflower Land. Os dados serÃƒÂ£o carregados automaticamente.</div>
       <div class="sett-farm-row">
         <input
           type="text"
@@ -1935,13 +1935,13 @@ function renderSettingsPage() {
       </div>
     </div>
 
-    <!-- â‘¡ COMMUNITY API KEY -->
+    <!-- Ã¢â€˜Â¡ COMMUNITY API KEY -->
     <div class="sett-section-title">Community API Key</div>
 
     <div class="sett-card">
       <div class="sett-card-desc" style="margin-bottom:10px">
-        Habilita dados completos (plantaÃ§Ãµes, animais, inventÃ¡rio). Digite apenas uma vez e ela ficarÃ¡ salva automaticamente.<br>
-        Pegue no jogo: <strong style="color:var(--amber)">Settings â†’ Developer Options â†’ API Key</strong>
+        Habilita dados completos (plantaÃƒÂ§ÃƒÂµes, animais, inventÃƒÂ¡rio). Digite apenas uma vez e ela ficarÃƒÂ¡ salva automaticamente.<br>
+        Pegue no jogo: <strong style="color:var(--amber)">Settings Ã¢â€ â€™ Developer Options Ã¢â€ â€™ API Key</strong>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input
@@ -1952,15 +1952,15 @@ function renderSettingsPage() {
           value="${settings.communityApiKey ?? ''}"
           style="flex:1;padding:10px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:var(--r2);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;box-sizing:border-box"
         >
-        ${settings.communityApiKey ? '<span style="color:var(--emerald);font-size:18px;" title="Chave Salva">âœ…</span>' : ''}
+        ${settings.communityApiKey ? '<span style="color:var(--emerald);font-size:18px;" title="Chave Salva">Ã¢Å“â€¦</span>' : ''}
       </div>
       ${settings.communityApiKey ? (window.__app.State.hasKeyError ? `
         <div class="card error-box" style="margin-top: 15px; border-color: var(--error-color);">
           <div style="display:flex;align-items:flex-start;gap:10px;">
-            <span style="font-size:16px;line-height:1">âŒ</span>
+            <span style="font-size:16px;line-height:1">Ã¢ÂÅ’</span>
             <div>
-              <strong>Chave de API InvÃ¡lida:</strong><br>
-              <span style="color: #ffaa99;">A chave configurada expirou ou estÃ¡ incorreta.</span><br><br>
+              <strong>Chave de API InvÃƒÂ¡lida:</strong><br>
+              <span style="color: #ffaa99;">A chave configurada expirou ou estÃƒÂ¡ incorreta.</span><br><br>
               Gere uma nova no jogo e cole acima para restaurar o acesso.
             </div>
           </div>
@@ -1969,13 +1969,13 @@ function renderSettingsPage() {
     </div>
 
     <div class="sett-footer">
-      ðŸŒ» Sunflower Super App v1.0 &nbsp;Â·&nbsp; Unofficial community tool
+      Ã°Å¸Å’Â» Sunflower Super App v1.0 &nbsp;Ã‚Â·&nbsp; Unofficial community tool
     </div>
     
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.05);margin:24px 0;">
     
     <button id="btn-reset-app" style="width:100%;padding:14px;background:var(--coral);color:#fff;border:none;border-radius:12px;font-weight:bold;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:20px;">
-      âš ï¸ Resetar Aplicativo (Sair)
+      Ã¢Å¡Â Ã¯Â¸Â Resetar Aplicativo (Sair)
     </button>
   `);
 
@@ -2018,11 +2018,11 @@ function bindSettingsEvents() {
   const btnReset = document.getElementById('btn-reset-app');
   if (btnReset) {
     btnReset.addEventListener('click', async () => {
-      if (!confirm('ATENÃ‡ÃƒO: Isso vai apagar completamente todos os dados salvos do aplicativo. Tem certeza?')) return;
+      if (!confirm('ATENÃƒâ€¡ÃƒÆ’O: Isso vai apagar completamente todos os dados salvos do aplicativo. Tem certeza?')) return;
       btnReset.innerHTML = 'Apagando...';
       try {
-        if (window.__app?.NotificationEngine) {
-          await window.__app.NotificationEngine.disablePush();
+        if (window.__app?.Notifications) {
+          await window.__app.Notifications.disablePush();
         }
         localStorage.clear();
         sessionStorage.clear();
@@ -2142,7 +2142,7 @@ window.__app.showExpansionModal = () => {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <div style="width:32px; height:32px; background:var(--surface-3); border-radius:8px; display:flex; align-items:center; justify-content:center;">
-              ${icon ? `<img src="${icon}" style="width:20px;height:20px;image-rendering:pixelated">` : 'ðŸ“¦'}
+              ${icon ? `<img src="${icon}" style="width:20px;height:20px;image-rendering:pixelated">` : 'Ã°Å¸â€œÂ¦'}
             </div>
             <div>
               <div style="font-size:13px; font-weight:600; color:var(--text-primary)">${resName}</div>
@@ -2153,7 +2153,7 @@ window.__app.showExpansionModal = () => {
             <div style="font-size:14px; font-weight:700; color: ${isMet ? 'var(--emerald)' : 'var(--text-secondary)'}">
               ${formatNumber(amountHas, 0)} / ${formatNumber(amountReq, 0)}
             </div>
-            ${isMet ? `<div style="font-size:11px; color:var(--emerald)">Pronto! âœ…</div>` : ''}
+            ${isMet ? `<div style="font-size:11px; color:var(--emerald)">Pronto! Ã¢Å“â€¦</div>` : ''}
           </div>
         </div>
         <!-- Progress Bar -->
@@ -2169,16 +2169,16 @@ window.__app.showExpansionModal = () => {
       <div style="width:64px;height:64px;margin:0 auto 12px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 8px rgba(0,0,0,0.2);">
         <img src="https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/islands/${islandType}.webp" style="width:40px;height:40px;image-rendering:pixelated" onerror="this.src='${ASSETS.ISLAND}'">
       </div>
-      <h3 style="margin:0; font-size:18px; color:var(--text-primary)">ExpansÃ£o ${level}/${maxExpansions}</h3>
-      <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Progresso atual para a ExpansÃ£o ${nextLevel}</div>
-      <div style="font-size:13px; font-weight:bold; color:var(--emerald); margin-top:8px;">${expansoesFaltantes > 0 ? 'Faltam ' + expansoesFaltantes + ' expansÃµes para concluir essa ilha.' : 'Ilha totalmente expandida!'}</div>
+      <h3 style="margin:0; font-size:18px; color:var(--text-primary)">ExpansÃƒÂ£o ${level}/${maxExpansions}</h3>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Progresso atual para a ExpansÃƒÂ£o ${nextLevel}</div>
+      <div style="font-size:13px; font-weight:bold; color:var(--emerald); margin-top:8px;">${expansoesFaltantes > 0 ? 'Faltam ' + expansoesFaltantes + ' expansÃƒÂµes para concluir essa ilha.' : 'Ilha totalmente expandida!'}</div>
     </div>
     <div style="max-height: 400px; overflow-y:auto; padding-right:4px;">
       ${reqHtml}
     </div>
   `;
 
-  showModal('ExpansÃ£o de Terreno', modalHtml);
+  showModal('ExpansÃƒÂ£o de Terreno', modalHtml);
 };
 
 window.__app.showCropsModal = () => {
@@ -2187,7 +2187,7 @@ window.__app.showCropsModal = () => {
 
   const crops = parsed.crops;
   if (crops.length === 0 && crops.totalPlots === 0) {
-    showModal('Minhas PlantaÃ§Ãµes', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">VocÃª nÃ£o possui plantaÃ§Ãµes.</div>');
+    showModal('Minhas PlantaÃƒÂ§ÃƒÂµes', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">VocÃƒÂª nÃƒÂ£o possui plantaÃƒÂ§ÃƒÂµes.</div>');
     return;
   }
 
@@ -2211,7 +2211,7 @@ window.__app.showCropsModal = () => {
       <div class="spring-in" style="background:var(--surface-3); border:1px solid var(--surface-border); border-radius:16px; margin-bottom:12px; animation-delay: ${i * 30}ms; padding:16px; display:flex; align-items:center; gap:16px;">
         <div style="width:64px;height:64px;background:var(--surface-2);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--surface-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
           <img src="${iconUrl}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-          <span style="font-size:32px;display:none">${crop.emoji || 'ðŸŒ±'}</span>
+          <span style="font-size:32px;display:none">${crop.emoji || 'Ã°Å¸Å’Â±'}</span>
         </div>
         <div style="flex:1; min-width:0;">
           <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${crop.name}</div>
@@ -2224,7 +2224,7 @@ window.__app.showCropsModal = () => {
           <div style="font-size:14px; font-weight:700; color:${statusColor}; background:${statusBg}; padding:6px 12px; border-radius:8px; border: 1px solid ${statusColor.replace('var(', 'rgba(').replace(')', ', 0.2)')}; white-space:nowrap;">
             ${statusText}
           </div>
-          ${crop.status !== 'ready' ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:6px; font-weight:600;">Termina Ã s ${new Date(crop.readyAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>` : ''}
+          ${crop.status !== 'ready' ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:6px; font-weight:600;">Termina ÃƒÂ s ${new Date(crop.readyAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>` : ''}
         </div>
       </div>
     `;
@@ -2255,7 +2255,7 @@ window.__app.showCropsModal = () => {
     </div>
   `;
 
-  showModal('Minhas PlantaÃ§Ãµes', modalHtml);
+  showModal('Minhas PlantaÃƒÂ§ÃƒÂµes', modalHtml);
 };
 
   window.__app.showFruitsModal = () => {
@@ -2264,7 +2264,7 @@ window.__app.showCropsModal = () => {
   
     const fruits = parsed.fruits;
     if (fruits.length === 0) {
-      showModal('ðŸ‡ Minhas Frutas', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">VocÃª nÃ£o possui frutas plantadas.</div>');
+      showModal('Ã°Å¸Ââ€¡ Minhas Frutas', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">VocÃƒÂª nÃƒÂ£o possui frutas plantadas.</div>');
       return;
     }
 
@@ -2288,13 +2288,13 @@ window.__app.showCropsModal = () => {
       const isEmpty = parseInt(fruit.harvestsLeft) === 0;
 
       const statusBadge = isReady
-        ? `<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#4ade80;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap;">âœ… Pronto!</span>`
+        ? `<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#4ade80;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap;">Ã¢Å“â€¦ Pronto!</span>`
         : isEmpty
           ? `<span style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#f87171;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">Esgotado</span>`
           : `<span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:var(--amber-glow);font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">${fruit.countdown}</span>`;
 
       const timeInfo = !isReady && !isEmpty
-        ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;">Pronto Ã s ${new Date(fruit.readyAt).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</div>`
+        ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;">Pronto ÃƒÂ s ${new Date(fruit.readyAt).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</div>`
         : '';
 
       const harvestBar = parseInt(fruit.harvestsLeft) > 0
@@ -2310,7 +2310,7 @@ window.__app.showCropsModal = () => {
         <div class="spring-in" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,${isReady ? '0.12' : '0.05'});border-radius:14px;margin-bottom:8px;animation-delay:${i*20}ms;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;${isReady ? 'box-shadow:0 0 0 1px rgba(74,222,128,0.15);' : ''}">
           <div style="width:44px;height:44px;flex-shrink:0;background:rgba(0,0,0,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.08);">
             <img src="${iconUrl}" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
-            <span style="font-size:24px;display:none;">${fruit.emoji || 'ðŸ“'}</span>
+            <span style="font-size:24px;display:none;">${fruit.emoji || 'Ã°Å¸Ââ€œ'}</span>
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:800;color:var(--text-primary);line-height:1;margin-bottom:4px;">${fruit.name}</div>
@@ -2334,7 +2334,7 @@ window.__app.showCropsModal = () => {
         </div>
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;text-align:center;">
           <div style="font-size:26px;font-weight:800;color:var(--text-primary);line-height:1;">${fruits.length}</div>
-          <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">PÃ©s</div>
+          <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">PÃƒÂ©s</div>
         </div>
         <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center;">
           <div style="font-size:26px;font-weight:800;color:var(--amber-glow);line-height:1;">${totalLeft}</div>
@@ -2351,7 +2351,7 @@ window.__app.showCropsModal = () => {
       </div>
     `;
   
-    showModal('ðŸ‡ Minhas Frutas', modalHtml);
+    showModal('Ã°Å¸Ââ€¡ Minhas Frutas', modalHtml);
   };
 
 window.__app.moveFarmSectionUp = (id) => {
@@ -2400,7 +2400,7 @@ window.__app.showAnimalsModal = () => {
 
   const animals = parsed.animals;
   if (animals.length === 0) {
-    showModal('Meus Animais', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">VocÃª nÃ£o possui animais.</div>');
+    showModal('Meus Animais', '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">VocÃƒÂª nÃƒÂ£o possui animais.</div>');
     return;
   }
 
@@ -2478,7 +2478,7 @@ window.__app.showAnimalsModal = () => {
               statusText = 'Precisando de Carinho';
             } else if (inst.status === 'sick') {
               statusColor = '#ef4444'; // Red for sick
-              statusText = 'Doente (Precisa de RemÃ©dio)';
+              statusText = 'Doente (Precisa de RemÃƒÂ©dio)';
             } else if (inst.status === 'soon') {
               statusColor = 'var(--coral)'; // Orange for hungry
               statusText = 'Com Fome';
@@ -2491,7 +2491,7 @@ window.__app.showAnimalsModal = () => {
               <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <div style="display:flex; align-items:center; gap: 10px;">
                   <span style="font-weight:bold; color:var(--text-primary); font-size:14px;">#${idx + 1}</span>
-                  <span style="font-size:12px; font-weight:700; background:rgba(255,255,255,0.08); color:var(--text-primary); padding:3px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">NÃ­vel ${inst.level ?? 0}</span>
+                  <span style="font-size:12px; font-weight:700; background:rgba(255,255,255,0.08); color:var(--text-primary); padding:3px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">NÃƒÂ­vel ${inst.level ?? 0}</span>
                 </div>
                 <div style="text-align:right;">
                   <div style="font-size:13px; font-weight:700; color:${statusColor};">${statusText}</div>
@@ -2511,7 +2511,7 @@ window.__app.showAnimalsModal = () => {
         Total de Animais: <strong style="color:white;">${animals.length}</strong>
       </div>
       <div style="font-size: 13px; color: var(--coral); font-weight: bold; background: rgba(251, 146, 60, 0.1); padding: 4px 8px; border-radius: 6px;">
-        ${animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length} precisando de atenÃ§Ã£o
+        ${animals.filter(a => ['ready', 'soon', 'needsLove', 'sick'].includes(a.status)).length} precisando de atenÃƒÂ§ÃƒÂ£o
       </div>
     </div>
     <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
@@ -2573,13 +2573,13 @@ export default {
 window.__app.showCompostModal = () => {
   const farm = window.__app.State.parsedFarm;
   if (!farm || farm.isPartial) {
-    showModal('â™»ï¸ Composteiras', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">ðŸ”’ Fazenda Bloqueada. NÃ£o Ã© possÃ­vel ver detalhes.</div>');
+    showModal('Ã¢â„¢Â»Ã¯Â¸Â Composteiras', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">Ã°Å¸â€â€™ Fazenda Bloqueada. NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel ver detalhes.</div>');
     return;
   }
 
   const items = farm.composting || [];
   if (items.length === 0) {
-    showModal('â™»ï¸ Composteiras', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">VocÃª nÃ£o possui composteiras na sua fazenda.</div>');
+    showModal('Ã¢â„¢Â»Ã¯Â¸Â Composteiras', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">VocÃƒÂª nÃƒÂ£o possui composteiras na sua fazenda.</div>');
     return;
   }
 
@@ -2621,12 +2621,12 @@ window.__app.showCompostModal = () => {
     </div>
   `;
   
-  showModal('â™»ï¸ Detalhes das Composteiras', modalHtml);
+  showModal('Ã¢â„¢Â»Ã¯Â¸Â Detalhes das Composteiras', modalHtml);
 };
 window.__app.showIslandResourcesModal = () => {
   const farm = window.__app.State.parsedFarm;
   if (!farm || farm.isPartial) {
-    window.__app.UI.showModal('ðŸŒ¿ Recursos da Ilha', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">ðŸ”’ Conecte sua API Key para ver os recursos detalhados.</div>');
+    window.__app.UI.showModal('Ã°Å¸Å’Â¿ Recursos da Ilha', '<div style="padding:32px; text-align:center; color:var(--text-secondary); font-size:15px;">Ã°Å¸â€â€™ Conecte sua API Key para ver os recursos detalhados.</div>');
     return;
   }
 
@@ -2676,7 +2676,7 @@ window.__app.showIslandResourcesModal = () => {
       regrow: '16h',
     },
     {
-      label: 'PetrÃ³leo',
+      label: 'PetrÃƒÂ³leo',
       img: 'Oil',
       items: (farm.oil || []),
       regrow: '24h',
@@ -2698,7 +2698,7 @@ window.__app.showIslandResourcesModal = () => {
               <span style="font-size:13px;font-weight:700;color:var(--text-secondary);">${g.label}</span>
               <span style="font-size:13px;font-weight:800;color:var(--text-tertiary);">0/0</span>
             </div>
-            <div style="font-size:11px;color:var(--text-tertiary);">Ainda nÃ£o desbloqueado na sua ilha.</div>
+            <div style="font-size:11px;color:var(--text-tertiary);">Ainda nÃƒÂ£o desbloqueado na sua ilha.</div>
           </div>
         </div>
       `;
@@ -2761,7 +2761,7 @@ window.__app.showIslandResourcesModal = () => {
 
   const modalHtml = `
     <div style="margin-bottom:16px;padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Total disponÃ­vel na ilha</span>
+      <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Total disponÃƒÂ­vel na ilha</span>
       <span style="font-size:18px;font-weight:800;color:var(--emerald);">${totalReady} / ${totalItems}</span>
     </div>
     <div style="max-height:55vh;overflow-y:auto;padding-right:4px;">
@@ -2769,12 +2769,12 @@ window.__app.showIslandResourcesModal = () => {
     </div>
   `;
 
-  window.__app.UI.showModal('ðŸï¸ Recursos da Ilha', modalHtml);
+  window.__app.UI.showModal('Ã°Å¸ÂÂÃ¯Â¸Â Recursos da Ilha', modalHtml);
 };
 
 window.__app = window.__app || {};
 window.__app.promptManualPurchase = () => {
-  let item = prompt('Nome do Item comprado (em inglÃªs, ex: Wood, Basic Land):');
+  let item = prompt('Nome do Item comprado (em inglÃƒÂªs, ex: Wood, Basic Land):');
   if (!item) return;
   
   // Smart Title Casing: "wood" -> "Wood", "basic land" -> "Basic Land"
@@ -2782,7 +2782,7 @@ window.__app.promptManualPurchase = () => {
   
   const qty = parseFloat(prompt('Quantidade (ex: 500):'));
   if (isNaN(qty) || qty <= 0) return;
-  const cost = parseFloat(prompt('PreÃ§o Total Pago em SFL (ex: 20.5):'));
+  const cost = parseFloat(prompt('PreÃƒÂ§o Total Pago em SFL (ex: 20.5):'));
   if (isNaN(cost) || cost <= 0) return;
 
   const salesLog = JSON.parse(localStorage.getItem('sfl_sales_log') || '[]');

@@ -96,7 +96,7 @@ serve(async () => {
       if (allowedItems.length === 0) continue;
 
       try {
-        // Build message â€” group by category
+        // Build message Ã¢â‚¬â€ group by category
         const byCat = new Map<string, string[]>();
         for (const item of allowedItems) {
           const list = byCat.get(item.item_category) || [];
@@ -121,7 +121,7 @@ serve(async () => {
         let iconUrl = "https://markoswcs.github.io/SuperSFL/icons/icon-192.png";
 
         const payload = JSON.stringify({
-          title: `ðŸŒ» SFL Pro: ${allowedItems.length === 1 ? firstName + ' pronto!' : allowedItems.length + ' itens prontos!'}`,
+          title: `Ã°Å¸Å’Â» SFL Pro: ${allowedItems.length === 1 ? firstName + ' pronto!' : allowedItems.length + ' itens prontos!'}`,
           body: bodyText,
           icon: iconUrl,
           badge: 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
@@ -135,7 +135,7 @@ serve(async () => {
           await messaging.send({
             token: fcmToken,
             notification: {
-              title: 🌻 SFL Pro: ,
+              title: ðŸŒ» SFL Pro: ,
               body: bodyText,
             },
             android: {
@@ -148,14 +148,14 @@ serve(async () => {
                if (messaging) {
                  await messaging.send({
                    token: sub.endpoint.substring(6),
-                   notification: { title: "🌅 Daily Reset!", body: "A fazenda foi resetada. Bom dia!" },
+                   notification: { title: "ðŸŒ… Daily Reset!", body: "A fazenda foi resetada. Bom dia!" },
                    android: { priority: 'high' }
                  });
                }
             } else {
                await webpush.sendNotification(
                  { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                 JSON.stringify({ title: "🌅 Daily Reset!", body: "A fazenda foi resetada. Bom dia!", icon: "https://sfl.world/favicon.ico", tag: "daily-reset" })
+                 JSON.stringify({ title: "ðŸŒ… Daily Reset!", body: "A fazenda foi resetada. Bom dia!", icon: "https://sfl.world/favicon.ico", tag: "daily-reset" })
                );
             }
           } catch (e) { console.error(e); }

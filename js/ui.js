@@ -1055,6 +1055,8 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       </div>
       ${listHtml}
     `);
+    return;
+  }
 
   let entries = [];
   // ── OPPORTUNITIES filter: show market-wide price movements (independent of inventory) ──

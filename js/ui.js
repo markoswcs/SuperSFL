@@ -1051,9 +1051,12 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display='flex');" style="cursor:pointer; font-size:11px; font-weight:800; background:var(--surface-3); padding:6px 14px; border-radius:16px; color:var(--text-primary);">Todas</div>
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-sale')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(16,185,129,0.15); color:var(--emerald); padding:6px 14px; border-radius:16px;">Vendas</div>
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-auto')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(139,92,246,0.15); color:rgb(167,139,250); padding:6px 14px; border-radius:16px;">Auto</div>
-         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-manual')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(59,130,246,0.15); color:rgb(96,165,250); padding:6px 14px
-  let entries = [];
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-manual')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(59,130,246,0.15); color:rgb(96,165,250); padding:6px 14px; border-radius:16px;">Manual</div>
+      </div>
+      ${listHtml}
+    `);
 
+  let entries = [];
   // ── OPPORTUNITIES filter: show market-wide price movements (independent of inventory) ──
   if (filter === 'opportunities') {
     const p2pItems = Object.entries(p2p);

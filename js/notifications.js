@@ -499,6 +499,14 @@ class NotificationEngine {
       if (!Number.isFinite(remaining) || remaining <= 0) return;
 
       const readyAtMs = now + remaining;
+      const strId = `${farmId}:${itemId}`;
+      let hash = 0;
+      for (let i = 0; i < strId.length; i++) {
+        hash = (hash << 5) - hash + strId.charCodeAt(i);
+        hash |= 0;
+      }
+      const numId = Math.abs(hash);
+
       schedules.push({
         farm_id: farmId,
         item_id: String(itemId),
@@ -510,7 +518,7 @@ class NotificationEngine {
 
       if (localReady) {
         localSchedules.push({
-          id: this.localId(`${itemId}:${readyAtMs}`),
+          id: numId,
           title: `SFL Pro: ${itemName}`,
           body: `${itemName} está pronto(a) para você!`,
           channelId: LOCAL_CHANNEL_ID,

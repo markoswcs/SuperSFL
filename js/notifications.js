@@ -102,7 +102,7 @@ class NotificationEngine {
           preferences: this.prefs
         })
       });
-      console.log('Preferências sincronizadas com a nuvem.');
+      console.log('PreferÃªncias sincronizadas com a nuvem.');
     } catch(e) {
       console.error('Erro ao sincronizar prefs', e);
     }
@@ -121,6 +121,32 @@ class NotificationEngine {
   }
 
   async requestPermission() {
+    const isCapacitor = window.Capacitor?.isNativePlatform();
+    
+    if (isCapacitor) {
+      try {
+        const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+        let perm = await LocalNotifications.checkPermissions();
+        if (perm.display !== 'granted') {
+          perm = await LocalNotifications.requestPermissions();
+        }
+        if (perm.display !== 'granted') {
+          alert('Por favor, ative as notificações nas configurações do seu celular para o SFL Pro funcionar no background.');
+          this.setPref('master', false);
+          return false;
+        }
+        
+        console.log('LocalNotifications permission granted!');
+        this.sendPush('Push 24/7 Ativado! ✅', { body: 'Você receberá notificações offline e em background pelo aplicativo SFL Pro.' });
+        return true;
+      } catch (e) {
+        console.error('Erro ao pedir permissão nativa:', e);
+        this.setPref('master', false);
+        return false;
+      }
+    }
+
+    // Web Push Logic
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       alert('Seu navegador não suporta Web Push.');
       this.setPref('master', false);
@@ -131,7 +157,7 @@ class NotificationEngine {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         this.setPref('master', false);
-        const modalHtml = `
+        const modalHtml = 
           <div style="text-align:center; padding: 10px;">
             <div style="font-size:40px; margin-bottom:12px;">🔕</div>
             <h3 style="font-size:18px; font-weight:bold; margin-bottom:12px; color:var(--text-primary);">Notificações Bloqueadas!</h3>
@@ -146,7 +172,7 @@ class NotificationEngine {
             </div>
             <button id="btn-understood" class="btn btn-primary" style="width:100%;background:var(--amber);color:#000;font-weight:bold;padding:14px;border-radius:12px;border:none;cursor:pointer;">Entendi, vou ativar agora!</button>
           </div>
-        `;
+        ;
         if (window.__app && window.__app.UI && window.__app.UI.showModal) {
           window.__app.UI.showModal('Atenção', modalHtml);
           setTimeout(() => {
@@ -189,12 +215,12 @@ class NotificationEngine {
       const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
       const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
 
-      await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=farm_id`, {
+      await fetch(${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=farm_id, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Authorization': Bearer ,
           'Prefer': 'resolution=merge-duplicates'
         },
         body: JSON.stringify({
@@ -216,9 +242,26 @@ class NotificationEngine {
       return false;
     }
   }
+async sendPush(title, options = {}) {
+    if (!this.prefs.master) return;
+    
+    const isCapacitor = window.Capacitor?.isNativePlatform();
+    if (isCapacitor) {
+       try {
+         const id = Math.floor(Date.now() / 1000);
+         await window.Capacitor.Plugins.LocalNotifications.schedule({
+           notifications: [{
+             title: title,
+             body: options.body || '',
+             id: id,
+             schedule: { at: new Date(Date.now() + 100) }
+           }]
+         });
+       } catch(e) { console.error('Native Push Error', e); }
+       return;
+    }
 
-  async sendPush(title, options = {}) {
-    if (!this.prefs.master || Notification.permission !== 'granted') return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     
     const defaultOptions = {
       icon: 'https://sfl.world/favicon.ico',
@@ -238,15 +281,14 @@ class NotificationEngine {
       console.error('Push Error:', e);
     }
   }
-
-  async disablePush() {
+async disablePush() {
     try {
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.ready;
         const subscription = await reg.pushManager.getSubscription();
         if (subscription) {
           await subscription.unsubscribe();
-          console.log('[SFL Pro] Inscrição FCM local removida.');
+          console.log('[SFL Pro] InscriÃ§Ã£o FCM local removida.');
         }
       }
       
@@ -258,7 +300,7 @@ class NotificationEngine {
           method: 'DELETE',
           headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
         });
-        console.log('[SFL Pro] Inscrição removida do servidor.');
+        console.log('[SFL Pro] InscriÃ§Ã£o removida do servidor.');
       }
       this.syncPrefsToSupabase();
     } catch (e) {
@@ -269,16 +311,78 @@ class NotificationEngine {
   /**
    * Envia os readyAt FUTUROS de todos os itens para o Supabase.
    * Isso permite que a Edge Function saiba EXATAMENTE quando cada item fica pronto
-   * e dispare a notificação no momento certo — igual ao AlarmManager do SFL Browser.
+   * e dispare a notificaÃ§Ã£o no momento certo â€” igual ao AlarmManager do SFL Browser.
    */
   async scheduleToSupabase(parsedFarm) {
     if (!this.prefs.master) return;
+    
+    const isCapacitor = window.Capacitor?.isNativePlatform();
+    const now = Date.now();
+
+    if (isCapacitor) {
+      const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+      if (!LocalNotifications) return;
+
+      const localSchedules = [];
+      const addLocal = (items, category, title) => {
+        if (!items) return;
+        const list = Array.isArray(items) ? items : Object.values(items);
+        for (const item of list) {
+          if (!item.readyAt || item.readyAt <= now) continue;
+          if (item.status === 'ready') continue;
+          if (this.prefs[category] === false) continue;
+
+          // Unique ID based on time so we can rewrite it if needed, fits in int32
+          const id = Math.abs(Math.floor((item.readyAt % 2147483647))); 
+          let name = item.name || item.type || category;
+          
+          localSchedules.push({
+            title: ${title} Pronta!,
+            body: O recurso  está pronto para ser coletado!,
+            id: id,
+            schedule: { at: new Date(item.readyAt) }
+          });
+        }
+      };
+
+      addLocal(parsedFarm.crops, 'crops', 'Colheita');
+      addLocal(parsedFarm.animals, 'animals', 'Aviso Animal');
+      addLocal(parsedFarm.fruits, 'fruits', 'Fruta');
+      addLocal(parsedFarm.trees, 'trees', 'Madeira');
+      addLocal(parsedFarm.stones, 'rocks', 'Pedra');
+      addLocal(parsedFarm.iron, 'rocks', 'Ferro');
+      addLocal(parsedFarm.gold, 'rocks', 'Ouro');
+      addLocal(parsedFarm.crimstones, 'rocks', 'Crimstone');
+      addLocal(parsedFarm.sunstones, 'rocks', 'Sunstone');
+      addLocal(parsedFarm.beehives, 'beehives', 'Colmeia');
+      addLocal(parsedFarm.flowers, 'flowers', 'Flor');
+      addLocal(parsedFarm.oil, 'oil', 'Óleo');
+      addLocal(parsedFarm.composting, 'composting', 'Composteira');
+      addLocal(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
+      addLocal(parsedFarm.buildings, 'buildings', 'Construção');
+      addLocal(parsedFarm.cropMachine, 'cropMachine', 'Crop Machine');
+      
+      try {
+        // We cancel all pending notifications and reschedule them all to be safe and avoid infinite duplicates
+        const pending = await LocalNotifications.getPending();
+        if (pending && pending.notifications.length > 0) {
+           await LocalNotifications.cancel(pending);
+        }
+        if (localSchedules.length > 0) {
+           await LocalNotifications.schedule({ notifications: localSchedules });
+           console.log([SFL Pro] ✅  alarmes offline agendados nativamente!);
+        }
+      } catch (e) {
+        console.error('Erro agendando local notifications:', e);
+      }
+      return;
+    }
+
     const farmId = parseInt(window.__app?.State?.farmId, 10);
     if (!farmId || isNaN(farmId) || !parsedFarm) return;
 
     const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
     const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
-    const now = Date.now();
 
     const schedules = [];
 
@@ -286,16 +390,13 @@ class NotificationEngine {
       if (!items) return;
       const list = Array.isArray(items) ? items : Object.values(items);
       for (const item of list) {
-        // Only schedule FUTURE items (not yet ready)
         if (!item.readyAt || item.readyAt <= now) continue;
         if (item.status === 'ready') continue;
-
-        // Check user preference for this category
         if (this.prefs[category] === false) continue;
 
         schedules.push({
           farm_id: farmId,
-          item_id: item.id || `${category}-${item.name || item.type}-${item.readyAt}`,
+          item_id: item.id || ${category}--,
           item_name: item.name || item.type || category,
           item_category: category,
           ready_at: new Date(item.readyAt).toISOString(),
@@ -326,37 +427,35 @@ class NotificationEngine {
     if (schedules.length === 0) return;
 
     try {
-      // First delete old unsent schedules for this farm (stale data)
-      await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules?farm_id=eq.${farmId}&notification_sent=eq.false`, {
+      await fetch(${SUPABASE_URL}/rest/v1/farm_schedules?farm_id=eq.&notification_sent=eq.false, {
         method: 'DELETE',
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': Bearer  }
       });
 
-      // Upsert all new schedules in one batch
-      const postResp = await fetch(`${SUPABASE_URL}/rest/v1/farm_schedules?on_conflict=farm_id,item_id`, {
+      const postResp = await fetch(${SUPABASE_URL}/rest/v1/farm_schedules?on_conflict=farm_id,item_id, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Authorization': Bearer ,
           'Prefer': 'resolution=merge-duplicates'
         },
         body: JSON.stringify(schedules)
       });
 
       if (!postResp.ok) {
-        const errText = await postResp.text();
-        console.error(`[SFL Pro] ❌ Erro ao salvar schedules (${postResp.status}):`, errText);
+        console.error([SFL Pro] ❌ Erro ao salvar schedules ());
       } else {
-        console.log(`[SFL Pro] ✅ ${schedules.length} alarmes agendados no servidor (farm ${farmId}).`);
+        console.log([SFL Pro] ✅  alarmes agendados no servidor (farm ).);
       }
     } catch(e) {
       console.error('[SFL Pro] Erro ao agendar notificações:', e);
     }
   }
 
-  process(parsedFarm) {
-    if (!this.prefs.master || Notification.permission !== 'granted' || !parsedFarm) return;
+  process(parsedFarm) {process(parsedFarm) {
+    if (!this.prefs.master || !parsedFarm) return;
+    if (!window.Capacitor?.isNativePlatform() && (typeof Notification === 'undefined' || Notification.permission !== 'granted')) return;
     
     const activeIdsThisTick = new Set();
     const suppressNotif = this.isFirstRun; // on first run, just mark as seen
@@ -374,7 +473,7 @@ class NotificationEngine {
             if (!suppressNotif) {
               const img = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
               this.sendPush(`Colheita Pronta! ${crop.emoji}`, { 
-                body: `Suas plantações de ${crop.name} (${crop.amount} un) estão prontas para colher.`,
+                body: `Suas plantaÃ§Ãµes de ${crop.name} (${crop.amount} un) estÃ£o prontas para colher.`,
                 tag: 'crops',
                 icon: img
               });
@@ -400,7 +499,7 @@ class NotificationEngine {
             if (!suppressNotif) {
               let msg = '';
               if (isReady) msg = `${animal.name} tem recursos para coletar!`;
-              if (isHungry) msg = `${animal.name} está com fome.`;
+              if (isHungry) msg = `${animal.name} estÃ¡ com fome.`;
               if (needsLove) msg = `${animal.name} precisa de carinho.`;
               
               let imgName = animal.type || animal.name.split(' ')[0];
@@ -424,7 +523,7 @@ class NotificationEngine {
             if (!suppressNotif) {
               const img = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
               this.sendPush(`Fruta Pronta! ${fruit.emoji}`, { 
-                body: `Suas árvores de ${fruit.name} (${fruit.amount} un) estão prontas para colher.`,
+                body: `Suas Ã¡rvores de ${fruit.name} (${fruit.amount} un) estÃ£o prontas para colher.`,
                 tag: 'fruits',
                 icon: img
               });
@@ -459,8 +558,8 @@ class NotificationEngine {
               const img = `https://sfl.world/img/source/${encodeURIComponent(imgName)}.png`;
               const amountStr = (res.amount && parseFloat(res.amount) > 0) ? ` (${res.amount} un)` : '';
               
-              this.sendPush(`${title} Pronta! ${res.emoji || '📦'}`, { 
-                body: `Seu recurso ${res.name}${amountStr} está pronto para coletar.`,
+              this.sendPush(`${title} Pronta! ${res.emoji || 'ðŸ“¦'}`, { 
+                body: `Seu recurso ${res.name}${amountStr} estÃ¡ pronto para coletar.`,
                 tag: tag,
                 icon: img
               });
@@ -470,7 +569,7 @@ class NotificationEngine {
         }
       });
     };
-    if (parsedFarm.trees && this.prefs.trees) checkRes(parsedFarm.trees, 'trees', 'Árvore');
+    if (parsedFarm.trees && this.prefs.trees) checkRes(parsedFarm.trees, 'trees', 'Ãrvore');
     if (parsedFarm.stones && this.prefs.rocks) checkRes(parsedFarm.stones, 'stones', 'Pedra');
     if (parsedFarm.iron && this.prefs.rocks) checkRes(parsedFarm.iron, 'iron', 'Ferro');
     if (parsedFarm.gold && this.prefs.rocks) checkRes(parsedFarm.gold, 'gold', 'Ouro');
@@ -478,16 +577,16 @@ class NotificationEngine {
     if (parsedFarm.sunstones && this.prefs.rocks) checkRes(parsedFarm.sunstones, 'sunstones', 'Sunstone');
     if (parsedFarm.beehives && this.prefs.beehives) checkRes(parsedFarm.beehives, 'beehives', 'Colmeia');
     if (parsedFarm.flowers && this.prefs.flowers) checkRes(parsedFarm.flowers, 'flowers', 'Flor');
-    if (parsedFarm.oil && this.prefs.oil) checkRes(parsedFarm.oil, 'oil', 'Óleo');
+    if (parsedFarm.oil && this.prefs.oil) checkRes(parsedFarm.oil, 'oil', 'Ã“leo');
     
     if (parsedFarm.composting && this.prefs.composting) checkRes(parsedFarm.composting, 'composting', 'Composteira');
     if (parsedFarm.greenhouse && this.prefs.greenhouse) checkRes(parsedFarm.greenhouse, 'greenhouse', 'Estufa');
-    if (parsedFarm.buildings && this.prefs.buildings) checkRes(parsedFarm.buildings, 'buildings', 'Construção');
+    if (parsedFarm.buildings && this.prefs.buildings) checkRes(parsedFarm.buildings, 'buildings', 'ConstruÃ§Ã£o');
     if (parsedFarm.cropMachine && this.prefs.cropMachine) checkRes(parsedFarm.cropMachine, 'cropMachine', 'Crop Machine');
     
     if (parsedFarm.crabTraps && this.prefs.crabTraps) checkRes(parsedFarm.crabTraps, 'crabTraps', 'Armadilha');
-    if (parsedFarm.shrines && this.prefs.shrines) checkRes(parsedFarm.shrines, 'shrines', 'Santuário');
-    if (parsedFarm.agingShed && this.prefs.agingShed) checkRes(parsedFarm.agingShed, 'agingShed', 'Galpão');
+    if (parsedFarm.shrines && this.prefs.shrines) checkRes(parsedFarm.shrines, 'shrines', 'SantuÃ¡rio');
+    if (parsedFarm.agingShed && this.prefs.agingShed) checkRes(parsedFarm.agingShed, 'agingShed', 'GalpÃ£o');
     if (parsedFarm.saltFarm && this.prefs.saltFarm) checkRes(parsedFarm.saltFarm, 'saltFarm', 'Salina');
 
     // Daily Reset (00:00 UTC)
@@ -519,8 +618,8 @@ class NotificationEngine {
           
           if (!this.notifiedIds.has(uid)) {
             if (!suppressNotif) {
-              this.sendPush(`Entrega Disponível! 📦`, { 
-                body: `NPC ${deliv.npc} está pronto para receber sua entrega.`,
+              this.sendPush(`Entrega DisponÃ­vel! ðŸ“¦`, { 
+                body: `NPC ${deliv.npc} estÃ¡ pronto para receber sua entrega.`,
                 tag: 'deliveries',
                 icon: `https://sfl.world/img/source/${encodeURIComponent(deliv.npc || 'bumpkin')}.png`
               });
@@ -567,8 +666,8 @@ class NotificationEngine {
                 
                 if (!this.notifiedIds.has(uid)) {
                   const img = `https://sfl.world/img/source/${encodeURIComponent(itemName)}.png`;
-                  this.sendPush(`Meta de Lucro Atingida! 💰`, {
-                    body: `${itemName} atingiu o preço de ${currentPrice.toFixed(4)} SFL! Venda agora para lucrar +${itemProfitPct}%.`,
+                  this.sendPush(`Meta de Lucro Atingida! ðŸ’°`, {
+                    body: `${itemName} atingiu o preÃ§o de ${currentPrice.toFixed(4)} SFL! Venda agora para lucrar +${itemProfitPct}%.`,
                     tag: 'market',
                     icon: img
                   });
@@ -586,7 +685,7 @@ class NotificationEngine {
               activeIdsThisTick.add(uid);
               if (!this.notifiedIds.has(uid)) {
                 const img = `https://sfl.world/img/source/${encodeURIComponent(alert.item)}.png`;
-                this.sendPush(`ALERTA: PUMP no Mercado! 🚀`, {
+                this.sendPush(`ALERTA: PUMP no Mercado! ðŸš€`, {
                   body: `${alert.item} subiu para ${currentPrice.toFixed(4)} SFL!`,
                   tag: 'market',
                   icon: img

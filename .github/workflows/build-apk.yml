@@ -37,6 +37,7 @@ jobs:
       run: |
         npx cap add android || exit 1
         npx cap sync android || exit 1
+        cp google-services.json android/app/google-services.json || exit 1
 
     - name: Configure Web Settings for Cross-Origin (Iframe support)
       run: |

@@ -566,10 +566,14 @@ function setupAutoRefresh() {
   // Reprocessa o estado em memória para manter a agenda local atualizada entre
   // sincronizações. O código anterior lia propriedades que não existem no State.
   State.localProcessTimer = setInterval(async () => {
-    if (State.rawFarm && State.parsedFarm && !State.parsedFarm.isPartial && window.__app.Notifications) {
-      State.parsedFarm = Farm.parseFarm(State.rawFarm, Storage.getCache(`land_info_${State.farmId}`, true));
-      await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
-      renderCurrentTab();
+    try {
+      if (State.rawFarm && State.parsedFarm && !State.parsedFarm.isPartial && window.__app.Notifications) {
+        State.parsedFarm = Farm.parseFarm(State.rawFarm, Storage.getCache(`land_info_${State.farmId}`, true));
+        await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
+        renderCurrentTab();
+      }
+    } catch (err) {
+      console.error('[LocalProcess] update error:', err);
     }
   }, 30000);
 

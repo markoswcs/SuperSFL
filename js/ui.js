@@ -1835,9 +1835,6 @@ function renderNotifSettings(notifPermission) {
     <div class="notif-permission-banner mb-4" style="border-color:rgba(34,197,94,0.3)">
       <span style="font-size:24px">🔔</span>
       <p><strong style="color:var(--emerald)">${t('notif_status_granted')}</strong><br>${t('notif_status_granted_desc')}</p>
-      <button id="btn-test-notif" class="btn-primary" style="margin-top:8px;font-size:12px;padding:6px 12px;background:var(--emerald)">
-        Testar Notificação Local
-      </button>
     </div>
   `;
 
@@ -1857,74 +1854,7 @@ function renderNotifSettings(notifPermission) {
     </div>
   `;
 
-  const NOTIF_TYPES = {
-    crops: { key: 'crops', icon: '🌾', label: 'Colheitas' },
-    animals: { key: 'animals', icon: '🐾', label: 'Animais' },
-    fruits: { key: 'fruits', icon: '🍎', label: 'Frutas' },
-    resources: { key: 'resources', icon: '🪨', label: 'Recursos Naturais' },
-    market: { key: 'market', icon: '📈', label: 'Mercado (Metas / Pump)' },
-    deliveries: { key: 'deliveries', icon: '📦', label: 'Entregas Prontas' }
-  };
-
-  const typeToggles = Object.values(NOTIF_TYPES).map(typeObj => `
-    <div class="notif-item">
-      <div class="notif-item-info">
-        <div class="notif-item-label">${typeObj.icon} ${t(typeObj.key) || typeObj.label}</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" data-notif-key="${typeObj.key}" ${prefs[typeObj.key] !== false ? 'checked' : ''}>
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-  `).join('');
-
-  const settings = Storage.getSettings();
-  const priceAlertsHtml = `
-    <div class="settings-group mt-4">
-      <div class="settings-group-title">Alertas de Preço (SFL)</div>
-      <div class="card" style="padding:16px;">
-        <div class="sett-row" style="margin-bottom:12px;">
-          <div style="flex:1">
-            <div class="sett-row-label">📈 Alerta de Alta</div>
-            <div class="sett-row-sub">SFL subir acima (USD)</div>
-          </div>
-          <input
-            type="text"
-            id="alert-price-high"
-            inputmode="decimal"
-            placeholder="ex: 0.15"
-            value="${settings.sflPriceAlertHigh ?? ''}"
-            class="sett-price-input"
-            style="width:80px;text-align:right"
-          >
-        </div>
-        <div class="sett-row" style="border-top:1px solid var(--surface-border);padding-top:12px;">
-          <div style="flex:1">
-            <div class="sett-row-label">📉 Alerta de Baixa</div>
-            <div class="sett-row-sub">SFL cair abaixo (USD)</div>
-          </div>
-          <input
-            type="text"
-            id="alert-price-low"
-            inputmode="decimal"
-            placeholder="ex: 0.05"
-            value="${settings.sflPriceAlertLow ?? ''}"
-            class="sett-price-input"
-            style="width:80px;text-align:right"
-          >
-        </div>
-      </div>
-    </div>
-  `;
-
-  setHtml('#notif-settings-content', permHtml + masterToggleHtml + `
-    <div class="settings-group">
-      <div class="settings-group-title">${t('settings_saved_farms')}</div>
-      <div class="card" style="padding:0">
-        ${typeToggles}
-      </div>
-    </div>
-  ` + priceAlertsHtml);
+  setHtml('#notif-settings-content', permHtml + masterToggleHtml);
 
   bindNotifToggles();
 }
@@ -1944,24 +1874,7 @@ function bindNotifToggles() {
     });
   }
 
-  $$('[data-notif-key]').forEach(el => {
-    el.addEventListener('change', async () => {
-      if (window.__app?.Notifications) {
-        await window.__app.Notifications.setPref(el.dataset.notifKey, el.checked);
-      } else {
-        Storage.saveNotifPrefs({ [el.dataset.notifKey]: el.checked });
-      }
-    });
-  });
 
-  const savePriceAlerts = () => {
-    Storage.saveSettings({
-      sflPriceAlertHigh: parseFloat($('#alert-price-high')?.value) || null,
-      sflPriceAlertLow:  parseFloat($('#alert-price-low')?.value)  || null,
-    });
-  };
-  $('#alert-price-high')?.addEventListener('blur', savePriceAlerts);
-  $('#alert-price-low')?.addEventListener('blur', savePriceAlerts);
 
   const requestBtn = $('#btn-request-notif');
   if (requestBtn) {
@@ -1975,14 +1888,6 @@ function bindNotifToggles() {
     });
   }
 
-  const testBtn = $('#btn-test-notif');
-  if (testBtn) {
-    testBtn.addEventListener('click', () => {
-      if (window.__app?.Notifications) {
-        window.__app.Notifications.sendPush('Teste SFL Pro', { body: 'As notificações locais estão funcionando perfeitamente!' });
-      }
-    });
-  }
 }
 
 // =====================================================

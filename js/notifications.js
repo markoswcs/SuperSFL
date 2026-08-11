@@ -322,6 +322,14 @@ class NotificationEngine {
     const farmId = parseInt(window.__app && window.__app.State && window.__app.State.farmId, 10);
     if (!farmId) return;
 
+    // Use raw farm data (Object.entries format) for scheduling
+    const rawState = window.__app && window.__app.State && window.__app.State.rawFarm;
+    const f = rawState ? (rawState.farm || rawState) : null;
+    if (!f) {
+      console.warn('[Notif] No raw farm data for scheduling');
+      return;
+    }
+
     const schedules = [];
 
     const addSchedule = (itemId, itemName, category, readyAtMs) => {
@@ -338,98 +346,107 @@ class NotificationEngine {
       }
     };
 
-    // Parse farm data
     try {
-      if (parsedFarm) {
-        const f = parsedFarm;
-
-        // Crops
-        if (f.crops) {
-          for (const [id, crop] of Object.entries(f.crops)) {
-            if (crop && crop.plantedAt && crop.name) {
-              const growTime = this._getCropGrowTime(crop.name);
-              if (growTime) addSchedule('crop_' + id, crop.name, 'crops', crop.plantedAt + growTime);
-            }
-          }
-        }
-
-        // Fruit patches
-        if (f.fruitPatches) {
-          for (const [id, patch] of Object.entries(f.fruitPatches)) {
-            if (patch && patch.fruit && patch.fruit.plantedAt && patch.fruit.name) {
-              const growTime = this._getFruitGrowTime(patch.fruit.name);
-              if (growTime) addSchedule('fruit_' + id, patch.fruit.name, 'fruits', patch.fruit.plantedAt + growTime);
-            }
-          }
-        }
-
-        // Trees
-        if (f.trees) {
-          for (const [id, tree] of Object.entries(f.trees)) {
-            if (tree && tree.wood && tree.wood.choppedAt) {
-              const readyAt = tree.wood.choppedAt + (4 * 60 * 60 * 1000);
-              addSchedule('tree_' + id, 'Arvore (Madeira)', 'trees', readyAt);
-            }
-          }
-        }
-
-        // Stones
-        if (f.stones) {
-          for (const [id, stone] of Object.entries(f.stones)) {
-            if (stone && stone.rock && stone.rock.minedAt) {
-              const readyAt = stone.rock.minedAt + (4 * 60 * 60 * 1000);
-              addSchedule('stone_' + id, 'Pedra', 'rocks', readyAt);
-            }
-          }
-        }
-
-        // Iron
-        if (f.iron) {
-          for (const [id, iron] of Object.entries(f.iron)) {
-            if (iron && iron.rock && iron.rock.minedAt) {
-              const readyAt = iron.rock.minedAt + (8 * 60 * 60 * 1000);
-              addSchedule('iron_' + id, 'Ferro', 'rocks', readyAt);
-            }
-          }
-        }
-
-        // Gold
-        if (f.gold) {
-          for (const [id, gold] of Object.entries(f.gold)) {
-            if (gold && gold.rock && gold.rock.minedAt) {
-              const readyAt = gold.rock.minedAt + (24 * 60 * 60 * 1000);
-              addSchedule('gold_' + id, 'Ouro', 'rocks', readyAt);
-            }
-          }
-        }
-
-        // Beehives
-        if (f.beehives) {
-          for (const [id, hive] of Object.entries(f.beehives)) {
-            if (hive && hive.honey && hive.honey.updatedAt) {
-              const readyAt = hive.honey.updatedAt + (24 * 60 * 60 * 1000);
-              addSchedule('hive_' + id, 'Colmeia (Mel)', 'beehives', readyAt);
-            }
-          }
-        }
-
-        // Flowers
-        if (f.flowers && f.flowers.flowerBeds) {
-          for (const [id, bed] of Object.entries(f.flowers.flowerBeds)) {
-            if (bed && bed.flower && bed.flower.plantedAt && bed.flower.name) {
-              addSchedule('flower_' + id, bed.flower.name, 'flowers', bed.flower.plantedAt + (24 * 60 * 60 * 1000));
-            }
+      // Crops (raw format: { id: { crop: { name, plantedAt }, ... } })
+      if (f.crops) {
+        for (const [id, plot] of Object.entries(f.crops)) {
+          const crop = plot.crop;
+          if (crop && crop.plantedAt && crop.name) {
+            const growTime = this._getCropGrowTime(crop.name);
+            if (growTime) addSchedule('crop_' + id, crop.name, 'crops', crop.plantedAt + growTime);
           }
         }
       }
+
+      // Fruit patches (raw format: { id: { fruit: { name, plantedAt }, ... } })
+      if (f.fruitPatches) {
+        for (const [id, patch] of Object.entries(f.fruitPatches)) {
+          const fruit = patch.fruit;
+          if (fruit && fruit.plantedAt && fruit.name) {
+            const growTime = this._getFruitGrowTime(fruit.name);
+            if (growTime) addSchedule('fruit_' + id, fruit.name, 'fruits', fruit.plantedAt + growTime);
+          }
+        }
+      }
+
+      // Trees (raw format: { id: { wood: { choppedAt }, ... } })
+      if (f.trees) {
+        for (const [id, tree] of Object.entries(f.trees)) {
+          if (tree && tree.wood && tree.wood.choppedAt) {
+            addSchedule('tree_' + id, 'Árvore (Madeira)', 'trees', tree.wood.choppedAt + (4 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Stones (raw: { id: { rock: { minedAt } } })
+      if (f.stones) {
+        for (const [id, stone] of Object.entries(f.stones)) {
+          if (stone && stone.rock && stone.rock.minedAt) {
+            addSchedule('stone_' + id, 'Pedra', 'rocks', stone.rock.minedAt + (4 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Iron
+      if (f.iron) {
+        for (const [id, iron] of Object.entries(f.iron)) {
+          if (iron && iron.rock && iron.rock.minedAt) {
+            addSchedule('iron_' + id, 'Ferro', 'rocks', iron.rock.minedAt + (8 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Gold
+      if (f.gold) {
+        for (const [id, gold] of Object.entries(f.gold)) {
+          if (gold && gold.rock && gold.rock.minedAt) {
+            addSchedule('gold_' + id, 'Ouro', 'rocks', gold.rock.minedAt + (24 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Beehives
+      if (f.beehives) {
+        for (const [id, hive] of Object.entries(f.beehives)) {
+          if (hive && hive.honey && hive.honey.updatedAt) {
+            addSchedule('hive_' + id, 'Colmeia (Mel)', 'beehives', hive.honey.updatedAt + (24 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Flowers
+      if (f.flowers && f.flowers.flowerBeds) {
+        for (const [id, bed] of Object.entries(f.flowers.flowerBeds)) {
+          if (bed && bed.flower && bed.flower.plantedAt && bed.flower.name) {
+            addSchedule('flower_' + id, bed.flower.name, 'flowers', bed.flower.plantedAt + (24 * 60 * 60 * 1000));
+          }
+        }
+      }
+
+      // Animals (raw: henHouse.animals & barn.animals)
+      const animalSources = [
+        ...(f.henHouse?.animals ? Object.entries(f.henHouse.animals) : []),
+        ...(f.barn?.animals ? Object.entries(f.barn.animals) : []),
+        ...(f.animals ? Object.entries(f.animals) : []),
+      ];
+      for (const [id, animal] of animalSources) {
+        if (animal && animal.awakeAt && animal.awakeAt > now) {
+          const type = animal.type || 'Animal';
+          addSchedule('animal_' + id, type, 'animals', animal.awakeAt);
+        }
+      }
+
     } catch(e) {
-      console.error('Erro ao montar schedules:', e);
+      console.error('[Notif] Erro ao montar schedules:', e);
     }
 
-    if (schedules.length === 0) return;
+    if (schedules.length === 0) {
+      console.log('[Notif] Nenhum agendamento futuro.');
+      return;
+    }
 
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/farm_schedules?on_conflict=farm_id,item_id', {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/farm_schedules?on_conflict=farm_id,item_id', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -439,11 +456,12 @@ class NotificationEngine {
         },
         body: JSON.stringify(schedules)
       });
-      console.log('Schedules enviados ao Supabase:', schedules.length);
+      console.log('[Notif] Schedules enviados ao Supabase:', schedules.length, '| Status:', resp.status);
     } catch(e) {
-      console.error('Erro ao enviar schedules:', e);
+      console.error('[Notif] Erro ao enviar schedules:', e);
     }
   }
+
 
   _getCropGrowTime(name) {
     const times = {

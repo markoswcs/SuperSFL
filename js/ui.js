@@ -171,10 +171,10 @@ function renderHome(exchange, prices, parsedFarm) {
             <img src="${ASSETS.SFL}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 0 6px rgba(245,158,11,0.5));" onerror="this.src='https://sfl.world/img/source/Flower.png'">
             <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-tertiary);text-transform:uppercase;">Flower (SFL)</span>
           </div>
-          <div style="font-family:var(--font-mono);font-size:clamp(18px,5vw,24px);font-weight:800;color:var(--amber-glow);line-height:1;">
+          <div style="font-family:var(--font-mono);font-size:clamp(18px,5vw,24px);font-weight:800;color:var(--amber-glow);line-height:1;" data-price-usd>
             $${sflUsd.toFixed(4)}
           </div>
-          <div style="font-family:var(--font-mono);font-size:clamp(11px,3vw,13px);color:var(--text-secondary);font-weight:500;margin-top:4px;">
+          <div style="font-family:var(--font-mono);font-size:clamp(11px,3vw,13px);color:var(--text-secondary);font-weight:500;margin-top:4px;" data-price-brl>
             R$ ${sflBrl.toFixed(4)}
           </div>
         </div>
@@ -389,7 +389,8 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           
         </div>
-        <!-- Animals -->
+        <!-- Animals - only show if farm has animals -->
+        ${(parsedFarm.animals && parsedFarm.animals.length > 0) ? `
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showAnimalsModal && window.__app.showAnimalsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.CHICKEN}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
@@ -404,7 +405,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           
         </div>
-
+        ` : ''}
         <!-- Composting -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showCompostModal && window.__app.showCompostModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"'} title="Composteiras">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
@@ -1050,46 +1051,104 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display='flex');" style="cursor:pointer; font-size:11px; font-weight:800; background:var(--surface-3); padding:6px 14px; border-radius:16px; color:var(--text-primary);">Todas</div>
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-sale')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(16,185,129,0.15); color:var(--emerald); padding:6px 14px; border-radius:16px;">Vendas</div>
          <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-auto')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(139,92,246,0.15); color:rgb(167,139,250); padding:6px 14px; border-radius:16px;">Auto</div>
-         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-manual')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(59,130,246,0.15); color:rgb(96,165,250); padding:6px 14px; border-radius:16px;">Manuais</div>
-      </div>
-      
-      <div style="grid-column:1/-1;">
-        ${listHtml}
-      </div>
-    `);
+         <div onclick="document.querySelectorAll('.history-row').forEach(e=>e.style.display=e.classList.contains('history-manual')?'flex':'none');" style="cursor:pointer; font-size:11px; font-weight:800; background:rgba(59,130,246,0.15); color:rgb(96,165,250); padding:6px 14px
+  let entries = [];
+
+  // ── OPPORTUNITIES filter: show market-wide price movements (independent of inventory) ──
+  if (filter === 'opportunities') {
+    const p2pItems = Object.entries(p2p);
+    const opsList = p2pItems.map(([name, priceInSfl]) => {
+      const h = history[name] || {};
+      let pctChange = 0;
+      if (h.prev && h.prev > 0) {
+        pctChange = ((priceInSfl - h.prev) / h.prev) * 100;
+      }
+      const isPump = h.trend === 'up' && h.prev && priceInSfl > h.prev * 1.10;
+      return { name, priceInSfl, pctChange, isPump, trend: h.trend, prev: h.prev, max: h.max };
+    });
+
+    // Sort by % change descending (only show items with a price movement)
+    const rising = opsList
+      .filter(i => i.pctChange > 0)
+      .sort((a, b) => b.pctChange - a.pctChange);
+    const stable = opsList
+      .filter(i => i.pctChange === 0 && i.priceInSfl > 0)
+      .sort((a, b) => b.priceInSfl - a.priceInSfl);
+    const falling = opsList
+      .filter(i => i.pctChange < 0)
+      .sort((a, b) => a.pctChange - b.pctChange);
+
+    const allOpps = [...rising, ...stable, ...falling];
+    const filtered = search ? allOpps.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : allOpps;
+
+    if (filtered.length === 0) {
+      setHtml('#market-grid', `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">📈</span><div class="empty-state-title">Sem movimentações ainda</div><div class="empty-state-sub" style="margin-top:8px;">Os preços serão atualizados automaticamente. Volte em breve para ver as oportunidades.</div></div>`);
+      return;
+    }
+
+    setHtml('#market-grid', `<div style="grid-column:1/-1;">` + filtered.slice(0, 60).map((item, idx) => {
+      const isRising = item.pctChange > 0;
+      const isFalling = item.pctChange < 0;
+      const pctStr = item.pctChange !== 0 ? `${isRising ? '+' : ''}${item.pctChange.toFixed(1)}%` : 'ESTÁVEL';
+      const pctColor = isRising ? 'var(--emerald)' : (isFalling ? 'var(--coral)' : 'var(--text-tertiary)');
+      const trendIcon = isRising ? '▲' : (isFalling ? '▼' : '→');
+      const rank = idx + 1;
+      const rankColor = rank === 1 ? '#FFD700' : (rank === 2 ? '#C0C0C0' : (rank === 3 ? '#CD7F32' : 'var(--text-tertiary)'));
+
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid ${item.isPump ? 'rgba(16,185,129,0.4)' : 'var(--surface-border)'};border-radius:14px;margin-bottom:8px;${item.isPump ? 'box-shadow:0 0 12px rgba(16,185,129,0.1);' : ''}">
+          <div style="min-width:24px;font-size:13px;font-weight:900;color:${rankColor};text-align:center;">${rank <= 3 ? (rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉') : `#${rank}`}</div>
+          <div style="width:42px;height:42px;background:var(--surface-3);border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name} ${item.isPump ? '🔥' : ''}</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">
+              Atual: <b style="color:var(--text-secondary)">${item.priceInSfl.toFixed(4)} SFL</b>
+              ${item.prev ? ` • Antes: ${item.prev.toFixed(4)}` : ''}
+              ${item.max ? ` • Máx: ${item.max.toFixed(4)}` : ''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:16px;font-weight:900;color:${pctColor};">${trendIcon} ${pctStr}</div>
+            ${item.pctChange !== 0 ? `<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">${isRising ? 'Em alta' : 'Em queda'}</div>` : '<div style="font-size:10px;color:var(--text-tertiary)">Estável</div>'}
+          </div>
+        </div>
+      `;
+    }).join('') + `</div>`);
     return;
   }
 
-  let entries = [];
-  
+  // ── PORTFOLIO filter: show ALL inventory items ──
   if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
     const inv = window.__app.State.parsedFarm.inventory;
-    const allOwned = [...inv.crops, ...inv.resources, ...inv.food, ...inv.special];
+    const allOwned = [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])];
     
     allOwned.forEach(item => {
-      const priceInSfl = p2p[item.name];
-      if (priceInSfl && item.qty > 0) {
-        const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(item.name) : 0;
-        const totalValue = item.qty * priceInSfl;
-        const unitProfit = priceInSfl - baseCost;
-        const totalProfit = unitProfit * item.qty;
-        const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 100;
+      if (item.qty <= 0) return;
+      const priceInSfl = p2p[item.name] || 0;
+      const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(item.name) : 0;
+      const totalValue = item.qty * priceInSfl;
+      const unitProfit = priceInSfl > 0 ? priceInSfl - baseCost : 0;
+      const totalProfit = unitProfit * item.qty;
+      const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 0;
 
-        entries.push({
-          name: item.name,
-          qty: item.qty,
-          priceInSfl: priceInSfl,
-          baseCost,
-          unitProfit,
-          totalProfit,
-          profitMargin,
-          totalValue
-        });
-      }
+      entries.push({
+        name: item.name,
+        qty: item.qty,
+        priceInSfl,
+        hasPrice: priceInSfl > 0,
+        baseCost,
+        unitProfit,
+        totalProfit,
+        profitMargin,
+        totalValue
+      });
     });
   }
-  if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory || window.__app.State.parsedFarm.isPartial) {
-    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1; padding:30px; background:var(--surface-2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); text-align:center;"><span style="font-size:32px; display:block; margin-bottom:12px;">⚠️</span><div style="font-size:16px; font-weight:800; color:var(--text-primary);">Inventário Indisponível</div><div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Configure sua API Key corretamente na aba "Ajustes" para acessar seu estoque e definir metas de lucro.</div></div>');
+
+  if (!window.__app.State.parsedFarm || !window.__app.State.parsedFarm.inventory) {
+    setHtml('#market-grid', '<div class="empty-state" style="grid-column:1/-1; padding:30px; background:var(--surface-2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); text-align:center;"><span style="font-size:32px; display:block; margin-bottom:12px;">⚠️</span><div style="font-size:16px; font-weight:800; color:var(--text-primary);">Inventário Indisponível</div><div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Configure sua API Key corretamente na aba "Ajustes" para acessar seu estoque.</div></div>');
     return;
   }
 
@@ -1098,24 +1157,27 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     entries = entries.filter(e => e.name.toLowerCase().includes(q));
   }
 
-  if (filter === 'portfolio') {
-    entries = entries.sort((a, b) => b.totalValue - a.totalValue);
-  } else if (filter === 'opportunities') {
-    entries = entries.sort((a, b) => b.profitMargin - a.profitMargin);
-  }
+  // Portfolio: items with price first (sorted by total value), then items without price (sorted by qty)
+  const withPrice = entries.filter(e => e.hasPrice).sort((a, b) => b.totalValue - a.totalValue);
+  const noPrice = entries.filter(e => !e.hasPrice).sort((a, b) => b.qty - a.qty);
+  entries = [...withPrice, ...noPrice];
 
-  const marketGrid = $('#market-grid');
-  let dashboard = $('#market-dashboard-container');
-  if (!dashboard && marketGrid && marketGrid.parentNode) {
-    dashboard = document.createElement('div');
-    dashboard.id = 'market-dashboard-container';
-    dashboard.className = 'mb-4';
-    marketGrid.parentNode.insertBefore(dashboard, marketGrid);
-  }
+  // Calculate total portfolio value
+  const totalPortfolioSfl = withPrice.reduce((sum, e) => sum + e.totalValue, 0);
 
-  setHtml('#market-grid', entries.length > 0 ? entries.map(item => {
-    const safeName = item.name.replace(/'/g, "\\\\'");
-    const totalSfl = item.qty * item.priceInSfl;
+  setHtml('#market-grid', entries.length > 0 ? `
+    <div style="grid-column:1/-1; margin-bottom:12px; padding:14px 16px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(16,185,129,0.08)); border:1px solid rgba(245,158,11,0.2); border-radius:14px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Valor Total do Portfólio</div>
+        <div style="font-size:22px;font-weight:900;color:var(--amber);">${totalPortfolioSfl.toFixed(2)} SFL</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text-tertiary);">${entries.length} itens no inventário</div>
+        <div style="font-size:12px;color:var(--emerald);margin-top:2px;">${withPrice.length} com preço P2P</div>
+      </div>
+    </div>
+    ${entries.map(item => {
+    const safeName = item.name.replace(/'/g, "\\'");
     
     let trendHtml = '';
     let isPump = false;
@@ -1129,73 +1191,62 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       }
     }
 
-    const targetAlert = alerts.find(a => a.item === item.name && a.type === 'up');
-
     let savedCost = 0;
     try { savedCost = JSON.parse(localStorage.getItem('sfl_base_cost') || '{}')[item.name]; } catch(e) {}
-    
     const hasCustomCost = savedCost > 0;
     const costToUse = hasCustomCost ? savedCost : item.priceInSfl;
-    
-    // Profit target stored per item in localStorage
+
     const profitTarget = (() => {
       try { return JSON.parse(localStorage.getItem('sfl_profit_pct') || '{}'); } catch(e) { return {}; }
     })();
     const itemProfitPct = profitTarget[item.name] || 0;
-    
     const farm = window.__app.State.parsedFarm || {};
     let farmTaxPct = farm.taxRate !== undefined ? farm.taxRate : 15;
     if (farm.isVip) farmTaxPct = farmTaxPct * 0.5;
     const farmTaxRate = farmTaxPct / 100;
-    
-    // Calculate target and profits based on market cost, not seed cost
+
     const targetPriceNeeded = hasCustomCost && itemProfitPct > 0
       ? (costToUse * (1 + itemProfitPct / 100)) / (1 - farmTaxRate)
       : null;
-      
     const unitProfit = hasCustomCost ? (item.priceInSfl * (1 - farmTaxRate)) - costToUse : 0;
-    const profitMargin = hasCustomCost && costToUse > 0 ? (unitProfit / costToUse) * 100 : 0;
-    const isTargetHit = targetAlert
-      ? item.priceInSfl >= targetAlert.threshold
-      : (targetPriceNeeded !== null ? item.priceInSfl >= targetPriceNeeded : false);
-    const isProfitTargetMissed = targetPriceNeeded !== null && !isTargetHit;
-    
-    let cardBorder = 'rgba(255,255,255,0.06)';
-    let cardShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    const profitMarginCalc = hasCustomCost && costToUse > 0 ? (unitProfit / costToUse) * 100 : 0;
+    const isTargetHit = targetPriceNeeded !== null ? item.priceInSfl >= targetPriceNeeded : false;
+
+    let cardBorder = item.hasPrice ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)';
     let targetFooterHtml = '';
 
     if (itemProfitPct > 0 && targetPriceNeeded) {
       if (isTargetHit) {
-        cardBorder = 'rgba(16,185,129,0.4)'; 
-        cardShadow = '0 0 16px rgba(16,185,129,0.15)';
-        targetFooterHtml = `
-          <div style="background:rgba(16,185,129,0.1); border-top:1px solid rgba(16,185,129,0.2); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="background:var(--emerald); color:#000; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">✅ META +${itemProfitPct}%</span>
-              <span style="font-size:11px; font-weight:700; color:var(--emerald);">Atingida!</span>
-            </div>
-            <div style="font-size:11px; font-weight:800; color:var(--emerald);">Alvo era ${targetPriceNeeded.toFixed(4)}</div>
-          </div>
-        `;
+        cardBorder = 'rgba(16,185,129,0.4)';
+        targetFooterHtml = `<div style="background:rgba(16,185,129,0.1); border-top:1px solid rgba(16,185,129,0.2); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;"><div style="display:flex; align-items:center; gap:8px;"><span style="background:var(--emerald); color:#000; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">✅ META +${itemProfitPct}%</span><span style="font-size:11px; font-weight:700; color:var(--emerald);">Atingida!</span></div><div style="font-size:11px; font-weight:800; color:var(--emerald);">Alvo era ${targetPriceNeeded.toFixed(4)}</div></div>`;
       } else {
-        targetFooterHtml = `
-          <div style="background:rgba(0,0,0,0.2); border-top:1px solid rgba(255,255,255,0.04); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">🎯 META +${itemProfitPct}%</span>
-              <span style="font-size:11px; font-weight:700; color:var(--text-tertiary);">Alvo: ${targetPriceNeeded.toFixed(4)}</span>
-            </div>
-            <div style="font-size:11px; font-weight:800; color:var(--amber);">Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(4)}</div>
-          </div>
-        `;
+        targetFooterHtml = `<div style="background:rgba(0,0,0,0.2); border-top:1px solid rgba(255,255,255,0.04); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;"><div style="display:flex; align-items:center; gap:8px;"><span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900;">🎯 META +${itemProfitPct}%</span><span style="font-size:11px; font-weight:700; color:var(--text-tertiary);">Alvo: ${targetPriceNeeded.toFixed(4)}</span></div><div style="font-size:11px; font-weight:800; color:var(--amber);">Falta ${(targetPriceNeeded - item.priceInSfl).toFixed(4)}</div></div>`;
       }
     }
-    
+
     const lucroColor = hasCustomCost ? (unitProfit >= 0 ? 'var(--emerald)' : 'var(--coral)') : 'var(--text-tertiary)';
     const lucroValStr = hasCustomCost ? (unitProfit >= 0 ? '+' : '') + unitProfit.toFixed(4) : '--';
-    const lucroBadge = hasCustomCost ? `<span style="margin-left:4px; background:${unitProfit >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${lucroColor}; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">${unitProfit >= 0 ? '+' : ''}${profitMargin.toFixed(0)}%</span>` : '';
 
+    if (!item.hasPrice) {
+      // Simplified card for items with no P2P price
+      return `
+        <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid rgba(255,255,255,0.03); border-radius:16px; opacity:0.7;">
+          <div style="padding:12px 14px; display:flex; gap:12px; align-items:center;">
+            <div style="width:40px; height:40px; background:var(--surface-3); border-radius:10px; border:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:26px; height:26px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
+            </div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name}</div>
+              <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">${Number.isInteger(item.qty) ? item.qty : parseFloat(item.qty).toFixed(2)} un • Sem preço P2P</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const totalSfl = item.qty * item.priceInSfl;
     return `
-      <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:${cardShadow}; position:relative; overflow:hidden; cursor:pointer; transition:all 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
+      <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid ${cardBorder}; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.2); position:relative; overflow:hidden; cursor:pointer; transition:all 0.2s ease;" onclick="window.__app.openP2pCalc('${safeName}', ${item.priceInSfl})">
         
         ${isPump ? `<div style="position:absolute; top:12px; left:60px; background:rgba(239,68,68,0.15); color:var(--coral); font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); z-index:2; animation:pulse 2s infinite;">PUMP 🔥</div>` : ''}
 
@@ -1230,7 +1281,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
               <div style="text-align:right;">
                 <div style="font-size:9px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:2px; letter-spacing:0.5px;">Seu Lucro</div>
                 <div style="font-size:13px; font-weight:800; color:${lucroColor};">
-                  ${lucroValStr} ${lucroBadge}
+                  ${lucroValStr}
                 </div>
               </div>
               <!-- Custo -->
@@ -1246,7 +1297,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
         ${targetFooterHtml}
       </div>
     `;
-  }).join('') : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🤷</span><div class="empty-state-title">Nada no Estoque</div><div class="empty-state-sub" style="margin-top:8px;">Você não tem itens nesta categoria com preços no mercado, ou o seu estoque está zerado.</div></div>`);
+  }).join('')}` : `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">🤷</span><div class="empty-state-title">Inventário Vazio</div><div class="empty-state-sub" style="margin-top:8px;">Você não tem itens no inventário ou configure sua API Key para ver o estoque completo.</div></div>`);
 }
 
 // =====================================================
@@ -1973,6 +2024,8 @@ function renderSettingsPage() {
       🌻 Sunflower Super App v1.0 &nbsp;·&nbsp; Unofficial community tool
     </div>
     
+    <div id="notif-settings-content" style="margin-top: 24px;"></div>
+    
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.05);margin:24px 0;">
     
     <button id="btn-reset-app" style="width:100%;padding:14px;background:var(--coral);color:#fff;border:none;border-radius:12px;font-weight:bold;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:20px;">
@@ -1981,6 +2034,13 @@ function renderSettingsPage() {
   `);
 
   bindSettingsEvents();
+
+  if (window.__app && window.__app.Notifications) {
+    const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications.prefs.master ? 'granted' : 'default');
+    renderNotifSettings(perm);
+  } else {
+    renderNotifSettings('default');
+  }
 }
 
 function bindSettingsEvents() {

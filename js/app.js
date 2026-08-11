@@ -18,6 +18,7 @@ const State = {
   exchange: null,
   prices: null,
   refreshTimer: null,
+  priceTimer: null,
   isRefreshing: false,
   lastSyncTime: 0,
 };
@@ -562,6 +563,36 @@ function setupAutoRefresh() {
       renderCurrentTab(); // Update UI timers
     }
   }, 30000);
+
+  // --- Real-time price update: refresh exchange every 60s independently ---
+  if (State.priceTimer) clearInterval(State.priceTimer);
+  State.priceTimer = setInterval(async () => {
+    try {
+      const exchange = await API.getExchange(true); // force fresh
+      if (exchange) {
+        State.exchange = exchange;
+        // Update price strip without re-rendering full farm tab
+        UI.renderPriceStrip(exchange);
+        // If on farm tab, also update the SFL card price numbers
+        if (State.currentTab === 'farm') {
+          const sflUsd = exchange?.sfl?.usd ?? 0;
+          const sflBrl = exchange?.sfl?.brl ?? 0;
+          const usdEl = document.querySelector('#home-sfl-card [data-price-usd]');
+          const brlEl = document.querySelector('#home-sfl-card [data-price-brl]');
+          if (usdEl) usdEl.textContent = `$${sflUsd.toFixed(4)}`;
+          if (brlEl) brlEl.textContent = `R$ ${sflBrl.toFixed(4)}`;
+        }
+        // If on market tab update prices too
+        if (State.currentTab === 'market') {
+          const prices = await API.getPrices(true);
+          if (prices) State.prices = prices;
+          UI.renderMarketPage(State.prices, exchange);
+        }
+      }
+    } catch(e) {
+      console.warn('[Price poll]', e.message);
+    }
+  }, 60000);
 }
 
 // =====================================================
@@ -607,12 +638,6 @@ function renderCurrentTab() {
       break;
     case 'market':
       UI.renderMarketPage(State.prices, State.exchange);
-      break;
-
-    case 'alerts':
-      UI.renderAlertsPage();
-      const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications?.prefs?.master ? 'granted' : 'default');
-      UI.renderNotifSettings(perm);
       break;
     case 'settings':
       UI.renderSettingsPage();

@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -25,13 +25,18 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
+    - name: Prepare WWW Folder
+      run: |
+        mkdir www
+        cp -r css js images manifest.json index.html sw.js package.json capacitor.config.json www/ 2>/dev/null || true
+
     - name: Install dependencies
       run: npm install
 
     - name: Add Android platform
       run: |
-        npx cap add android || true
-        npx cap sync android
+        npx cap add android || exit 1
+        npx cap sync android || exit 1
 
     - name: Configure Web Settings for Cross-Origin (Iframe support)
       run: |
@@ -59,7 +64,7 @@ jobs:
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4

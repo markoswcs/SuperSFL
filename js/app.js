@@ -542,10 +542,14 @@ function updateSyncBadge() {
 function setupAutoRefresh() {
   if (State.refreshTimer) clearInterval(State.refreshTimer);
   
-  // Instead of auto-fetching API, we just update the badge status every 5 seconds
+  // Update UI timers and auto-fetch from API every 60 seconds (Piloto Automático)
   State.refreshTimer = setInterval(() => {
     updateSyncBadge();
-  }, 5000);
+    // Only auto-sync if we have a farm ID and not already refreshing
+    if (State.farmId && !State.isRefreshing) {
+       refreshData(false); // background silent sync
+    }
+  }, 60000);
 
   if (State.localProcessTimer) clearInterval(State.localProcessTimer);
   

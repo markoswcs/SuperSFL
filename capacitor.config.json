@@ -1,0 +1,14 @@
+{
+  "appId": "com.sflpro.app",
+  "appName": "SFL Pro",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "appendUserAgent": "SFLProApp"
+  }
+}

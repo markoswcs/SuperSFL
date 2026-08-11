@@ -301,9 +301,7 @@ class NotificationEngine {
           notifications: [{
             id: Math.floor(Math.random() * 100000),
             title: title,
-            body: options.body || '',
-            smallIcon: 'ic_stat_icon_config_sample',
-            iconColor: '#FCD34D'
+            body: options.body || ''
           }]
         }).catch(e => console.warn('LocalNotification error:', e));
       }
@@ -339,9 +337,10 @@ class NotificationEngine {
 
     const schedules = [];
 
-    const addSchedule = (itemId, itemName, category, readyAtMs) => {
+    const addSchedule = (itemId, itemName, category, msLeft) => {
       if (!this.prefs[category]) return;
-      if (readyAtMs && readyAtMs > now) {
+      if (msLeft && msLeft > 0) {
+        const readyAtMs = now + msLeft;
         schedules.push({
           farm_id: farmId,
           item_id: String(itemId),
@@ -366,9 +365,7 @@ class NotificationEngine {
                 id: numId % 2147483647,
                 title: 'SFL Pro: ' + itemName,
                 body: 'Seu(ua) ' + itemName + ' está pronto(a)!',
-                schedule: { at: new Date(readyAtMs) },
-                smallIcon: 'ic_stat_icon_config_sample',
-                iconColor: '#FCD34D'
+                schedule: { at: new Date(readyAtMs) }
               }]
             }).catch(() => {});
           }
@@ -377,94 +374,18 @@ class NotificationEngine {
     };
 
     try {
-      // Crops (raw format: { id: { crop: { name, plantedAt }, ... } })
-      if (f.crops) {
-        for (const [id, plot] of Object.entries(f.crops)) {
-          const crop = plot.crop;
-          if (crop && crop.plantedAt && crop.name) {
-            const growTime = this._getCropGrowTime(crop.name);
-            if (growTime) addSchedule('crop_' + id, crop.name, 'crops', crop.plantedAt + growTime);
-          }
-        }
-      }
-
-      // Fruit patches (raw format: { id: { fruit: { name, plantedAt }, ... } })
-      if (f.fruitPatches) {
-        for (const [id, patch] of Object.entries(f.fruitPatches)) {
-          const fruit = patch.fruit;
-          if (fruit && fruit.plantedAt && fruit.name) {
-            const growTime = this._getFruitGrowTime(fruit.name);
-            if (growTime) addSchedule('fruit_' + id, fruit.name, 'fruits', fruit.plantedAt + growTime);
-          }
-        }
-      }
-
-      // Trees (raw format: { id: { wood: { choppedAt }, ... } })
-      if (f.trees) {
-        for (const [id, tree] of Object.entries(f.trees)) {
-          if (tree && tree.wood && tree.wood.choppedAt) {
-            addSchedule('tree_' + id, 'Árvore (Madeira)', 'trees', tree.wood.choppedAt + (4 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Stones (raw: { id: { rock: { minedAt } } })
-      if (f.stones) {
-        for (const [id, stone] of Object.entries(f.stones)) {
-          if (stone && stone.rock && stone.rock.minedAt) {
-            addSchedule('stone_' + id, 'Pedra', 'rocks', stone.rock.minedAt + (4 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Iron
-      if (f.iron) {
-        for (const [id, iron] of Object.entries(f.iron)) {
-          if (iron && iron.rock && iron.rock.minedAt) {
-            addSchedule('iron_' + id, 'Ferro', 'rocks', iron.rock.minedAt + (8 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Gold
-      if (f.gold) {
-        for (const [id, gold] of Object.entries(f.gold)) {
-          if (gold && gold.rock && gold.rock.minedAt) {
-            addSchedule('gold_' + id, 'Ouro', 'rocks', gold.rock.minedAt + (24 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Beehives
-      if (f.beehives) {
-        for (const [id, hive] of Object.entries(f.beehives)) {
-          if (hive && hive.honey && hive.honey.updatedAt) {
-            addSchedule('hive_' + id, 'Colmeia (Mel)', 'beehives', hive.honey.updatedAt + (24 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Flowers
-      if (f.flowers && f.flowers.flowerBeds) {
-        for (const [id, bed] of Object.entries(f.flowers.flowerBeds)) {
-          if (bed && bed.flower && bed.flower.plantedAt && bed.flower.name) {
-            addSchedule('flower_' + id, bed.flower.name, 'flowers', bed.flower.plantedAt + (24 * 60 * 60 * 1000));
-          }
-        }
-      }
-
-      // Animals (raw: henHouse.animals & barn.animals)
-      const animalSources = [
-        ...(f.henHouse?.animals ? Object.entries(f.henHouse.animals) : []),
-        ...(f.barn?.animals ? Object.entries(f.barn.animals) : []),
-        ...(f.animals ? Object.entries(f.animals) : []),
-      ];
-      for (const [id, animal] of animalSources) {
-        if (animal && animal.awakeAt && animal.awakeAt > now) {
-          const type = animal.type || 'Animal';
-          addSchedule('animal_' + id, type, 'animals', animal.awakeAt);
-        }
-      }
+      // Loop over parsedFarm arrays directly - this ensures all boosts, skills, and tools are applied!
+      (parsedFarm.crops || []).forEach(item => addSchedule(`crop_${item.id}`, item.name, 'crops', item.msLeft));
+      (parsedFarm.fruits || []).forEach(item => addSchedule(`fruit_${item.id}`, item.name, 'fruits', item.msLeft));
+      (parsedFarm.trees || []).forEach(item => addSchedule(`tree_${item.id}`, 'Árvore (Madeira)', 'trees', item.msLeft));
+      (parsedFarm.rocks || []).forEach(item => addSchedule(`rock_${item.id}`, item.name, 'rocks', item.msLeft));
+      (parsedFarm.mushrooms || []).forEach(item => addSchedule(`mushroom_${item.id}`, item.name, 'mushrooms', item.msLeft));
+      (parsedFarm.animals || []).forEach(item => addSchedule(`animal_${item.id}`, item.name, 'animals', item.msLeft));
+      (parsedFarm.beehives || []).forEach(item => addSchedule(`hive_${item.id}`, 'Colmeia (Mel)', 'beehives', item.msLeft));
+      (parsedFarm.flowers || []).forEach(item => addSchedule(`flower_${item.id}`, item.name, 'flowers', item.msLeft));
+      (parsedFarm.composting || []).forEach(item => addSchedule(`compost_${item.id}`, item.name, 'composting', item.msLeft));
+      (parsedFarm.cropMachine || []).forEach(item => addSchedule(`cropMachine_${item.id}`, item.name, 'crops', item.msLeft));
+      (parsedFarm.oil || []).forEach(item => addSchedule(`oil_${item.id}`, item.name, 'rocks', item.msLeft));
 
     } catch(e) {
       console.error('[Notif] Erro ao montar schedules:', e);

@@ -311,13 +311,23 @@ class NotificationEngine {
       }
 
       this.attachNativeListeners();
-      await push.register();
-      if (this.fcmToken) await this.saveNativeSubscription();
+      try {
+        await push.register();
+      } catch (e) {
+        console.warn('[Notif] push.register falhou, mas permissão foi concedida:', e);
+      }
+      
       this.hasPermission = true;
-      await this.sendPush('SFL Pro ativado', { body: 'Os alertas da sua fazenda estão prontos para uso.' });
+      if (this.fcmToken) {
+        try {
+          await this.saveNativeSubscription();
+        } catch (e) {
+          console.warn('[Notif] saveNativeSubscription falhou, tentaremos depois:', e);
+        }
+      }
       return true;
     } catch (error) {
-      console.error('[Notif] Erro ao pedir permissão nativa:', error);
+      console.error('[Notif] Erro crítico ao registrar Push Nativo:', error);
       return false;
     }
   }

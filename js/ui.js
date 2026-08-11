@@ -389,23 +389,21 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           
         </div>
-        <!-- Animals - only show if farm has animals -->
-        ${(parsedFarm.animals && parsedFarm.animals.length > 0) ? `
+        <!-- Animals -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showAnimalsModal && window.__app.showAnimalsModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;" title="Ver detalhes dos animais"'}>
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
             <img src="${ASSETS.CHICKEN}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">${t('home_animals')}</div>
-            <div class="stat-value ${collectAnimals > 0 ? 'emerald' : (attnAnimals > 0 ? 'coral' : '')}" style="font-size:18px; line-height:1;">
+            <div class="stat-value ${!parsedFarm.animals || parsedFarm.animals.length === 0 ? '' : (collectAnimals > 0 ? 'emerald' : (attnAnimals > 0 ? 'coral' : ''))}" style="font-size:18px; line-height:1;">
               ${parsedFarm.isPartial ? `<span style="font-size:14px;color:var(--text-tertiary)">🔒 ${t('farm_missing_key')}</span>` : 
-                (collectAnimals > 0 ? collectAnimals + ' pronto!' : (attnAnimals > 0 ? attnAnimals + ' atenção' : parsedFarm.animals.length + ' ' + t('home_ok')))}
+                (!parsedFarm.animals || parsedFarm.animals.length === 0 ? 'Nenhum' : (collectAnimals > 0 ? collectAnimals + ' pronto!' : (attnAnimals > 0 ? attnAnimals + ' atenção' : parsedFarm.animals.length + ' ' + t('home_ok'))))}
             </div>
-            <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${animalDetailsText}</div>
+            <div class="stat-sub" style="margin-top:2px;font-size:12px;color:var(--text-secondary);">${!parsedFarm.animals || parsedFarm.animals.length === 0 ? 'Sem animais na fazenda' : animalDetailsText}</div>
           </div>
           
         </div>
-        ` : ''}
         <!-- Composting -->
         <div class="stat-card spring-in stagger-6" onclick="window.__app && window.__app.showCompostModal && window.__app.showCompostModal()" ${parsedFarm.isPartial ? 'style="opacity:0.6; display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"' : 'style="display:flex; flex-direction:row; align-items:center; gap:8px; padding: 12px; cursor:pointer;"'} title="Composteiras">
           <div style="width:40px;height:40px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.05);">
@@ -1068,8 +1066,12 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       if (h.prev && h.prev > 0) {
         pctChange = ((priceInSfl - h.prev) / h.prev) * 100;
       }
+      let valChange = 0;
+      if (h.prev && h.prev > 0) {
+        valChange = priceInSfl - h.prev;
+      }
       const isPump = h.trend === 'up' && h.prev && priceInSfl > h.prev * 1.10;
-      return { name, priceInSfl, pctChange, isPump, trend: h.trend, prev: h.prev, max: h.max };
+      return { name, priceInSfl, pctChange, valChange, isPump, trend: h.trend, prev: h.prev, max: h.max };
     });
 
     // Sort by % change descending (only show items with a price movement)
@@ -1095,6 +1097,7 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       const isRising = item.pctChange > 0;
       const isFalling = item.pctChange < 0;
       const pctStr = item.pctChange !== 0 ? `${isRising ? '+' : ''}${item.pctChange.toFixed(1)}%` : 'ESTÁVEL';
+      const valStr = item.valChange !== undefined && item.valChange !== 0 ? `${isRising ? '+' : ''}${item.valChange.toFixed(4)} SFL` : '';
       const pctColor = isRising ? 'var(--emerald)' : (isFalling ? 'var(--coral)' : 'var(--text-tertiary)');
       const trendIcon = isRising ? '▲' : (isFalling ? '▼' : '→');
       const rank = idx + 1;
@@ -1115,8 +1118,8 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:16px;font-weight:900;color:${pctColor};">${trendIcon} ${pctStr}</div>
-            ${item.pctChange !== 0 ? `<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">${isRising ? 'Em alta' : 'Em queda'}</div>` : '<div style="font-size:10px;color:var(--text-tertiary)">Estável</div>'}
+            <div style="font-size:15px;font-weight:900;color:${pctColor};">${trendIcon} ${valStr || pctStr}</div>
+            ${item.pctChange !== 0 ? `<div style="font-size:11px;color:${pctColor};margin-top:2px;font-weight:700;">${pctStr}</div>` : '<div style="font-size:10px;color:var(--text-tertiary)">Estável</div>'}
           </div>
         </div>
       `;

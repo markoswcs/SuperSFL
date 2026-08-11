@@ -343,6 +343,29 @@ class NotificationEngine {
           ready_at: new Date(readyAtMs).toISOString(),
           notification_sent: false
         });
+
+        // Também agendar localmente no aparelho (Android/iOS)
+        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+          const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+          if (LocalNotifications) {
+            // Criar ID numérico determinístico para evitar duplicação local
+            const strId = String(itemId);
+            let numId = 0;
+            for(let i=0; i<strId.length; i++) numId += strId.charCodeAt(i);
+            numId += Math.floor(readyAtMs / 100000);
+            
+            LocalNotifications.schedule({
+              notifications: [{
+                id: numId % 2147483647,
+                title: 'SFL Pro: ' + itemName,
+                body: 'Seu(ua) ' + itemName + ' está pronto(a)!',
+                schedule: { at: new Date(readyAtMs) },
+                smallIcon: 'ic_stat_icon_config_sample',
+                iconColor: '#FCD34D'
+              }]
+            }).catch(() => {});
+          }
+        }
       }
     };
 

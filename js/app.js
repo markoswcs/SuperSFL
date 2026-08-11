@@ -1,6 +1,6 @@
 /**
- * app.js â€” Controlador Principal
- * Gerencia o estado da aplicaÃ§Ã£o, roteamento das abas e ciclo de vida
+ * app.js — Controlador Principal
+ * Gerencia o estado da aplicação, roteamento das abas e ciclo de vida
  */
 
 import Storage from './storage.js?v=141';
@@ -103,7 +103,7 @@ async function init() {
     promptGlobalAlerts: () => {
       const html = `
         <div style="padding:16px;">
-          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina automaticamente um alvo de venda para <b>TODOS</b> os itens do seu estoque baseados no preÃ§o atual de mercado.</div>
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina automaticamente um alvo de venda para <b>TODOS</b> os itens do seu estoque baseados no preço atual de mercado.</div>
           
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button onclick="window.__app.applyGlobalAlerts(1.10)" class="btn" style="border:1px solid var(--emerald); background:transparent; color:var(--emerald); padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">+10% de Lucro</button>
@@ -112,11 +112,11 @@ async function init() {
           </div>
           
           <div style="margin-top:16px;font-size:11px;color:var(--text-tertiary);text-align:center;">
-            Isso vai substituir os alvos que vocÃª definiu manualmente.
+            Isso vai substituir os alvos que você definiu manualmente.
           </div>
         </div>
       `;
-      UI.showModal('ðŸš€ EstratÃ©gia Global', html);
+      UI.showModal('🚀 Estratégia Global', html);
     },
     applyGlobalAlerts: (multiplier) => {
       const inv = State.parsedFarm?.inventory;
@@ -145,10 +145,10 @@ async function init() {
 
       const html = `
         <div style="padding:16px;">
-          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preÃ§o alvo (SFL) para vender <b>${item}</b>. O card ficarÃ¡ destacado quando o mercado atingir este valor.</div>
+          <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Defina o preço alvo (SFL) para vender <b>${item}</b>. O card ficará destacado quando o mercado atingir este valor.</div>
           <div style="font-size:12px;margin-bottom:16px; display:flex; justify-content:space-between;">
-            <span>PreÃ§o atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></span>
-            ${maxPrice ? `<span>MÃ¡x HistÃ³rico: <span style="color:var(--emerald);font-weight:700;">${maxPrice} SFL</span></span>` : ''}
+            <span>Preço atual: <span style="color:var(--amber);font-weight:700;">${currentPrice} SFL</span></span>
+            ${maxPrice ? `<span>Máx Histórico: <span style="color:var(--emerald);font-weight:700;">${maxPrice} SFL</span></span>` : ''}
           </div>
           <input type="number" id="prompt-alert-input" step="0.0001" placeholder="Ex: ${autoPrice}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--surface-border);background:var(--surface-3);color:var(--text-primary);margin-bottom:16px;">
           <div style="display:flex; gap:8px;">
@@ -157,7 +157,7 @@ async function init() {
           </div>
         </div>
       `;
-      UI.showModal('ðŸŽ¯ Alvo de Venda', html);
+      UI.showModal('🎯 Alvo de Venda', html);
       setTimeout(() => {
         const btnSave = document.getElementById('prompt-alert-save');
         const btnAuto = document.getElementById('prompt-alert-auto');
@@ -177,7 +177,7 @@ async function init() {
                 UI.renderMarketPage(State.prices, State.exchange);
               }
             } else {
-              UI.showToast('Valor invÃ¡lido', 'error');
+              UI.showToast('Valor inválido', 'error');
             }
           };
         }
@@ -185,11 +185,11 @@ async function init() {
     },
     addPriceAlert: (item, type, threshold) => {
       if (!item || !type || isNaN(threshold) || threshold <= 0) {
-        UI.showToast('Insira um valor vÃ¡lido para o alerta!', 'error');
+        UI.showToast('Insira um valor válido para o alerta!', 'error');
         return;
       }
       Storage.savePriceAlert({ item, type, threshold });
-      UI.showToast(`Alerta salvo: ${item} ${type === 'up' ? 'â–²' : 'â–¼'} ${threshold} SFL âœ…`);
+      UI.showToast(`Alerta salvo: ${item} ${type === 'up' ? '▲' : '▼'} ${threshold} SFL ✅`);
       UI.hideModal();
       if (State.currentTab === 'alerts') UI.renderAlertsPage();
     },
@@ -222,7 +222,7 @@ async function init() {
           <button id="manual-purchase-save" class="btn btn-primary" style="width:100%; border:none; border-radius:8px; background:var(--emerald); color:#fff; padding:12px; font-weight:700; cursor:pointer;">Registrar Compra</button>
         </div>
       `;
-      UI.showModal('ðŸ›’ Registrar Compra', html);
+      UI.showModal('🛒 Registrar Compra', html);
       setTimeout(() => {
         const btnSave = document.getElementById('manual-purchase-save');
         if (btnSave) {
@@ -313,7 +313,7 @@ async function init() {
             window.__app.UI.showToast('Processando...', 'info');
             await window.__app.Notifications.setPref('master', true);
             if (Notification.permission === 'granted') {
-               window.__app.UI.showToast('NotificaÃ§Ãµes ativadas com sucesso!', 'success');
+               window.__app.UI.showToast('Notificações ativadas com sucesso!', 'success');
             }
             window.__app.switchTab('settings');
           }
@@ -386,7 +386,7 @@ async function refreshData(force = false) {
     if (errors.length > 0) {
       console.warn('API partial failures:', errors);
       if (hasKeyError) {
-        UI.showToast('Chave de API InvÃ¡lida ou Expirada!', 'error');
+        UI.showToast('Chave de API Inválida ou Expirada!', 'error');
         State.lastErrorMessage = 'API Key invalid/expired';
       }
     }
@@ -414,7 +414,7 @@ async function refreshData(force = false) {
           prevListings.forEach(prev => {
             const stillExists = currentListings.find(c => c.id === prev.id);
             if (!stillExists) {
-              // Listing disappeared â€” likely sold
+              // Listing disappeared — likely sold
               const itemName = Object.keys(prev.items || {})[0];
               const qty      = itemName ? (prev.items[itemName] || 0) : 0;
               const sflEarned = parseFloat(prev.sfl || 0) * (1 - (prev.tax || 0.1));
@@ -502,7 +502,7 @@ async function refreshData(force = false) {
     Storage.setCache('last_sync_time', State.lastSyncTime, 86400000 * 365);
     updateSyncBadge();
 
-    if (force) UI.showToast('Data synced! âœ…');
+    if (force) UI.showToast('Data synced! ✅');
   } catch (err) {
     console.error('Refresh Error:', err);
     if (force) UI.showToast(`Sync Failed: ${err.message}`, 'error');

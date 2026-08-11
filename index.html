@@ -134,9 +134,9 @@
   <script src="js/Sortable.min.js"></script>
 
   <!-- App Entry Point -->
-  <script src="js/notifications.js?v=148"></script>
+  <script src="js/notifications.js?v=161"></script>
   <script src="js/market-costs.js?v=143"></script>
-  <script type="module" src="js/app.js?v=154"></script>
+  <script type="module" src="js/app.js?v=161"></script>
 
   <!-- PWA: Service Worker + Install Prompt -->
   <script>
@@ -148,7 +148,7 @@
     // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/SuperSFL/sw.js?v=' + Date.now(), { scope: '/SuperSFL/' })
+        navigator.serviceWorker.register('/SuperSFL/sw.js?v=161', { scope: '/SuperSFL/' })
           .then(reg => console.log('[SW] Registered:', reg.scope))
           .catch(err => console.warn('[SW] Registration failed:', err));
       });

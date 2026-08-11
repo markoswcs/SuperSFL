@@ -1,8 +1,8 @@
 /**
- * Notifications Engine for Super Sunflower Land
- * Handles FCM (native Android) and Web Push (browser)
+ * Notifications Engine for SFL Pro.
+ * Mantém uma inscrição remota para alertas 24/7 e uma agenda local como
+ * redundância no Android/iOS quando o aplicativo está fechado.
  */
-
 window.__app = window.__app || {};
 
 const DEFAULT_PREFS = {
@@ -25,27 +25,53 @@ const DEFAULT_PREFS = {
   saltFarm: true,
   deliveries: true,
   market: true,
-  dailyReset: true
+  dailyReset: true,
 };
 
 const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_Txki7crNaFMuqseK9G6JKw_aR4TsulA';
 const VAPID_PUBLIC = 'BIyHzQRluCO6jIO6cifQJLbiVoZyPo9EH3Cmb-VQ78MSBkeRgPE87sc43aK4D8sIZlYwAmGY13fUt-c19GvpEpo';
+const LOCAL_CHANNEL_ID = 'sfl-farm-ready';
 
 class NotificationEngine {
   constructor() {
     this.prefs = { ...DEFAULT_PREFS };
     this.notifiedIds = this.loadNotifiedIds();
-    this.isFirstRun = true;
     this.hasPermission = false;
+    this.fcmToken = localStorage.getItem('sfl_fcm_token') || '';
+    this._subscriptionFarmId = localStorage.getItem('sfl_notification_farm_id') || '';
+    this.localExactAllowed = true;
+    this._registrationListenerAdded = false;
+    this._registrationErrorListenerAdded = false;
+    this._localChannelReady = false;
     this.loadPrefs();
+  }
+
+  isNative() {
+    return Boolean(
+      window.Capacitor &&
+      window.Capacitor.isNativePlatform &&
+      window.Capacitor.isNativePlatform(),
+    );
+  }
+
+  getFarmId() {
+    const farmId = window.__app && window.__app.State && window.__app.State.farmId;
+    return farmId ? String(farmId) : '';
+  }
+
+  getPushPlugin() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+  }
+
+  getLocalPlugin() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   }
 
   loadNotifiedIds() {
     try {
-      const arr = JSON.parse(localStorage.getItem('sfl_notified_ids') || '[]');
-      return new Set(arr);
-    } catch(e) {
+      return new Set(JSON.parse(localStorage.getItem('sfl_notified_ids') || '[]'));
+    } catch (error) {
       return new Set();
     }
   }
@@ -57,11 +83,9 @@ class NotificationEngine {
   loadPrefs() {
     try {
       const saved = localStorage.getItem('sfl_notify_prefs');
-      if (saved) {
-        this.prefs = { ...DEFAULT_PREFS, ...JSON.parse(saved) };
-      }
-    } catch(e) {
-      console.error('Failed to load notification prefs', e);
+      if (saved) this.prefs = { ...DEFAULT_PREFS, ...JSON.parse(saved) };
+    } catch (error) {
+      console.error('[Notif] Não foi possível carregar preferências:', error);
     }
   }
 
@@ -69,412 +93,511 @@ class NotificationEngine {
     localStorage.setItem('sfl_notify_prefs', JSON.stringify(this.prefs));
   }
 
-  setPref(key, value) {
+  async setPref(key, value) {
     this.prefs[key] = value;
     this.savePrefs();
 
-    if (key === 'master' && value === true) {
-      this.requestPermission();
-    } else if (key === 'master' && value === false) {
-      this.disablePush();
-    } else {
-      this.syncPrefsToSupabase();
+    let success = true;
+    try {
+      if (key === 'master' && value) {
+        success = await this.requestPermission();
+        if (!success) {
+          this.prefs.master = false;
+          this.savePrefs();
+        }
+      } else if (key === 'master' && !value) {
+        await this.disablePush();
+      } else {
+        await this.syncPrefsToSupabase();
+      }
+    } catch (error) {
+      console.error('[Notif] Falha ao alterar preferência:', error);
+      success = false;
     }
 
-    if (window.__app && window.__app.ui) {
-      window.__app.ui.renderNotificationSettings();
+    if (window.__app && window.__app.UI && window.__app.UI.renderNotifSettings) {
+      this.getPermissionState().then((permission) => window.__app.UI.renderNotifSettings(permission));
     }
+    return success;
+  }
+
+  async fetchOrThrow(url, options, label) {
+    const response = await fetch(url, options);
+    if (response.ok) return response;
+
+    let detail = '';
+    try {
+      detail = await response.text();
+    } catch (error) {
+      detail = '';
+    }
+    throw new Error(`${label} (${response.status})${detail ? `: ${detail.slice(0, 180)}` : ''}`);
+  }
+
+  async upsertSubscription(subscription) {
+    const farmId = this.getFarmId();
+    if (!farmId) throw new Error('Carregue uma fazenda antes de ativar notificações.');
+
+    await this.fetchOrThrow(
+      `${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=farm_id`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ farm_id: Number(farmId), preferences: this.prefs, ...subscription }),
+      },
+      'Não foi possível salvar a inscrição de notificações',
+    );
   }
 
   async syncPrefsToSupabase() {
-    if (!this.prefs.master) return;
-    const farmId = window.__app && window.__app.State && window.__app.State.farmId;
-    if (!farmId) return;
+    if (!this.prefs.master) return false;
+    const farmId = this.getFarmId();
+    if (!farmId) return false;
 
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?farm_id=eq.' + farmId, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + SUPABASE_ANON
+      await this.fetchOrThrow(
+        `${SUPABASE_URL}/rest/v1/push_subscriptions?farm_id=eq.${encodeURIComponent(farmId)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON,
+            Authorization: `Bearer ${SUPABASE_ANON}`,
+          },
+          body: JSON.stringify({ preferences: this.prefs }),
         },
-        body: JSON.stringify({ preferences: this.prefs })
-      });
-    } catch(e) {
-      console.error('Erro ao sincronizar prefs', e);
-    }
-  }
-
-  urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  }
-
-  // ─────────────────────────────────────────────
-  // REQUEST PERMISSION
-  // ─────────────────────────────────────────────
-  async requestPermission() {
-    const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-
-    if (isNative) {
-      return this._requestFCMPermission();
-    } else {
-      return this._requestWebPushPermission();
-    }
-  }
-
-  async _requestFCMPermission() {
-    try {
-      const PushNotifications = window.Capacitor.Plugins.PushNotifications;
-      if (!PushNotifications) {
-        console.error('PushNotifications plugin not available');
-        return false;
-      }
-
-      let perm = await PushNotifications.checkPermissions();
-      if (perm.receive !== 'granted') {
-        perm = await PushNotifications.requestPermissions();
-      }
-
-      if (perm.receive !== 'granted') {
-        alert('Por favor, ative as notificacoes nas configuracoes do celular para o SFL Pro.');
-        this.setPref('master', false);
-        return false;
-      }
-
-      await PushNotifications.register();
-
-      return new Promise((resolve) => {
-        if (!this._registrationListenerAdded) {
-          this._registrationListenerAdded = true;
-          PushNotifications.addListener('registration', async (token) => {
-            console.log('FCM Token:', token.value);
-            this.hasPermission = true;
-
-            const farmId = window.__app && window.__app.State && window.__app.State.farmId;
-            if (farmId) {
-              try {
-                await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?on_conflict=farm_id', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': SUPABASE_ANON,
-                    'Authorization': 'Bearer ' + SUPABASE_ANON,
-                    'Prefer': 'resolution=merge-duplicates'
-                  },
-                  body: JSON.stringify({
-                    farm_id: farmId,
-                    endpoint: 'fcm://' + token.value,
-                    p256dh: '',
-                    auth: '',
-                    preferences: this.prefs
-                  })
-                });
-                console.log('FCM subscription salva no Supabase!');
-              } catch(e) {
-                console.error('Erro ao salvar FCM token:', e);
-              }
-            }
-
-            this.sendPush('SFL Pro Ativado!', { body: 'Voce recebera alertas mesmo com o app fechado!' });
-            resolve(true);
-          });
-        } else {
-          // If already listening, it will trigger from the register() call above.
-          // We can just resolve immediately since they already have permission.
-          resolve(true);
-        }
-
-        PushNotifications.addListener('registrationError', (error) => {
-          console.error('Push register error:', error);
-          resolve(false);
-        });
-      });
-
-    } catch(e) {
-      console.error('Erro ao pedir permissao nativa:', e);
-      this.setPref('master', false);
+        'Não foi possível sincronizar as preferências',
+      );
+      return true;
+    } catch (error) {
+      console.error('[Notif] Erro ao sincronizar preferências:', error);
       return false;
     }
   }
 
-  async _requestWebPushPermission() {
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let index = 0; index < rawData.length; index += 1) outputArray[index] = rawData.charCodeAt(index);
+    return outputArray;
+  }
+
+  async getPermissionState() {
+    if (!this.isNative()) return typeof Notification === 'undefined' ? 'denied' : Notification.permission;
+
+    const push = this.getPushPlugin();
+    const local = this.getLocalPlugin();
+    try {
+      const pushStatus = push ? await push.checkPermissions() : { receive: 'denied' };
+      const localStatus = local ? await local.checkPermissions() : { display: 'granted' };
+      return pushStatus.receive === 'granted' && localStatus.display === 'granted' ? 'granted' : (pushStatus.receive || localStatus.display || 'denied');
+    } catch (error) {
+      console.warn('[Notif] Não foi possível consultar permissões:', error);
+      return 'denied';
+    }
+  }
+
+  async prepareLocalNotifications(requestPermission = false) {
+    const local = this.getLocalPlugin();
+    if (!local) return true;
+
+    try {
+      let permission = await local.checkPermissions();
+      if (permission.display !== 'granted' && requestPermission) permission = await local.requestPermissions();
+      if (permission.display !== 'granted') {
+        console.warn('[Notif] Permissão de notificações locais não concedida:', permission.display);
+        return false;
+      }
+
+      this.localExactAllowed = true;
+      if (local.checkExactNotificationSetting) {
+        try {
+          const exact = await local.checkExactNotificationSetting();
+          this.localExactAllowed = exact === 'granted';
+          if (!this.localExactAllowed) {
+            console.warn('[Notif] Alarmes exatos estão desativados; usando agendamento aproximado.');
+          }
+        } catch (error) {
+          console.warn('[Notif] Não foi possível verificar alarmes exatos:', error);
+        }
+      }
+
+      if (!this._localChannelReady && local.createChannel) {
+        await local.createChannel({
+          id: LOCAL_CHANNEL_ID,
+          name: 'SFL Pro — Fazenda',
+          description: 'Avisos de colheitas, produções e atividades prontas',
+          importance: 5,
+          visibility: 1,
+          sound: 'default',
+          vibration: true,
+          lights: true,
+          lightColor: '#F59E0B',
+        });
+        this._localChannelReady = true;
+      }
+      return true;
+    } catch (error) {
+      console.error('[Notif] Não foi possível preparar notificações locais:', error);
+      return false;
+    }
+  }
+
+  attachNativeListeners() {
+    const push = this.getPushPlugin();
+    if (!push) return false;
+
+    if (!this._registrationListenerAdded) {
+      this._registrationListenerAdded = true;
+      push.addListener('registration', async (token) => {
+        this.fcmToken = token && token.value ? token.value : '';
+        if (!this.fcmToken) return;
+
+        localStorage.setItem('sfl_fcm_token', this.fcmToken);
+        this.hasPermission = true;
+        try {
+          await this.saveNativeSubscription();
+          console.log('[Notif] Token FCM salvo no backend.');
+        } catch (error) {
+          console.error('[Notif] Token FCM recebido, mas não foi salvo:', error);
+        }
+      });
+    }
+
+    if (!this._registrationErrorListenerAdded) {
+      this._registrationErrorListenerAdded = true;
+      push.addListener('registrationError', (error) => {
+        console.error('[Notif] Falha ao registrar FCM:', error);
+      });
+    }
+    return true;
+  }
+
+  async saveNativeSubscription() {
+    if (!this.fcmToken) return false;
+    await this.upsertSubscription({ endpoint: `fcm://${this.fcmToken}`, p256dh: '', auth: '' });
+    this._subscriptionFarmId = this.getFarmId();
+    localStorage.setItem('sfl_notification_farm_id', this._subscriptionFarmId);
+    return true;
+  }
+
+  async requestPermission() {
+    return this.isNative() ? this.requestNativePermission() : this.requestWebPushPermission();
+  }
+
+  async requestNativePermission() {
+    try {
+      const push = this.getPushPlugin();
+      if (!push) throw new Error('Plugin de notificações push não está disponível neste aplicativo.');
+
+      let permission = await push.checkPermissions();
+      if (permission.receive !== 'granted') permission = await push.requestPermissions();
+      if (permission.receive !== 'granted') {
+        alert('Ative as notificações nas configurações do celular para receber os avisos do SFL Pro.');
+        return false;
+      }
+
+      const localReady = await this.prepareLocalNotifications(true);
+      if (!localReady) {
+        alert('O Android bloqueou as notificações locais. Ative a permissão de notificações para o SFL Pro nas configurações do aparelho.');
+        return false;
+      }
+
+      this.attachNativeListeners();
+      await push.register();
+      if (this.fcmToken) await this.saveNativeSubscription();
+      this.hasPermission = true;
+      await this.sendPush('SFL Pro ativado', { body: 'Os alertas da sua fazenda estão prontos para uso.' });
+      return true;
+    } catch (error) {
+      console.error('[Notif] Erro ao pedir permissão nativa:', error);
+      return false;
+    }
+  }
+
+  async requestWebPushPermission() {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      alert('Seu navegador nao suporta notificacoes push.');
-      this.setPref('master', false);
+      alert('Este navegador não suporta notificações push.');
       return false;
     }
 
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        this.setPref('master', false);
-        alert('Por favor, ative as notificacoes nas configuracoes do navegador para o SFL Pro.');
+        alert('Ative as notificações nas configurações do navegador para o SFL Pro.');
         return false;
       }
 
-      const registration = await navigator.serviceWorker.ready;
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: this.urlBase64ToUint8Array(VAPID_PUBLIC)
-        });
-      }
-
-      const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
-      const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
-
-      const farmId = window.__app && window.__app.State && window.__app.State.farmId;
-      if (!farmId) {
-        alert('Primeiro carregue sua fazenda antes de ativar as notificacoes!');
-        this.setPref('master', false);
-        return false;
-      }
-
-      await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?on_conflict=farm_id', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + SUPABASE_ANON,
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify({
-          farm_id: farmId,
-          endpoint: subscription.endpoint,
-          p256dh: p256dh,
-          auth: auth,
-          preferences: this.prefs
-        })
-      });
-
+      const saved = await this.saveWebSubscription();
+      if (!saved) return false;
       this.hasPermission = true;
-      this.sendPush('SFL Pro Ativado!', { body: 'Voce recebera alertas 24/7 mesmo com o navegador fechado!' });
+      await this.sendPush('SFL Pro ativado', { body: 'Você receberá avisos quando a fazenda estiver pronta.' });
       return true;
-
-    } catch(e) {
-      console.error('Erro ao registrar Web Push:', e);
-      this.setPref('master', false);
+    } catch (error) {
+      console.error('[Notif] Erro ao registrar Web Push:', error);
       return false;
     }
   }
 
-  // ─────────────────────────────────────────────
-  // DISABLE PUSH
-  // ─────────────────────────────────────────────
-  async disablePush() {
-    const farmId = window.__app && window.__app.State && window.__app.State.farmId;
-    if (!farmId) return;
+  async saveWebSubscription() {
+    const farmId = this.getFarmId();
+    if (!farmId) {
+      alert('Primeiro carregue a sua fazenda antes de ativar as notificações.');
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+    }
+
+    const p256dhKey = subscription.getKey('p256dh');
+    const authKey = subscription.getKey('auth');
+    if (!p256dhKey || !authKey) throw new Error('O navegador não retornou as chaves da inscrição push.');
+
+    await this.upsertSubscription({
+      endpoint: subscription.endpoint,
+      p256dh: btoa(String.fromCharCode(...new Uint8Array(p256dhKey))),
+      auth: btoa(String.fromCharCode(...new Uint8Array(authKey))),
+    });
+    this._subscriptionFarmId = farmId;
+    localStorage.setItem('sfl_notification_farm_id', farmId);
+    return true;
+  }
+
+  async syncAfterFarmLoad() {
+    const farmId = this.getFarmId();
+    if (!this.prefs.master || !farmId) return false;
+    if (this._subscriptionFarmId === farmId) return true;
 
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?farm_id=eq.' + farmId, {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + SUPABASE_ANON
-        }
-      });
-    } catch(e) {
-      console.error('Erro ao remover inscricao:', e);
-    }
+      if (this.isNative()) {
+        const push = this.getPushPlugin();
+        if (!push) return false;
+        const permission = await push.checkPermissions();
+        if (permission.receive !== 'granted') return false;
+        await this.prepareLocalNotifications(false);
+        this.attachNativeListeners();
+        await push.register();
+        if (this.fcmToken) return this.saveNativeSubscription();
+        return true;
+      }
 
-    this.hasPermission = false;
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        return this.saveWebSubscription();
+      }
+    } catch (error) {
+      console.error('[Notif] Não foi possível restaurar a inscrição:', error);
+    }
+    return false;
   }
 
-  // ─────────────────────────────────────────────
-  // LOCAL PUSH (for foreground feedback only)
-  // ─────────────────────────────────────────────
-  sendPush(title, options) {
-    const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    if (isNative) {
-      const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
-      if (LocalNotifications) {
-        LocalNotifications.schedule({
-          notifications: [{
-            id: Math.floor(Math.random() * 100000),
-            title: title,
-            body: options.body || ''
-          }]
-        }).catch(e => console.warn('LocalNotification error:', e));
-      }
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(title, {
-          body: options.body || '',
-          icon: '/icons/icon-192.png',
-          ...options
-        });
-      } catch(e) {
-        console.warn('Notification error:', e);
-      }
-    }
-  }
-
-  // ─────────────────────────────────────────────
-  // SCHEDULE - sends data to Supabase for the 24/7 robot
-  // ─────────────────────────────────────────────
-  async scheduleToSupabase(parsedFarm) {
-    if (!this.prefs.master) return;
-    const now = Date.now();
-    const farmId = parseInt(window.__app && window.__app.State && window.__app.State.farmId, 10);
-    if (!farmId) return;
-
-    // Use raw farm data (Object.entries format) for scheduling
-    const rawState = window.__app && window.__app.State && window.__app.State.rawFarm;
-    const f = rawState ? (rawState.farm || rawState) : null;
-    if (!f) {
-      console.warn('[Notif] No raw farm data for scheduling');
+  async disablePush() {
+    const farmId = this.getFarmId();
+    if (!farmId) {
+      this.hasPermission = false;
       return;
     }
 
+    try {
+      await this.fetchOrThrow(
+        `${SUPABASE_URL}/rest/v1/push_subscriptions?farm_id=eq.${encodeURIComponent(farmId)}`,
+        { method: 'DELETE', headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } },
+        'Não foi possível remover a inscrição de notificações',
+      );
+    } catch (error) {
+      console.error('[Notif] Erro ao remover inscrição:', error);
+    }
+    this.hasPermission = false;
+    this._subscriptionFarmId = '';
+    localStorage.removeItem('sfl_notification_farm_id');
+  }
+
+  localSchedule(readyAtMs) {
+    const schedule = { at: new Date(readyAtMs) };
+    if (this.localExactAllowed) schedule.allowWhileIdle = true;
+    return schedule;
+  }
+
+  async sendPush(title, options = {}) {
+    if (this.isNative()) {
+      const local = this.getLocalPlugin();
+      if (!local || !(await this.prepareLocalNotifications(false))) return false;
+      try {
+        await local.schedule({
+          notifications: [{
+            id: this.localId(`preview:${title}:${Date.now()}`),
+            title,
+            body: options.body || '',
+            channelId: LOCAL_CHANNEL_ID,
+            schedule: this.localSchedule(Date.now() + 250),
+          }],
+        });
+        return true;
+      } catch (error) {
+        console.warn('[Notif] Não foi possível exibir notificação de teste:', error);
+        return false;
+      }
+    }
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      const payload = { body: options.body || '', icon: './icons/icon-192.png', ...options };
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification(title, payload);
+        } else {
+          new Notification(title, payload);
+        }
+        return true;
+      } catch (error) {
+        console.warn('[Notif] Não foi possível exibir notificação web:', error);
+      }
+    }
+    return false;
+  }
+
+  localId(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) % 2147483646 + 1;
+  }
+
+  async scheduleToSupabase(parsedFarm) {
+    if (!this.prefs.master || !parsedFarm || parsedFarm.isPartial) return;
+    const farmId = Number(this.getFarmId());
+    if (!farmId) return;
+
+    const rawState = window.__app && window.__app.State && window.__app.State.rawFarm;
+    if (!rawState) {
+      console.warn('[Notif] Dados completos da fazenda não estão disponíveis para agendar avisos.');
+      return;
+    }
+
+    const now = Date.now();
     const schedules = [];
+    const localSchedules = [];
+    const localReady = this.isNative() && await this.prepareLocalNotifications(false);
 
     const addSchedule = (itemId, itemName, category, msLeft) => {
-      if (!this.prefs[category]) return;
-      if (msLeft && msLeft > 0) {
-        const readyAtMs = now + msLeft;
-        schedules.push({
-          farm_id: farmId,
-          item_id: String(itemId),
-          item_name: itemName,
-          item_category: category,
-          ready_at: new Date(readyAtMs).toISOString(),
-          notification_sent: false
-        });
+      if (this.prefs[category] === false) return;
+      const remaining = Number(msLeft);
+      if (!Number.isFinite(remaining) || remaining <= 0) return;
 
-        // Também agendar localmente no aparelho (Android/iOS)
-        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-          const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
-          if (LocalNotifications) {
-            // Criar ID numérico determinístico para evitar duplicação local
-            const strId = String(itemId);
-            let numId = 0;
-            for(let i=0; i<strId.length; i++) numId += strId.charCodeAt(i);
-            numId += Math.floor(readyAtMs / 100000);
-            
-            LocalNotifications.schedule({
-              notifications: [{
-                id: numId % 2147483647,
-                title: 'SFL Pro: ' + itemName,
-                body: 'Seu(ua) ' + itemName + ' está pronto(a)!',
-                schedule: { at: new Date(readyAtMs) }
-              }]
-            }).catch(() => {});
-          }
-        }
+      const readyAtMs = now + remaining;
+      schedules.push({
+        farm_id: farmId,
+        item_id: String(itemId),
+        item_name: itemName,
+        item_category: category,
+        ready_at: new Date(readyAtMs).toISOString(),
+        notification_sent: false,
+      });
+
+      if (localReady) {
+        localSchedules.push({
+          id: this.localId(`${itemId}:${readyAtMs}`),
+          title: `SFL Pro: ${itemName}`,
+          body: `${itemName} está pronto(a) para você!`,
+          channelId: LOCAL_CHANNEL_ID,
+          schedule: this.localSchedule(readyAtMs),
+          extra: { farmId, itemId: String(itemId), category },
+        });
       }
     };
 
     try {
-      // Loop over parsedFarm arrays directly - this ensures all boosts, skills, and tools are applied!
-      (parsedFarm.crops || []).forEach(item => addSchedule(`crop_${item.id}`, item.name, 'crops', item.msLeft));
-      (parsedFarm.fruits || []).forEach(item => addSchedule(`fruit_${item.id}`, item.name, 'fruits', item.msLeft));
-      (parsedFarm.trees || []).forEach(item => addSchedule(`tree_${item.id}`, 'Árvore (Madeira)', 'trees', item.msLeft));
-      (parsedFarm.rocks || []).forEach(item => addSchedule(`rock_${item.id}`, item.name, 'rocks', item.msLeft));
-      (parsedFarm.mushrooms || []).forEach(item => addSchedule(`mushroom_${item.id}`, item.name, 'mushrooms', item.msLeft));
-      (parsedFarm.animals || []).forEach(item => addSchedule(`animal_${item.id}`, item.name, 'animals', item.msLeft));
-      (parsedFarm.beehives || []).forEach(item => addSchedule(`hive_${item.id}`, 'Colmeia (Mel)', 'beehives', item.msLeft));
-      (parsedFarm.flowers || []).forEach(item => addSchedule(`flower_${item.id}`, item.name, 'flowers', item.msLeft));
-      (parsedFarm.composting || []).forEach(item => addSchedule(`compost_${item.id}`, item.name, 'composting', item.msLeft));
-      (parsedFarm.cropMachine || []).forEach(item => addSchedule(`cropMachine_${item.id}`, item.name, 'crops', item.msLeft));
-      (parsedFarm.oil || []).forEach(item => addSchedule(`oil_${item.id}`, item.name, 'rocks', item.msLeft));
-
-    } catch(e) {
-      console.error('[Notif] Erro ao montar schedules:', e);
+      (parsedFarm.crops || []).forEach((item) => addSchedule(`crop_${item.id}`, item.name, 'crops', item.msLeft));
+      (parsedFarm.fruits || []).forEach((item) => addSchedule(`fruit_${item.id}`, item.name, 'fruits', item.msLeft));
+      (parsedFarm.trees || []).forEach((item) => addSchedule(`tree_${item.id}`, 'Árvore (Madeira)', 'trees', item.msLeft));
+      (parsedFarm.rocks || []).forEach((item) => addSchedule(`rock_${item.id}`, item.name, 'rocks', item.msLeft));
+      (parsedFarm.mushrooms || []).forEach((item) => addSchedule(`mushroom_${item.id}`, item.name, 'rocks', item.msLeft));
+      (parsedFarm.animals || []).forEach((item) => addSchedule(`animal_${item.id}`, item.name, 'animals', item.msLeft));
+      (parsedFarm.beehives || []).forEach((item) => addSchedule(`hive_${item.id}`, 'Colmeia (Mel)', 'beehives', item.msLeft));
+      (parsedFarm.flowers || []).forEach((item) => addSchedule(`flower_${item.id}`, item.name, 'flowers', item.msLeft));
+      (parsedFarm.composting || []).forEach((item) => addSchedule(`compost_${item.id}`, item.name, 'composting', item.msLeft));
+      (parsedFarm.cropMachine || []).forEach((item) => addSchedule(`crop-machine_${item.id}`, item.name, 'cropMachine', item.msLeft));
+      (parsedFarm.oil || []).forEach((item) => addSchedule(`oil_${item.id}`, item.name, 'oil', item.msLeft));
+      (parsedFarm.greenhouse || []).forEach((item) => addSchedule(`greenhouse_${item.id}`, item.name, 'greenhouse', item.msLeft));
+      (parsedFarm.buildings || []).forEach((item) => addSchedule(`building_${item.id}`, item.name, 'buildings', item.msLeft));
+      (parsedFarm.crabTraps || []).forEach((item) => addSchedule(`crab-trap_${item.id}`, item.name, 'crabTraps', item.msLeft));
+      (parsedFarm.shrines || []).forEach((item) => addSchedule(`shrine_${item.id}`, item.name, 'shrines', item.msLeft));
+      (parsedFarm.agingShed || []).forEach((item) => addSchedule(`aging_${item.id}`, item.name, 'agingShed', item.msLeft));
+      (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, item.name, 'saltFarm', item.msLeft));
+      (parsedFarm.deliveries || []).forEach((item) => addSchedule(`delivery_${item.id}`, item.name, 'deliveries', item.msLeft));
+    } catch (error) {
+      console.error('[Notif] Erro ao montar agendas:', error);
+      return;
     }
 
-    if (schedules.length === 0) {
-      console.log('[Notif] Nenhum agendamento futuro.');
+    const local = this.getLocalPlugin();
+    if (localSchedules.length && local) {
+      try {
+        await local.schedule({ notifications: localSchedules });
+      } catch (error) {
+        console.error('[Notif] Falha ao agendar notificações locais:', error);
+      }
+    }
+
+    if (!schedules.length) {
+      console.log('[Notif] Nenhum evento futuro para agendar.');
       return;
     }
 
     try {
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/farm_schedules?on_conflict=farm_id,item_id', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + SUPABASE_ANON,
-          'Prefer': 'resolution=merge-duplicates'
+      const response = await this.fetchOrThrow(
+        `${SUPABASE_URL}/rest/v1/farm_schedules?on_conflict=farm_id,item_id`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON,
+            Authorization: `Bearer ${SUPABASE_ANON}`,
+            Prefer: 'resolution=merge-duplicates',
+          },
+          body: JSON.stringify(schedules),
         },
-        body: JSON.stringify(schedules)
-      });
-      console.log('[Notif] Schedules enviados ao Supabase:', schedules.length, '| Status:', resp.status);
-    } catch(e) {
-      console.error('[Notif] Erro ao enviar schedules:', e);
+        'Não foi possível salvar as agendas de notificação',
+      );
+      console.log('[Notif] Agendas sincronizadas:', schedules.length, '| Status:', response.status);
+    } catch (error) {
+      console.error('[Notif] Erro ao enviar agendas ao backend:', error);
     }
   }
 
-
-  _getCropGrowTime(name) {
-    const times = {
-      'Sunflower': 1 * 60 * 1000,
-      'Potato': 5 * 60 * 1000,
-      'Pumpkin': 30 * 60 * 1000,
-      'Carrot': 60 * 60 * 1000,
-      'Cabbage': 2 * 60 * 60 * 1000,
-      'Soybean': 2 * 60 * 60 * 1000,
-      'Beetroot': 8 * 60 * 60 * 1000,
-      'Cauliflower': 8 * 60 * 60 * 1000,
-      'Parsnip': 12 * 60 * 60 * 1000,
-      'Radish': 24 * 60 * 60 * 1000,
-      'Wheat': 24 * 60 * 60 * 1000,
-      'Kale': 36 * 60 * 60 * 1000,
-      'Blueberry': 24 * 60 * 60 * 1000,
-      'Orange': 24 * 60 * 60 * 1000,
-      'Apple': 24 * 60 * 60 * 1000,
-      'Banana': 24 * 60 * 60 * 1000,
-      'Lemon': 24 * 60 * 60 * 1000
-    };
-    return times[name] || null;
-  }
-
-  _getFruitGrowTime(name) {
-    const times = {
-      'Apple': 24 * 60 * 60 * 1000,
-      'Blueberry': 24 * 60 * 60 * 1000,
-      'Orange': 24 * 60 * 60 * 1000,
-      'Banana': 24 * 60 * 60 * 1000,
-      'Lemon': 24 * 60 * 60 * 1000,
-      'Grape': 6 * 60 * 60 * 1000,
-      'Tomato': 2 * 60 * 60 * 1000,
-      'Strawberry': 12 * 60 * 60 * 1000
-    };
-    return times[name] || (24 * 60 * 60 * 1000);
-  }
-
-  // ─────────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────────
   init() {
-    // Listen for incoming FCM notifications when app is in foreground
-    const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    if (isNative) {
-      const PushNotifications = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
-      if (PushNotifications) {
-        PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          console.log('Push recebido em foreground:', notification);
-        });
-        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-          console.log('Push clicado:', action);
-        });
+    if (this.isNative()) {
+      const push = this.getPushPlugin();
+      this.attachNativeListeners();
+      if (push) {
+        push.addListener('pushNotificationReceived', (notification) => console.log('[Notif] Push recebido:', notification));
+        push.addListener('pushNotificationActionPerformed', (action) => console.log('[Notif] Push acionado:', action));
+      }
+
+      const local = this.getLocalPlugin();
+      if (local) {
+        local.addListener('localNotificationReceived', (notification) => console.log('[Notif] Aviso local entregue:', notification));
+        local.addListener('localNotificationActionPerformed', (action) => console.log('[Notif] Aviso local aberto:', action));
       }
     }
-
-    console.log('NotificationEngine inicializado. Plataforma nativa:', isNative);
+    console.log('[Notif] Motor inicializado. Plataforma nativa:', this.isNative());
   }
 }
 
-// Instantiate globally
 window.__app.Notifications = new NotificationEngine();
 window.__app.Notifications.init();
-
 console.log('notifications.js carregado com sucesso!');

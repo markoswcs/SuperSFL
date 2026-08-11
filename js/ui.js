@@ -1817,7 +1817,8 @@ function updateAlertBadge() {
 // =====================================================
 
 function renderNotifSettings(notifPermission) {
-  const prefs = Storage.getNotifPrefs();
+  const engine = window.__app && window.__app.Notifications;
+  const prefs = engine ? engine.prefs : Storage.getNotifPrefs();
 
   const permHtml = notifPermission !== 'granted' ? `
     <div class="notif-permission-banner mb-4">
@@ -1846,7 +1847,7 @@ function renderNotifSettings(notifPermission) {
           <div class="settings-row-sub">${t('alert_master_desc')}</div>
         </div>
         <label class="toggle">
-          <input type="checkbox" id="toggle-notif-master" ${prefs.enabled ? 'checked' : ''}>
+          <input type="checkbox" id="toggle-notif-master" ${prefs.master ? 'checked' : ''}>
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -1928,14 +1929,25 @@ function renderNotifSettings(notifPermission) {
 function bindNotifToggles() {
   const master = $('#toggle-notif-master');
   if (master) {
-    master.addEventListener('change', () => {
-      Storage.saveNotifPrefs({ enabled: master.checked });
+    master.addEventListener('change', async () => {
+      if (window.__app?.Notifications) {
+        const enabled = await window.__app.Notifications.setPref('master', master.checked);
+        master.checked = enabled && window.__app.Notifications.prefs.master;
+        const permission = await window.__app.Notifications.getPermissionState();
+        renderNotifSettings(permission);
+      } else {
+        Storage.saveNotifPrefs({ enabled: master.checked });
+      }
     });
   }
 
   $$('[data-notif-key]').forEach(el => {
-    el.addEventListener('change', () => {
-      Storage.saveNotifPrefs({ [el.dataset.notifKey]: el.checked });
+    el.addEventListener('change', async () => {
+      if (window.__app?.Notifications) {
+        await window.__app.Notifications.setPref(el.dataset.notifKey, el.checked);
+      } else {
+        Storage.saveNotifPrefs({ [el.dataset.notifKey]: el.checked });
+      }
     });
   });
 
@@ -1952,9 +1964,9 @@ function bindNotifToggles() {
   if (requestBtn) {
     requestBtn.addEventListener('click', async () => {
       if (window.__app?.Notifications) {
-        await window.__app.Notifications.setPref('master', true);
-        const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications.prefs.master ? 'granted' : 'default');
-        Storage.saveNotifPrefs({ enabled: perm === 'granted' });
+        const enabled = await window.__app.Notifications.setPref('master', true);
+        const perm = await window.__app.Notifications.getPermissionState();
+        if (!enabled) showToast('Não foi possível ativar as notificações. Verifique as permissões do aparelho.', 'error');
         renderNotifSettings(perm);
       }
     });
@@ -2044,8 +2056,7 @@ function renderSettingsPage() {
   bindSettingsEvents();
 
   if (window.__app && window.__app.Notifications) {
-    const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications.prefs.master ? 'granted' : 'default');
-    renderNotifSettings(perm);
+    window.__app.Notifications.getPermissionState().then(renderNotifSettings);
   } else {
     renderNotifSettings('default');
   }

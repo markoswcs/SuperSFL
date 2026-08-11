@@ -19,6 +19,7 @@ const State = {
   prices: null,
   refreshTimer: null,
   priceTimer: null,
+  localProcessTimer: null,
   isRefreshing: false,
   lastSyncTime: 0,
 };
@@ -356,6 +357,11 @@ function loadCachedState() {
   // Update badge UI on startup
   updateSyncBadge();
 
+  // Restaura a inscrição imediatamente quando há dados completos em cache.
+  if (State.parsedFarm && !State.parsedFarm.isPartial && window.__app.Notifications) {
+    window.__app.Notifications.syncAfterFarmLoad();
+  }
+
   // If a farmId is configured but no cache exists yet, fetch initial data
   if (farmId && !State.parsedFarm) {
     refreshData(false);
@@ -493,7 +499,10 @@ async function refreshData(force = false) {
     }
 
     if (State.parsedFarm && window.__app.Notifications) {
-      window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
+      // Quando uma fazenda é carregada depois da permissão, a inscrição precisa
+      // ser vinculada novamente ao Farm ID antes de enviar as agendas.
+      await window.__app.Notifications.syncAfterFarmLoad();
+      await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
     }
 
     renderCurrentTab();
@@ -554,13 +563,13 @@ function setupAutoRefresh() {
 
   if (State.localProcessTimer) clearInterval(State.localProcessTimer);
   
-  // Re-process local data every 30 seconds for local push notifications
-  State.localProcessTimer = setInterval(() => {
-    if (State.farmData && window.__app.FarmData && window.__app.Notifications) {
-      // Re-parse the cached raw data to update 'ready' statuses based on current time
-      State.parsedFarm = window.__app.FarmData.parse(State.farmData);
-      window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
-      renderCurrentTab(); // Update UI timers
+  // Reprocessa o estado em memória para manter a agenda local atualizada entre
+  // sincronizações. O código anterior lia propriedades que não existem no State.
+  State.localProcessTimer = setInterval(async () => {
+    if (State.rawFarm && State.parsedFarm && !State.parsedFarm.isPartial && window.__app.Notifications) {
+      State.parsedFarm = Farm.parseFarm(State.rawFarm, Storage.getCache(`land_info_${State.farmId}`, true));
+      await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
+      renderCurrentTab();
     }
   }, 30000);
 

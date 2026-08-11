@@ -38,12 +38,7 @@ jobs:
         npx cap add android || exit 1
         npx cap sync android || exit 1
         cp google-services.json android/app/google-services.json || exit 1
-        
-        # Injetar o plugin do google-services no build.gradle root
-        sed -i 's/dependencies {/dependencies {
-        classpath "com.google.gms:google-services:4.4.1"/g' android/build.gradle
-        
-        # Injetar o apply plugin no final do app/build.gradle
+        node -e "const fs = require('fs'); let b = fs.readFileSync('android/build.gradle', 'utf8'); b = b.replace(/dependencies \{/, 'dependencies {\n        classpath \"com.google.gms:google-services:4.4.1\"'); fs.writeFileSync('android/build.gradle', b);"
         echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
 
     - name: Configure Web Settings for Cross-Origin (Iframe support)

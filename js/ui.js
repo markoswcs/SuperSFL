@@ -1892,9 +1892,10 @@ function bindNotifToggles() {
   const requestBtn = $('#btn-request-notif');
   if (requestBtn) {
     requestBtn.addEventListener('click', async () => {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        Storage.saveNotifPrefs({ enabled: true });
+      if (window.__app?.Notifications) {
+        await window.__app.Notifications.setPref('master', true);
+        const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications.prefs.master ? 'granted' : 'default');
+        Storage.saveNotifPrefs({ enabled: perm === 'granted' });
         renderNotifSettings(perm);
       }
     });

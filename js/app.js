@@ -312,7 +312,7 @@ async function init() {
           if (window.__app?.Notifications) {
             window.__app.UI.showToast('Processando...', 'info');
             await window.__app.Notifications.setPref('master', true);
-            if (Notification.permission === 'granted') {
+            if ((typeof Notification === 'undefined') || Notification.permission === 'granted') {
                window.__app.UI.showToast('Notificações ativadas com sucesso!', 'success');
             }
             window.__app.switchTab('settings');
@@ -611,7 +611,7 @@ function renderCurrentTab() {
 
     case 'alerts':
       UI.renderAlertsPage();
-      const perm = Notification.permission;
+      const perm = (typeof Notification !== 'undefined') ? Notification.permission : (window.__app.Notifications?.prefs?.master ? 'granted' : 'default');
       UI.renderNotifSettings(perm);
       break;
     case 'settings':

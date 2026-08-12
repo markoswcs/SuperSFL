@@ -3015,40 +3015,76 @@ window.__app.promptManualPurchase = () => {
 
 window.__app.UI = window.__app.UI || {};
 window.__app.UI.promptWalletPosition = () => {
-  // All SFL tradeable items: p2p market + known NFTs/wearables that trade on the marketplace
+  // Build complete item list: live p2p prices (all resources/crops/etc.) + NFT collectibles from SFL source
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
-  const NFT_ITEMS = [
-    // Collectible Animals & Decorations (NFTs)
-    'Chicken', 'Rooster', 'Pig', 'Sheep', 'Cow', 'Bee', 'Butterfly', 'Flower Fox',
-    // Wearables - common NFTs traded on marketplace
-    'Painter Hat', 'Brown Boots', 'Peasant Skirt', 'White Shirt',
-    'Tattered Jacket', 'Black Farmer Boots', 'Farmer Pants', 'Farmer Shirt',
-    'Pumpkin Shirt', 'Blue Farmer Pants',
-    // Collectibles & limited items
-    'Sunflower Statue', 'Potato Statue', 'Christmas Tree', 'Dog',
-    'Cabbage Boy', 'Pink Flamingo', 'Gnome', 'Scarecrow',
-    'Nancy', 'Kuebiko', 'Lunar Calendar', 'Easter Bunny',
-    'Speed Chicken', 'Rich Chicken', 'Fat Chicken',
-    'Golden Cauliflower', 'Carrot Sword', 'Golden Bonsai',
-    'Wicker Man', 'Rock Golem', 'Immortal Pear',
-    'Peeled Potato', 'Wood Nymph Wendy', 'Cabbage Girl',
-    'Parsnip', 'Nyon Potato', 'Tin Turtle', 'Christmas Snow Globe',
-    'Maneki Neko', 'Squirrel Monkey', 'Black Bear',
-    'Hoot', 'Foreman Beaver', 'Paul', 'Kerri',
-    'Scary Mike', 'Laurie the Chuckle Crow', 'Sir Goldensnout',
-    'Freya Fox', 'Bumpkin Nutcracker', 'White Crow', 'Grinx Hammer',
-    'Genie Lamp', 'Basic Bear', 'Collectible Bear',
-    // Boost items traded
-    'Bale', 'Flag', 'Sunflower Rock', 'Sunflower Tombstone',
-    'Sunflower Gold Statue', 'Goblin Crown', 'Eggplant Bear',
-    // Resources that appear on marketplace
-    'Crimstone', 'Obsidian', 'Sunstone', 'Merino Wool',
-    'Honey', 'Feather', 'Milk', 'Leather', 'Wool',
+
+  // Image URL helper - sfl.world uses the full name with spaces
+  const imgUrl = (name) => `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
+
+  // All known SFL collectible NFTs tradeable on the marketplace (from official SFL source)
+  const NFT_COLLECTIBLES = [
+    // Season 14 - Salt Awakening
+    'Ant Queen','Speckled Kissing Fish','Dark Eyed Kissing Fish','Fisherman\'s Boat','Sea Arch',
+    'Crabs and Fish Rug','Fish Flags','Fish Drying Rack','Yellow Submarine Trophy',
+    'Oaken','Meerkat','Pearl Bed','Crimstone Clam','Poseidon\'s Throne','Fish Kite',
+    'Pufferfish','Fat Crab','Navigation Table','Royal Crab Pot','Crab House','Speed Trap',
+    // Mutant Flowers (Power-ups)
+    'Desert Rose', 'Chicory', 'Chamomile', 'Lunalist', 'Venus Bumpkin Trap', 
+    'Black Hole Flower', 'Anemone Flower', 'Salt Crystal Flower', 'Ruins Flower',
+    // Season 13
+    'Obsidian Turtle','Winter Guardian','Summer Guardian','Spring Guardian','Autumn Guardian',
+    'Sky Pillar','Rocket Statue',
+    // Season 12 - Paw Prints
+    'Black Sheep','Golden Sheep','Barn Blueprint','Quarry',
+    'Moo-ver','Swiss Whiskers','Cluckulator','UFO',
+    // Season 11 - Better Together
+    'Groovy Gramophone','Poppy','Kernaldo','Grain Grinder',
+    'Skill Shrimpy','Soil Krabby','Nana',
+    // Season 10 - Great Bloom
+    'Giant Onion','Giant Turnip','Jurassic Droplet',
+    // Season 9 - Winds of Change (Pharaoh\'s Treasure)
+    'Lemon Tea Bath','Tomato Clown','Pyramid','Oasis',
+    'Lily Egg','Goblet','Stone Beetle','Pharaoh Gnome',
+    // Season 8 - Bull Run
+    'Royal Throne','Queen Bee','Blossom Royale','Hungry Caterpillar','Turbo Sprout',
+    'Soybliss','Grape Granny',
+    // Season 7 - Pharaoh (older)
+    'Humming Bird','Kraken Head','Rubber Ducky','Anchor','Knowledge Crab',
+    'Walrus','Alba',
+    // Season 6 - Clash of Factions
+    'Freya Fox','Queen Cornelia','White Crow',
+    // Season 5 - Spring Blossom
+    'Lady Bug','Hoot','Black Bearry','Squirrel Monkey','Maneki Neko',
+    // Season 4 - Catch the Kraken
+    'Pablo The Bunny','Easter Bush','Giant Carrot','Collectible Bear',
+    'Blossom Tree','Flamingo','Heart Balloons',
+    // Season 3 - Witches Eve
+    'Cabbage Boy','Cabbage Girl','Cyborg Bear','Palm Tree','Beach Ball',
+    // Season 2 - Solar Flare
+    'Beta Bear','Peeled Potato','Christmas Snow Globe','Wood Nymph Wendy',
+    // Older / Helios Blacksmith / always available
+    'Immortal Pear','Basic Scarecrow','Bale','Scary Mike','Laurie the Chuckle Crow',
+    'Iron Beetle','Gold Beetle','Fairy Circle','Squirrel','Macaw','Butterfly','Salt Sculpture',
+    // SFTs (classic collectibles)
+    'Sunflower Statue','Potato Statue','Scarecrow','Chicken Coop','Dog',
+    'Pink Flamingo','Gnome','Nancy','Kuebiko','Lunar Calendar','Easter Bunny',
+    'Speed Chicken','Rich Chicken','Fat Chicken','Golden Cauliflower','Carrot Sword',
+    'Golden Bonsai','Wicker Man','Rock Golem','Tin Turtle',
+    'Foreman Beaver','Sir Goldensnout','Bumpkin Nutcracker','Genie Lamp','Basic Bear',
+    'Sunflower Rock','Sunflower Tombstone','Sunflower Gold Statue','Goblin Crown','Eggplant Bear',
+    // Treasure collectibles
+    'Treasure Map','Adrift Ark','Castellan','Sunlit Citadel','Baobab Tree','Camel',
   ];
-  // Merge: p2p items first, then unique NFTs not already in p2p
-  const p2pKeys = Object.keys(p2p);
-  const allNftKeys = NFT_ITEMS.filter(n => !p2pKeys.includes(n));
-  const items = [...p2pKeys, ...allNftKeys].sort();
+
+  // Remove baits and basic animals (not sold on marketplace) from p2p market items
+  const p2pKeys = Object.keys(p2p).filter(k => {
+    const name = k.toLowerCase();
+    if (name.includes('bait') || name.includes('baitfish')) return false;
+    if (['chicken', 'pig', 'cow', 'sheep', 'rooster', 'bee', 'butterfly'].includes(name)) return false;
+    return true;
+  });
+  const nftOnly = NFT_COLLECTIBLES.filter(n => !p2pKeys.includes(n));
+  const items = [...p2pKeys, ...nftOnly].sort();
   
   const step1Html = `
     <div id="wallet-step-1" style="padding:16px; font-family:var(--font-sans);">
@@ -3107,18 +3143,27 @@ window.__app.UI.promptWalletPosition = () => {
         return;
       }
       
-      resultsContainer.innerHTML = filtered.map(item => `
-        <div class="wallet-search-item" data-name="${item}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px; cursor:pointer;">
-          <img src="https://sfl.world/img/source/${encodeURIComponent(item.replace(/\s+/g, ''))}.png" style="width:24px; height:24px; object-fit:contain; image-rendering:pixelated;" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
-          <div style="font-size:14px; font-weight:700; color:var(--text-primary);">${item}</div>
+      resultsContainer.innerHTML = filtered.map(item => {
+        // Use the item name with spaces - sfl.world serves images with full name
+        const url = `https://sfl.world/img/source/${encodeURIComponent(item)}.png`;
+        const isNft = !p2p[item];
+        return `
+        <div class="wallet-search-item" data-name="${item}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px; cursor:pointer; transition:background 0.15s;">
+          <img src="${url}" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated; flex-shrink:0;" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item}</div>
+            ${isNft ? '<div style="font-size:10px; color:var(--amber); font-weight:700;">🏆 NFT Colecionável</div>' : ''}
+          </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
       
       document.querySelectorAll('.wallet-search-item').forEach(el => {
         el.addEventListener('click', () => {
           selectedItemName = el.dataset.name;
           document.getElementById('wallet-selected-name').textContent = selectedItemName;
-          document.getElementById('wallet-selected-img').src = `https://sfl.world/img/source/${encodeURIComponent(selectedItemName.replace(/\s+/g, ''))}.png`;
+          // Correct image URL: use full name with spaces
+          document.getElementById('wallet-selected-img').src = `https://sfl.world/img/source/${encodeURIComponent(selectedItemName)}.png`;
           step1.style.display = 'none';
           step2.style.display = 'block';
         });

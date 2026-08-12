@@ -35,7 +35,6 @@ jobs:
 
     - name: Add Android platform
       run: |
-        npm install -g @capacitor/assets
         mkdir -p assets
         cp icons/icon-512.png assets/icon.png
         cp icons/icon-512.png assets/splash.png

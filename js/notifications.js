@@ -503,41 +503,20 @@ class NotificationEngine {
     const localSchedules = [];
     const localReady = this.isNative() && await this.prepareLocalNotifications(false);
 
+    const itemsToSchedule = [];
+
     const addSchedule = (itemId, itemName, category, msLeft) => {
       if (this.prefs[category] === false) return;
       const remaining = Number(msLeft);
       if (!Number.isFinite(remaining) || remaining <= 0) return;
 
       const readyAtMs = now + remaining;
-      const strId = `${farmId}:${itemId}`;
-      let hash = 0;
-      for (let i = 0; i < strId.length; i++) {
-        hash = (hash << 5) - hash + strId.charCodeAt(i);
-        hash |= 0;
-      }
-      const numId = Math.abs(hash);
-
-      if (!this.isNative()) {
-        schedules.push({
-          farm_id: farmId,
-          item_id: String(itemId),
-          item_name: itemName,
-          item_category: category,
-          ready_at: new Date(readyAtMs).toISOString(),
-          notification_sent: false,
-        });
-      }
-
-      if (localReady) {
-        localSchedules.push({
-          id: numId,
-          title: `SFL Pro: ${itemName}`,
-          body: `${itemName} está pronto(a) para você!`,
-          channelId: LOCAL_CHANNEL_ID,
-          schedule: this.localSchedule(readyAtMs),
-          extra: { farmId, itemId: String(itemId), category },
-        });
-      }
+      itemsToSchedule.push({
+        itemId: String(itemId),
+        itemName,
+        category,
+        readyAtMs
+      });
     };
 
     try {
@@ -563,6 +542,71 @@ class NotificationEngine {
       console.error('[Notif] Erro ao montar agendas:', error);
       return;
     }
+
+    const grouped = {};
+    itemsToSchedule.forEach(item => {
+       const minuteBucket = Math.round(item.readyAtMs / 60000);
+       const key = `${item.itemName}_${minuteBucket}`;
+       if (!grouped[key]) {
+           grouped[key] = {
+               itemName: item.itemName,
+               category: item.category,
+               readyAtMs: item.readyAtMs,
+               count: 0,
+               itemIds: []
+           };
+       }
+       grouped[key].count++;
+       grouped[key].itemIds.push(item.itemId);
+       if (item.readyAtMs > grouped[key].readyAtMs) {
+           grouped[key].readyAtMs = item.readyAtMs;
+       }
+    });
+
+    Object.values(grouped).forEach(group => {
+      const { itemName, category, readyAtMs, count, itemIds } = group;
+      
+      const strId = `${farmId}:${itemName}:${Math.round(readyAtMs/60000)}`;
+      let hash = 0;
+      for (let i = 0; i < strId.length; i++) {
+        hash = (hash << 5) - hash + strId.charCodeAt(i);
+        hash |= 0;
+      }
+      const numId = Math.abs(hash);
+      
+      const formattedName = itemName.replace(/\s+/g, '');
+      const imageUrl = `https://sfl.world/img/source/${formattedName}.png`;
+
+      let title = `${itemName} Pronto(a)!`;
+      let body = `${itemName} terminaram e já podem ser coletados(as)!`;
+      if (count > 1) {
+         body = `${count}x ${itemName} terminaram e já podem ser coletados(as)!`;
+      }
+
+      if (!this.isNative()) {
+        schedules.push({
+          farm_id: farmId,
+          item_id: itemIds[0],
+          item_name: itemName,
+          item_category: category,
+          ready_at: new Date(readyAtMs).toISOString(),
+          notification_sent: false,
+        });
+      }
+
+      if (localReady) {
+        localSchedules.push({
+          id: numId,
+          title: title,
+          body: body,
+          channelId: LOCAL_CHANNEL_ID,
+          schedule: this.localSchedule(readyAtMs),
+          largeIcon: imageUrl,
+          attachments: [{ id: "icon", url: imageUrl }],
+          extra: { farmId, category, itemName, count }
+        });
+      }
+    });
 
     const local = this.getLocalPlugin();
     if (localSchedules.length && local) {

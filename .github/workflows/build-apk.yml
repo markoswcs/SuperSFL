@@ -35,7 +35,12 @@ jobs:
 
     - name: Add Android platform
       run: |
+        npm install -g @capacitor/assets
+        mkdir -p assets
+        cp icons/icon-512.png assets/icon.png
+        cp icons/icon-512.png assets/splash.png
         npx cap add android || exit 1
+        npx @capacitor/assets generate --android
         npx cap sync android || exit 1
         cp google-services.json android/app/google-services.json || exit 1
         node -e "const fs = require('fs'); let b = fs.readFileSync('android/build.gradle', 'utf8'); b = b.replace(/dependencies \{/, 'dependencies {\n        classpath \"com.google.gms:google-services:4.4.1\"'); fs.writeFileSync('android/build.gradle', b);"

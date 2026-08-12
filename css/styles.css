@@ -177,6 +177,15 @@ body::before {
   gap: var(--s2);
 }
 
+.app-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
 .app-logo-img {
   width: 32px;
   height: 32px;
@@ -184,6 +193,28 @@ body::before {
   image-rendering: pixelated;
   border-radius: 8px;
   flex-shrink: 0;
+  display: block;
+}
+
+.app-logo-fallback {
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Creator visit button bounce animation */
+.btn-bounce-pulse {
+  animation: supportBounce 0.5s ease-in-out 6 !important;
+  box-shadow: 0 0 24px rgba(16,185,129,0.6) !important;
+}
+
+@keyframes supportBounce {
+  0%, 100% { transform: scale(1); }
+  30%       { transform: scale(1.06) translateY(-4px); }
+  60%       { transform: scale(0.97) translateY(2px); }
 }
 
 .app-logo-text {

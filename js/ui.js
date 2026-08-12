@@ -2171,7 +2171,7 @@ function renderSettingsPage() {
       <div class="sett-card-desc" style="margin-bottom:12px; text-align: center;">
         Gostou do aplicativo? Visite a ilha do desenvolvedor e deixe seu apoio!
       </div>
-      <button class="btn-primary" style="width:100%; padding: 12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; background: var(--emerald);" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/2601876753363557')">
+      <button id="btn-visit-creator" class="btn-primary" style="width:100%; padding: 12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; background: var(--emerald);" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/2601876753363557')">
         <span style="font-size:18px">🏝️</span> Visitar Ilha do Criador
       </button>
     </div>
@@ -3015,8 +3015,40 @@ window.__app.promptManualPurchase = () => {
 
 window.__app.UI = window.__app.UI || {};
 window.__app.UI.promptWalletPosition = () => {
+  // All SFL tradeable items: p2p market + known NFTs/wearables that trade on the marketplace
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
-  const items = Object.keys(p2p).sort();
+  const NFT_ITEMS = [
+    // Collectible Animals & Decorations (NFTs)
+    'Chicken', 'Rooster', 'Pig', 'Sheep', 'Cow', 'Bee', 'Butterfly', 'Flower Fox',
+    // Wearables - common NFTs traded on marketplace
+    'Painter Hat', 'Brown Boots', 'Peasant Skirt', 'White Shirt',
+    'Tattered Jacket', 'Black Farmer Boots', 'Farmer Pants', 'Farmer Shirt',
+    'Pumpkin Shirt', 'Blue Farmer Pants',
+    // Collectibles & limited items
+    'Sunflower Statue', 'Potato Statue', 'Christmas Tree', 'Dog',
+    'Cabbage Boy', 'Pink Flamingo', 'Gnome', 'Scarecrow',
+    'Nancy', 'Kuebiko', 'Lunar Calendar', 'Easter Bunny',
+    'Speed Chicken', 'Rich Chicken', 'Fat Chicken',
+    'Golden Cauliflower', 'Carrot Sword', 'Golden Bonsai',
+    'Wicker Man', 'Rock Golem', 'Immortal Pear',
+    'Peeled Potato', 'Wood Nymph Wendy', 'Cabbage Girl',
+    'Parsnip', 'Nyon Potato', 'Tin Turtle', 'Christmas Snow Globe',
+    'Maneki Neko', 'Squirrel Monkey', 'Black Bear',
+    'Hoot', 'Foreman Beaver', 'Paul', 'Kerri',
+    'Scary Mike', 'Laurie the Chuckle Crow', 'Sir Goldensnout',
+    'Freya Fox', 'Bumpkin Nutcracker', 'White Crow', 'Grinx Hammer',
+    'Genie Lamp', 'Basic Bear', 'Collectible Bear',
+    // Boost items traded
+    'Bale', 'Flag', 'Sunflower Rock', 'Sunflower Tombstone',
+    'Sunflower Gold Statue', 'Goblin Crown', 'Eggplant Bear',
+    // Resources that appear on marketplace
+    'Crimstone', 'Obsidian', 'Sunstone', 'Merino Wool',
+    'Honey', 'Feather', 'Milk', 'Leather', 'Wool',
+  ];
+  // Merge: p2p items first, then unique NFTs not already in p2p
+  const p2pKeys = Object.keys(p2p);
+  const allNftKeys = NFT_ITEMS.filter(n => !p2pKeys.includes(n));
+  const items = [...p2pKeys, ...allNftKeys].sort();
   
   const step1Html = `
     <div id="wallet-step-1" style="padding:16px; font-family:var(--font-sans);">
@@ -3123,25 +3155,17 @@ window.__app.UI.promptWalletPosition = () => {
 
 // ── Creator Island Shortcut ──
 window.__app.UI.goToCreatorIsland = () => {
-  const CREATOR_FARM_ID = 2; // SFL game creator farm
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-    window.Capacitor.Plugins.Browser.open({ url: `https://www.sunflower-land.com/visit/${CREATOR_FARM_ID}` });
-  } else {
-    // Fallback: navigate to settings tab that has visit island option
-    const settingsTab = document.querySelector('[data-tab="settings"]');
-    if (settingsTab) settingsTab.click();
-    // Show a quick modal with the link
-    setTimeout(() => {
-      showModal('🌻 Visitar Ilha', `
-        <div style="padding:20px; text-align:center; font-family:var(--font-sans);">
-          <div style="font-size:48px; margin-bottom:12px;">🌻</div>
-          <div style="font-size:16px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Ilha do Criador</div>
-          <div style="font-size:13px; color:var(--text-tertiary); margin-bottom:20px;">Acesse a fazenda do criador do SFL PRO!</div>
-          <a href="https://www.sunflower-land.com/visit/2" target="_blank" style="display:block; background:var(--amber-subtle); border:1px solid var(--amber); color:var(--amber); border-radius:12px; padding:12px; font-weight:800; font-size:14px; text-decoration:none;">
-            Abrir no Navegador 🔗
-          </a>
-        </div>
-      `);
-    }, 100);
-  }
+  // 1. Switch to settings tab
+  const settingsTab = document.querySelector('[data-tab="settings"]');
+  if (settingsTab) settingsTab.click();
+
+  // 2. After render, scroll to and animate the support button
+  setTimeout(() => {
+    const btn = document.getElementById('btn-visit-creator');
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      btn.classList.add('btn-bounce-pulse');
+      setTimeout(() => btn.classList.remove('btn-bounce-pulse'), 3000);
+    }
+  }, 350);
 };

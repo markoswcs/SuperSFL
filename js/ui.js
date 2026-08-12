@@ -6,12 +6,21 @@ const BUMPKIN_EXP = [0,0,2,22,205,555,1155,2155,3405,5405,7905,10905,14405,18405
  */
 
 import Storage from './storage.js?v=141';
-
 import { EXPANSION_REQUIREMENTS } from './data/expansions.js?v=141';
 import { t } from './i18n.js?v=141';
 import Farm from './farm.js?v=141';
 
-// duplicate removed
+window.openExternal = async (url) => {
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    try {
+      await window.Capacitor.Plugins.Browser.open({ url });
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  } else {
+    window.open(url, '_blank');
+  }
+};
 
 // =====================================================
 // ASSETS & CONFIG
@@ -549,7 +558,7 @@ function renderHome(exchange, prices, parsedFarm) {
                       <div class="profile-id-badge" title="Copiar Link da Fazenda" onclick="navigator.clipboard.writeText('https://sunflower-land.com/play/#/visit/${farmId}'); alert('Link de visita copiado!'); event.stopPropagation();">
                         #${farmId} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-left:2px; opacity:0.7;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                       </div>
-                      <div class="profile-id-badge" title="Visitar Fazenda" onclick="window.open('https://sunflower-land.com/play/#/visit/${farmId}', '_blank'); event.stopPropagation();" style="padding: 4px 6px;">
+                      <div class="profile-id-badge" title="Visitar Fazenda" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/${farmId}', '_blank'); event.stopPropagation();" style="padding: 4px 6px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; opacity:0.7;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                       </div>
                     </div>` : ''}
@@ -1655,23 +1664,23 @@ function renderToolsPage() {
       <div class="section-title">🛠️ External Tools</div>
     </div>
     <div class="tools-grid">
-      <div class="tool-card" onclick="window.open('https://sfl.world/util/p2p-calc', '_blank')">
+      <div class="tool-card" onclick="window.openExternal('https://sfl.world/util/p2p-calc', '_blank')">
         <div class="tool-card-icon">🧮</div>
         <div class="tool-card-title">P2P Calc (Full)</div>
       </div>
-      <div class="tool-card" onclick="window.open('https://sfl.world/util/factions', '_blank')">
+      <div class="tool-card" onclick="window.openExternal('https://sfl.world/util/factions', '_blank')">
         <div class="tool-card-icon">⚔️</div>
         <div class="tool-card-title">Factions</div>
       </div>
-      <div class="tool-card" onclick="window.open('https://sfl.world/tools/skills/', '_blank')">
+      <div class="tool-card" onclick="window.openExternal('https://sfl.world/tools/skills/', '_blank')">
         <div class="tool-card-icon">🧠</div>
         <div class="tool-card-title">Skill Trainer</div>
       </div>
-      <div class="tool-card" onclick="window.open('https://sfl.world/tools/pet-feed-calc/', '_blank')">
+      <div class="tool-card" onclick="window.openExternal('https://sfl.world/tools/pet-feed-calc/', '_blank')">
         <div class="tool-card-icon">🐶</div>
         <div class="tool-card-title">Pet Feed Calc</div>
       </div>
-      <div class="tool-card" onclick="window.open('https://sfl.world/tools/trade/', '_blank')">
+      <div class="tool-card" onclick="window.openExternal('https://sfl.world/tools/trade/', '_blank')">
         <div class="tool-card-icon">📈</div>
         <div class="tool-card-title">Price History</div>
       </div>
@@ -1957,7 +1966,17 @@ function renderSettingsPage() {
       ` : '') : ''}
     </div>
 
-    <div class="sett-footer">
+    <div class="sett-section-title" style="margin-top:24px;">Apoiar Desenvolvedor</div>
+    <div class="sett-card" style="border-color: rgba(34, 197, 94, 0.3);">
+      <div class="sett-card-desc" style="margin-bottom:12px; text-align: center;">
+        Gostou do aplicativo? Visite a ilha do desenvolvedor e deixe seu apoio!
+      </div>
+      <button class="btn-primary" style="width:100%; padding: 12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; background: var(--emerald);" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/ID_DA_FAZENDA')">
+        <span style="font-size:18px">🏝️</span> Visitar Ilha do Criador
+      </button>
+    </div>
+
+    <div class="sett-footer" style="margin-top:24px;">
       🌻 Sunflower Super App v1.0 &nbsp;·&nbsp; Unofficial community tool
     </div>
     

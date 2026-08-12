@@ -25,16 +25,22 @@ window.openExternal = async (url) => {
 // =====================================================
 // ASSETS & CONFIG
 // =====================================================
+window.getImgUrl = function(name) {
+  if (!name) return window.getImgUrl('Sunflower');
+  if (window.SFL_IMAGES && window.SFL_IMAGES[name]) return window.SFL_IMAGES[name];
+  return https://sfl.world/img/source/.png;
+};
+
 const ASSETS = {
   SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/flower_token.webp',
-  COINS: 'https://sfl.world/img/source/coins.png',
-  GEM: 'https://sfl.world/img/source/Gem.png',
+  COINS: window.getImgUrl('coins'),
+  GEM: window.getImgUrl('Gem'),
   VIP: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/vip.webp',
-  SUNFLOWER: 'https://sfl.world/img/source/Sunflower.png',
-  CHICKEN: 'https://sfl.world/img/source/Chicken.png',
+  SUNFLOWER: window.getImgUrl('Sunflower'),
+  CHICKEN: window.getImgUrl('Chicken'),
   ISLAND: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/island.png',
-  MARK: 'https://sfl.world/img/source/Mark.png',
-  APPLE: 'https://sfl.world/img/source/Apple.png'
+  MARK: window.getImgUrl('Mark'),
+  APPLE: window.getImgUrl('Apple')
 };
 
 // =====================================================
@@ -177,7 +183,7 @@ function renderHome(exchange, prices, parsedFarm) {
         <!-- LEFT: Token Price -->
         <div style="flex-shrink:0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <img src="${ASSETS.SFL}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 0 6px rgba(245,158,11,0.5));" onerror="this.src='https://sfl.world/img/source/Flower.png'">
+            <img src="${ASSETS.SFL}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 0 6px rgba(245,158,11,0.5));" onerror="this.src=window.getImgUrl('Flower')">
             <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-tertiary);text-transform:uppercase;">Flower (SFL)</span>
           </div>
           <div style="font-family:var(--font-mono);font-size:clamp(18px,5vw,24px);font-weight:800;color:var(--amber-glow);line-height:1;" data-price-usd>
@@ -241,14 +247,14 @@ function renderHome(exchange, prices, parsedFarm) {
       const activeCrop = parsedFarm.crops.find(c => c.status === 'ready') || nextCrop || parsedFarm.crops[0];
       mainCropName = activeCrop.name;
     }
-    const cropIconUrl = `https://sfl.world/img/source/${mainCropName.replace(/\s+/g, '')}.png`;
+    const cropIconUrl = `${window.getImgUrl(mainCropName.replace(/\s+/g, '')}`;
 
     let mainFruitName = 'Apple';
     if (parsedFarm.fruits && parsedFarm.fruits.length > 0) {
       const activeFruit = parsedFarm.fruits.find(f => f.status === 'ready') || nextFruit || parsedFarm.fruits[0];
       mainFruitName = activeFruit.name;
     }
-    const fruitIconUrl = `https://sfl.world/img/source/${mainFruitName.replace(/\s+/g, '')}.png`;
+    const fruitIconUrl = `${window.getImgUrl(mainFruitName.replace(/\s+/g, '')}`;
 
     const activeAnimalsArr = readyAnimals > 0 ? [...collectAnimalsArr, ...attnAnimalsArr] : parsedFarm.animals;
     const animalTypes = activeAnimalsArr.reduce((acc, a) => {
@@ -447,7 +453,7 @@ function renderHome(exchange, prices, parsedFarm) {
                 {img:'Oil', count: oilReady, total: islandOil.length, label:'Petróleo'},
               ].filter(r => r.total > 0).map(r => `
                 <div title="${r.label}" style="display:flex;align-items:center;gap:4px;background:${r.count>0?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.04)'};border:1px solid ${r.count>0?'rgba(16,185,129,0.3)':'rgba(255,255,255,0.08)'};border-radius:8px;padding:4px 8px;">
-                  <img src="https://sfl.world/img/source/${encodeURIComponent(r.img)}.png" style="width:16px;height:16px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+                  <img src="${window.getImgUrl(r.img)}" style="width:16px;height:16px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
                   <span style="font-size:12px;font-weight:700;color:${r.count>0?'var(--emerald)':'var(--text-secondary)'}">${r.count}/${r.total}</span>
                 </div>
               `).join('')}
@@ -808,7 +814,7 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
           ${resItems.map(item => `
             <div style="text-align:center;position:relative;">
               <div style="width:52px;height:52px;margin:0 auto 6px;background:var(--surface-3);border:1px solid var(--surface-border);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.15);">
-                <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                <img src="${window.getImgUrl(item.name)}" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
                 <span style="font-size:24px;line-height:1;display:none;">📦</span>
               </div>
               <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--text-primary);">${formatNumber(item.amount, 0)}</div>
@@ -897,7 +903,7 @@ function renderFarmItem(item, index) {
   if (item.type === 'building' && item.cooking && item.cooking !== 'Unknown') iconName = item.cooking;
   if (item.type === 'cropMachine' && item.name.includes('(')) iconName = item.name.split('(')[1].replace(')', '');
   
-  const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(iconName)}.png`;
+  const iconUrl = `${window.getImgUrl(iconName)}`;
 
   return `
     <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="animation-delay:${index * 30}ms">
@@ -1060,7 +1066,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         <div class="history-row ${rowClass}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;margin-bottom:8px;position:relative;overflow:hidden;">
           ${isPurchase ? `<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${isAuto ? 'rgb(167,139,250)' : '#3b82f6'};"></div>` : ''}
           <div style="width:40px;height:40px;background:var(--surface-3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.06);">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(entry.item || 'SFL')}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <img src="${window.getImgUrl(entry.item || 'SFL')}" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${entry.item || 'Item'} ${badgeHtml}</div>
@@ -1138,7 +1144,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:12px;">
               <div style="width:36px; height:36px; background:var(--surface-3); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);">
-                <img src="https://sfl.world/img/source/${encodeURIComponent(item.name.replace(/\s+/g, ''))}.png" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src=ASSETS.SUNFLOWER">
+                <img src="${window.getImgUrl(item.name)}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src=ASSETS.SUNFLOWER">
               </div>
               <div>
                 <div style="font-size:15px;font-weight:800;color:var(--text-primary);letter-spacing:0.3px;">${item.name}</div>
@@ -1219,7 +1225,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         <div class="market-card" style="display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <img src="https://sfl.world/img/source/${encodeURIComponent(pos.itemName.replace(/\s+/g, ''))}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
+              <img src="${window.getImgUrl(pos.itemName)}" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
               <div>
                 <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${pos.itemName}</div>
                 <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${pos.qty}</div>
@@ -1316,7 +1322,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid ${item.isPump ? 'rgba(16,185,129,0.4)' : 'var(--surface-border)'};border-radius:14px;margin-bottom:8px;${item.isPump ? 'box-shadow:0 0 12px rgba(16,185,129,0.1);' : ''}">
           <div style="min-width:24px;font-size:13px;font-weight:900;color:${rankColor};text-align:center;">${rank <= 3 ? (rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉') : `#${rank}`}</div>
           <div style="width:42px;height:42px;background:var(--surface-3);border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <img src="${window.getImgUrl(item.name)}" style="width:26px;height:26px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name} ${item.isPump ? '🔥' : ''}</div>
@@ -1450,7 +1456,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         <div class="market-item spring-in" style="display:flex; flex-direction:column; background:var(--surface-2); border:1px solid rgba(255,255,255,0.03); border-radius:16px; opacity:0.7;">
           <div style="padding:12px 14px; display:flex; gap:12px; align-items:center;">
             <div style="width:40px; height:40px; background:var(--surface-3); border-radius:10px; border:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:26px; height:26px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
+              <img src="${window.getImgUrl(item.name)}" style="width:26px; height:26px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
             </div>
             <div style="flex:1; min-width:0;">
               <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name}</div>
@@ -1471,7 +1477,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
           
           <!-- Icon -->
           <div style="width:48px; height:48px; background:var(--surface-3); border-radius:12px; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <img src="https://sfl.world/img/source/${encodeURIComponent(item.name)}.png" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
+            <img src="${window.getImgUrl(item.name)}" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none';">
           </div>
           
           <!-- Stats -->
@@ -2282,15 +2288,15 @@ window.__app.showExpansionModal = () => {
   
   // Base resources image URLs
   const resourceIcons = {
-    'Wood': 'https://sfl.world/img/source/Wood.png',
-    'Stone': 'https://sfl.world/img/source/Stone.png',
-    'Iron': 'https://sfl.world/img/source/Iron.png',
-    'Gold': 'https://sfl.world/img/source/Gold.png',
-    'Crimstone': 'https://sfl.world/img/source/Crimstone.png',
-    'Oil': 'https://sfl.world/img/source/Oil.png',
-    'Gem': 'https://sfl.world/img/source/Gem.png',
-    'Block Buck': 'https://sfl.world/img/source/Block%20Buck.png',
-    'Coins': 'https://sfl.world/img/source/Coins.png',
+    'Wood': window.getImgUrl('Wood'),
+    'Stone': window.getImgUrl('Stone'),
+    'Iron': window.getImgUrl('Iron'),
+    'Gold': window.getImgUrl('Gold'),
+    'Crimstone': window.getImgUrl('Crimstone'),
+    'Oil': window.getImgUrl('Oil'),
+    'Gem': window.getImgUrl('Gem'),
+    'Block Buck': window.getImgUrl('Block Buck'),
+    'Coins': window.getImgUrl('Coins'),
     'SFL': ASSETS.SFL
   };
   
@@ -2408,7 +2414,7 @@ window.__app.showCropsModal = () => {
   }
 
   const itemsHtml = crops.map((crop, i) => {
-    const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(crop.name)}.png`;
+    const iconUrl = `${window.getImgUrl(crop.name)}`;
     let statusColor = 'var(--text-secondary)';
     let statusBg = 'rgba(255,255,255,0.1)';
     let statusText = 'Crescendo';
@@ -2434,7 +2440,7 @@ window.__app.showCropsModal = () => {
           <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">
             Quantidade: <strong style="color:var(--text-primary); font-size:14px;">${crop.amount}x</strong>
           </div>
-          ${crop.fertiliser ? `<div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--emerald); margin-top:6px; font-weight:600;"><img src="https://sfl.world/img/source/${encodeURIComponent(crop.fertiliser)}.png" style="width:18px;height:18px;image-rendering:pixelated;" onerror="this.style.display='none'"> <span style="color:var(--text-primary);">${crop.fertiliser}</span></div>` : ''}
+          ${crop.fertiliser ? `<div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--emerald); margin-top:6px; font-weight:600;"><img src="${window.getImgUrl(crop.fertiliser)}" style="width:18px;height:18px;image-rendering:pixelated;" onerror="this.style.display='none'"> <span style="color:var(--text-primary);">${crop.fertiliser}</span></div>` : ''}
         </div>
         <div style="text-align:right;">
           <div style="font-size:14px; font-weight:700; color:${statusColor}; background:${statusBg}; padding:6px 12px; border-radius:8px; border: 1px solid ${statusColor.replace('var(', 'rgba(').replace(')', ', 0.2)')}; white-space:nowrap;">
@@ -2491,7 +2497,7 @@ window.__app.showCropsModal = () => {
     const byType = {};
     fruits.forEach(f => { byType[f.name] = (byType[f.name] || 0) + 1; });
     const typeChips = Object.entries(byType).map(([name, count]) => {
-      const icon = `https://sfl.world/img/source/${name.replace(/\s+/g, '')}.png`;
+      const icon = `${window.getImgUrl(name.replace(/\s+/g, '')}`;
       return `<div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:4px 12px;">
         <img src="${icon}" style="width:18px;height:18px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
         <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${count}x ${name}</span>
@@ -2499,7 +2505,7 @@ window.__app.showCropsModal = () => {
     }).join('');
 
     const itemsHtml = fruits.map((fruit, i) => {
-      const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(fruit.name)}.png`;
+      const iconUrl = `${window.getImgUrl(fruit.name)}`;
       const isReady = fruit.status === 'ready';
       const isEmpty = parseInt(fruit.harvestsLeft) === 0;
 
@@ -2808,7 +2814,7 @@ window.__app.showCompostModal = () => {
     else if (c.name === 'Compost Bin') composterImg = 'sprout_mix.png';
     
     const imgUrl = `https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/${composterImg}`;
-    const produceImg = isProducing || isReady ? `<img src="https://sfl.world/img/source/${c.type.replace(/\s+/g, '')}.png" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
+    const produceImg = isProducing || isReady ? `<img src="${window.getImgUrl(c.type.replace(/\s+/g, '')}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
 
     return `
       <div style="background:var(--surface-2);border:1px solid var(--surface-border);border-radius:16px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
@@ -2846,7 +2852,7 @@ window.__app.showIslandResourcesModal = () => {
     return;
   }
 
-  const IMG = (name) => `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
+  const IMG = (name) => `${window.getImgUrl(name)}`;
 
   const resourceGroups = [
     {
@@ -3025,7 +3031,7 @@ window.__app.UI.promptWalletPosition = () => {
   const imgUrl = (name) => {
     if (officialImages[name]) return officialImages[name];
     // Fallback if missing from SFL official mapping
-    return `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
+    return `${window.getImgUrl(name)}`;
   };
 
   // Build full list with P2P items and all official SFL items (NFTs/Power-ups)
@@ -3061,7 +3067,7 @@ window.__app.UI.promptWalletPosition = () => {
       <button id="wallet-back-btn" style="background:none; border:none; color:var(--text-tertiary); margin-bottom:12px; cursor:pointer; font-weight:700;">← Voltar</button>
       
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px; background:var(--surface-2); border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-         <img id="wallet-selected-img" src="" style="width:32px; height:32px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
+         <img id="wallet-selected-img" src="" style="width:32px; height:32px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src=window.getImgUrl('Sunflower')">
          <div id="wallet-selected-name" style="font-size:16px; font-weight:900; color:var(--text-primary);"></div>
       </div>
 
@@ -3106,7 +3112,7 @@ window.__app.UI.promptWalletPosition = () => {
         const isNotP2p = !p2p[item];
         return `
         <div class="wallet-search-item" data-name="${item}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px; cursor:pointer; transition:background 0.15s;">
-          <img src="${url}" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated; flex-shrink:0;" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
+          <img src="${url}" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated; flex-shrink:0;" onerror="this.src=window.getImgUrl('Sunflower')">
           <div style="flex:1; min-width:0;">
             <div style="font-size:14px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item}</div>
             ${isNotP2p ? '<div style="font-size:10px; color:var(--amber); font-weight:700;">🏆 NFT Colecionável</div>' : ''}

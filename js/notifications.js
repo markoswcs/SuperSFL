@@ -517,14 +517,16 @@ class NotificationEngine {
       }
       const numId = Math.abs(hash);
 
-      schedules.push({
-        farm_id: farmId,
-        item_id: String(itemId),
-        item_name: itemName,
-        item_category: category,
-        ready_at: new Date(readyAtMs).toISOString(),
-        notification_sent: false,
-      });
+      if (!this.isNative()) {
+        schedules.push({
+          farm_id: farmId,
+          item_id: String(itemId),
+          item_name: itemName,
+          item_category: category,
+          ready_at: new Date(readyAtMs).toISOString(),
+          notification_sent: false,
+        });
+      }
 
       if (localReady) {
         localSchedules.push({

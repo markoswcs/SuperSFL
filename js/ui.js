@@ -28,7 +28,7 @@ window.openExternal = async (url) => {
 window.getImgUrl = function(name) {
   if (!name) return window.getImgUrl('Sunflower');
   if (window.SFL_IMAGES && window.SFL_IMAGES[name]) return window.SFL_IMAGES[name];
-  return https://sfl.world/img/source/.png;
+  return `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
 };
 
 const ASSETS = {

@@ -3048,7 +3048,7 @@ window.__app.UI.promptWalletPosition = () => {
         el.addEventListener('click', () => {
           selectedItemName = el.dataset.name;
           document.getElementById('wallet-selected-name').textContent = selectedItemName;
-          document.getElementById('wallet-selected-img').src = \`https://sfl.world/img/source/\${encodeURIComponent(selectedItemName.replace(/\\s+/g, ''))}.png\`;
+          document.getElementById('wallet-selected-img').src = `https://sfl.world/img/source/${encodeURIComponent(selectedItemName.replace(/\s+/g, ''))}.png`;
           step1.style.display = 'none';
           step2.style.display = 'block';
         });

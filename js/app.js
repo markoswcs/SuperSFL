@@ -265,14 +265,6 @@ async function init() {
     State,
   };
 
-  // Unregister Service Workers to prevent caching bugs during dev
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister();
-      }
-    });
-  }
 
   // Bind UI Events
   bindNavigation();
@@ -290,7 +282,7 @@ async function init() {
 
   // First-run Push Notification Prompt
   setTimeout(() => {
-    const hasSeenPrompt = localStorage.getItem('sfl_seen_push_prompt');
+    const hasSeenPrompt = localStorage.getItem('sfl_seen_push_prompt_v2');
     if (!hasSeenPrompt && window.__app.UI && window.__app.UI.showModal) {
       const promptHtml = `
           <div style="text-align:center; padding: 10px;">
@@ -310,7 +302,7 @@ async function init() {
         
         if (btnActive) btnActive.addEventListener('click', async () => {
           window.__app.UI.hideModal();
-          localStorage.setItem('sfl_seen_push_prompt', 'true');
+          localStorage.setItem('sfl_seen_push_prompt_v2', 'true');
           if (window.__app?.Notifications) {
             window.__app.UI.showToast('Processando...', 'info');
             await window.__app.Notifications.setPref('master', true);
@@ -323,7 +315,7 @@ async function init() {
         
         if (btnSkip) btnSkip.addEventListener('click', () => {
            window.__app.UI.hideModal();
-           localStorage.setItem('sfl_seen_push_prompt', 'true');
+           localStorage.setItem('sfl_seen_push_prompt_v2', 'true');
         });
       }, 100);
     }

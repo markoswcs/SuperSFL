@@ -789,6 +789,65 @@ setInterval(() => {
 }, 1000);
 
 // =====================================================
+// WALLET MANAGEMENT
+// =====================================================
+
+function getWalletPositions() {
+  if (!State.farmId) return [];
+  try {
+    return JSON.parse(localStorage.getItem(`sfl_wallet_${State.farmId}`) || '[]');
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveWalletPositions(positions) {
+  if (!State.farmId) return;
+  localStorage.setItem(`sfl_wallet_${State.farmId}`, JSON.stringify(positions));
+}
+
+function addWalletPosition(itemName, qty, totalCostSfl) {
+  const positions = getWalletPositions();
+  const existing = positions.find(p => p.itemName === itemName);
+  const numericQty = parseFloat(qty);
+  const numericCost = parseFloat(totalCostSfl);
+  
+  if (existing) {
+    existing.qty += numericQty;
+    existing.totalCostSfl += numericCost;
+    existing.averagePrice = existing.totalCostSfl / existing.qty;
+  } else {
+    positions.push({
+      itemName,
+      qty: numericQty,
+      totalCostSfl: numericCost,
+      averagePrice: numericCost / numericQty
+    });
+  }
+  saveWalletPositions(positions);
+  if (State.currentTab === 'market') {
+    if (window.__app.UI && window.__app.UI.renderMarketFiltered) {
+      window.__app.UI.renderMarketFiltered(document.querySelector('#market-search')?.value || '', 'wallet');
+    }
+  }
+}
+
+function removeWalletPosition(itemName) {
+  let positions = getWalletPositions();
+  positions = positions.filter(p => p.itemName !== itemName);
+  saveWalletPositions(positions);
+  if (State.currentTab === 'market') {
+    if (window.__app.UI && window.__app.UI.renderMarketFiltered) {
+      window.__app.UI.renderMarketFiltered(document.querySelector('#market-search')?.value || '', 'wallet');
+    }
+  }
+}
+
+window.__app.getWalletPositions = getWalletPositions;
+window.__app.addWalletPosition = addWalletPosition;
+window.__app.removeWalletPosition = removeWalletPosition;
+
+// =====================================================
 // BOOTSTRAP
 // =====================================================
 

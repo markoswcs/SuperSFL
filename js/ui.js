@@ -1063,6 +1063,162 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
       ${listHtml}
     `);
     return;
+    return;
+  }
+
+  // ── INVENTORY filter: show current holdings and their market value ──
+  if (filter === 'inventory') {
+    const rawInv = window.__app?.State?.parsedFarm?.rawInventory || {};
+    let totalSflValue = 0;
+    
+    const inventoryList = Object.entries(rawInv)
+      .map(([name, qty]) => {
+        const priceInSfl = p2p[name] || 0;
+        const totalValue = priceInSfl * qty;
+        totalSflValue += totalValue;
+        return { name, qty, priceInSfl, totalValue };
+      })
+      .filter(item => item.totalValue > 0 || search.trim() !== '')
+      .filter(item => search.trim() === '' || item.name.toLowerCase().includes(search.toLowerCase()))
+      .sort((a, b) => b.totalValue - a.totalValue); // Sort by highest value
+      
+    if (inventoryList.length === 0) {
+      setHtml('#market-grid', `
+        <div class="empty-state" style="grid-column:1/-1">
+          <span class="empty-state-icon">📦</span>
+          <div class="empty-state-title">Nenhum recurso de valor encontrado</div>
+        </div>
+      `);
+      return;
+    }
+
+    const listHtml = inventoryList.map(item => {
+      const usdTotal = item.totalValue * _sflUsd;
+      return `
+        <div class="market-card" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="https://sfl.world/img/source/${encodeURIComponent(item.name.replace(/\s+/g, ''))}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
+              <div>
+                <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name}</div>
+                <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${item.qty}</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:auto; padding-top:8px; border-top:1px solid var(--surface-border); display:flex; justify-content:space-between; align-items:baseline;">
+            <div style="font-size:10px; color:var(--text-tertiary);">Valor Total:</div>
+            <div style="text-align:right;">
+              <div style="font-size:14px; font-weight:800; color:var(--amber-glow); line-height:1;">${item.totalValue.toFixed(4)} SFL</div>
+              <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">$${usdTotal.toFixed(4)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const totalUsdValue = totalSflValue * _sflUsd;
+    setHtml('#market-grid', `
+      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Patrimônio (Inventário)</div>
+          <div style="font-size:22px;font-weight:900;color:var(--amber-glow);">${totalSflValue.toFixed(4)} SFL</div>
+          <div style="font-size:13px;color:var(--emerald); font-weight:700; margin-top:2px;">$${totalUsdValue.toFixed(4)} USD</div>
+        </div>
+      </div>
+      ${listHtml}
+    `);
+    return;
+  }
+
+  // ── WALLET filter: manual portfolio tracking ──
+  if (filter === 'wallet') {
+    let positions = [];
+    if (window.__app && window.__app.getWalletPositions) {
+      positions = window.__app.getWalletPositions();
+    }
+    
+    if (search.trim() !== '') {
+      positions = positions.filter(p => p.itemName.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    if (positions.length === 0) {
+      setHtml('#market-grid', `
+        <div class="empty-state" style="grid-column:1/-1">
+          <span class="empty-state-icon">💳</span>
+          <div class="empty-state-title">Sua Carteira está Vazia</div>
+          <div class="empty-state-sub" style="margin-top:8px;">
+            Registre suas compras e investimentos para acompanhar lucros e prejuízos.
+          </div>
+          <button onclick="window.__app.UI.promptWalletPosition()" style="margin-top:16px; background:var(--emerald); color:var(--surface-1); border:none; padding:8px 16px; border-radius:8px; font-weight:800; cursor:pointer;">+ Registrar Investimento</button>
+        </div>
+      `);
+      return;
+    }
+
+    let totalInvested = 0;
+    let totalLiveValue = 0;
+
+    const listHtml = positions.map(pos => {
+      const livePrice = p2p[pos.itemName] || 0;
+      const liveTotal = livePrice * pos.qty;
+      const profit = liveTotal - pos.totalCostSfl;
+      const pctChange = pos.totalCostSfl > 0 ? (profit / pos.totalCostSfl) * 100 : 0;
+      
+      totalInvested += pos.totalCostSfl;
+      totalLiveValue += liveTotal;
+
+      const isPositive = profit >= 0;
+      const valColor = isPositive ? 'var(--emerald)' : 'var(--coral)';
+      const valSign = isPositive ? '+' : '';
+
+      return `
+        <div class="market-card" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="https://sfl.world/img/source/${encodeURIComponent(pos.itemName.replace(/\s+/g, ''))}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
+              <div>
+                <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${pos.itemName}</div>
+                <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${pos.qty}</div>
+              </div>
+            </div>
+            <button onclick="if(confirm('Remover ${pos.itemName} da carteira?')) window.__app.removeWalletPosition('${pos.itemName}')" style="background:none; border:none; color:var(--text-tertiary); font-size:18px; cursor:pointer; padding:0 4px;">&times;</button>
+          </div>
+          
+          <div style="margin-top:auto; padding-top:8px; border-top:1px solid var(--surface-border); display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div>
+              <div style="font-size:10px; color:var(--text-tertiary);">Pago (Médio):</div>
+              <div style="font-size:12px; font-weight:700; color:var(--text-secondary);">${pos.averagePrice.toFixed(4)} SFL</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px; color:var(--text-tertiary);">Preço Atual:</div>
+              <div style="font-size:12px; font-weight:700; color:var(--text-primary);">${livePrice.toFixed(4)} SFL</div>
+            </div>
+            <div style="grid-column:1/-1; padding-top:6px; border-top:1px dashed var(--surface-border); display:flex; justify-content:space-between; align-items:baseline;">
+              <div style="font-size:10px; color:var(--text-tertiary);">Lucro (P&L):</div>
+              <div style="font-size:14px; font-weight:800; color:${valColor};">${valSign}${profit.toFixed(3)} SFL <span style="font-size:10px;">(${valSign}${pctChange.toFixed(1)}%)</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const totalProfit = totalLiveValue - totalInvested;
+    const totalPct = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+    
+    setHtml('#market-grid', `
+      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Carteira (P&L Aberto)</div>
+          <div style="font-size:22px;font-weight:900;color:${totalProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(3)} SFL</div>
+          <div style="font-size:12px;color:var(--text-secondary); margin-top:2px;">Total Investido: ${totalInvested.toFixed(2)} SFL</div>
+        </div>
+        <div style="text-align:right;">
+          <button onclick="window.__app.UI.promptWalletPosition()" style="background:var(--emerald-subtle);border:1px solid var(--emerald);color:var(--emerald);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Registrar</button>
+        </div>
+      </div>
+      ${listHtml}
+    `);
+    return;
   }
 
   let entries = [];
@@ -2810,5 +2966,55 @@ window.__app.promptManualPurchase = () => {
     window.__app.UI.renderMarketFiltered(searchVal, 'history');
   } else {
     window.location.reload();
+  }
+};
+
+window.__app.UI = window.__app.UI || {};
+window.__app.UI.promptWalletPosition = () => {
+  const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
+  const items = Object.keys(p2p).sort();
+  
+  const optionsHtml = items.map(i => `<option value="${i}">`).join('');
+  
+  const modalHtml = `
+    <div style="padding:16px; font-family:var(--font-sans);">
+      <h3 style="margin-top:0; color:var(--text-primary); font-weight:900;">Registrar Investimento</h3>
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Nome do Item (em Inglês)</label>
+        <input type="text" id="wallet-item-name" list="wallet-items-list" placeholder="Ex: Wood, Barley" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
+        <datalist id="wallet-items-list">${optionsHtml}</datalist>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Quantidade Comprada</label>
+        <input type="number" id="wallet-item-qty" placeholder="Ex: 5000" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Custo Total (SFL)</label>
+        <input type="number" step="0.0001" id="wallet-item-cost" placeholder="Ex: 25.50" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
+      </div>
+      <button id="wallet-save-btn" style="width:100%; padding:12px; border-radius:12px; background:var(--emerald); color:white; font-weight:800; border:none; cursor:pointer;">Salvar na Carteira</button>
+    </div>
+  `;
+  
+  if (window.__app.UI.showModal) {
+    window.__app.UI.showModal(modalHtml);
+    
+    document.getElementById('wallet-save-btn').addEventListener('click', () => {
+      let name = document.getElementById('wallet-item-name').value;
+      const qty = parseFloat(document.getElementById('wallet-item-qty').value);
+      const cost = parseFloat(document.getElementById('wallet-item-cost').value);
+      
+      if (!name || isNaN(qty) || qty <= 0 || isNaN(cost) || cost <= 0) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+      
+      name = name.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      
+      if (window.__app.addWalletPosition) {
+        window.__app.addWalletPosition(name, qty, cost);
+        window.__app.UI.hideModal();
+      }
+    });
   }
 };

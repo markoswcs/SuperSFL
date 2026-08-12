@@ -1971,7 +1971,7 @@ function renderSettingsPage() {
       <div class="sett-card-desc" style="margin-bottom:12px; text-align: center;">
         Gostou do aplicativo? Visite a ilha do desenvolvedor e deixe seu apoio!
       </div>
-      <button class="btn-primary" style="width:100%; padding: 12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; background: var(--emerald);" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/ID_DA_FAZENDA')">
+      <button class="btn-primary" style="width:100%; padding: 12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; background: var(--emerald);" onclick="window.openExternal('https://sunflower-land.com/play/#/visit/2601876753363557')">
         <span style="font-size:18px">🏝️</span> Visitar Ilha do Criador
       </button>
     </div>

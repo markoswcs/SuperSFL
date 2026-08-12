@@ -940,7 +940,7 @@ function renderMarketPage(prices, exchange) {
   }
   _allPrices = p2p;
 
-  renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'portfolio');
+  renderMarketFiltered($('#market-search')?.value ?? '', $('#market-filter-active')?.dataset?.filter ?? 'inventory');
 
   const settingsContainer = $('#market-settings-container');
   if (settingsContainer) {
@@ -948,7 +948,7 @@ function renderMarketPage(prices, exchange) {
   }
 }
 
-function renderMarketFiltered(search = '', filter = 'portfolio') {
+function renderMarketFiltered(search = '', filter = 'inventory') {
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
   let history = {};
   let alerts = [];
@@ -1094,22 +1094,28 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
 
     const listHtml = inventoryList.map(item => {
       const usdTotal = item.totalValue * _sflUsd;
+      const sflFmt = item.totalValue >= 1 ? item.totalValue.toFixed(2) : item.totalValue.toFixed(4);
+      const usdFmt = usdTotal >= 1 ? usdTotal.toFixed(2) : usdTotal.toFixed(4);
+      const qtyFmt = item.qty >= 1000 ? (item.qty/1000).toFixed(1) + 'k' : item.qty;
+      
       return `
-        <div class="market-card" style="display:flex; flex-direction:column; gap:8px;">
+        <div class="market-card" style="display:flex; flex-direction:column; gap:10px; padding:12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <img src="https://sfl.world/img/source/${encodeURIComponent(item.name.replace(/\s+/g, ''))}.png" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; background:var(--surface-3); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);">
+                <img src="https://sfl.world/img/source/${encodeURIComponent(item.name.replace(/\s+/g, ''))}.png" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src=ASSETS.SUNFLOWER">
+              </div>
               <div>
-                <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${item.name}</div>
-                <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${item.qty}</div>
+                <div style="font-size:15px;font-weight:800;color:var(--text-primary);letter-spacing:0.3px;">${item.name}</div>
+                <div style="font-size:12px;color:var(--text-tertiary); font-weight:600;">Qtd: <span style="color:var(--text-secondary);">${item.qty}</span></div>
               </div>
             </div>
           </div>
-          <div style="margin-top:auto; padding-top:8px; border-top:1px solid var(--surface-border); display:flex; justify-content:space-between; align-items:baseline;">
-            <div style="font-size:10px; color:var(--text-tertiary);">Valor Total:</div>
+          <div style="padding-top:10px; border-top:1px dashed rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Patrimônio</div>
             <div style="text-align:right;">
-              <div style="font-size:14px; font-weight:800; color:var(--amber-glow); line-height:1;">${item.totalValue.toFixed(4)} SFL</div>
-              <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">$${usdTotal.toFixed(4)}</div>
+              <div style="font-size:16px; font-weight:900; color:var(--amber-glow); line-height:1; filter:drop-shadow(0 0 8px rgba(245,158,11,0.2));">${sflFmt} SFL</div>
+              <div style="font-size:11px; font-weight:700; color:var(--emerald); margin-top:3px;">$${usdFmt} USD</div>
             </div>
           </div>
         </div>
@@ -1117,12 +1123,15 @@ function renderMarketFiltered(search = '', filter = 'portfolio') {
     }).join('');
 
     const totalUsdValue = totalSflValue * _sflUsd;
+    const headerSfl = totalSflValue >= 1 ? totalSflValue.toFixed(2) : totalSflValue.toFixed(4);
+    const headerUsd = totalUsdValue >= 1 ? totalUsdValue.toFixed(2) : totalUsdValue.toFixed(4);
+    
     setHtml('#market-grid', `
-      <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="grid-column:1/-1;margin-bottom:16px;padding:16px;background:linear-gradient(145deg, var(--surface-2) 0%, rgba(30,41,59,0.8) 100%);border:1px solid rgba(245,158,11,0.2);border-radius:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 16px rgba(0,0,0,0.2);">
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Patrimônio (Inventário)</div>
-          <div style="font-size:22px;font-weight:900;color:var(--amber-glow);">${totalSflValue.toFixed(4)} SFL</div>
-          <div style="font-size:13px;color:var(--emerald); font-weight:700; margin-top:2px;">$${totalUsdValue.toFixed(4)} USD</div>
+          <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px; margin-bottom:4px;">💰 Valor do Inventário</div>
+          <div style="font-size:26px;font-weight:900;color:var(--amber-glow); letter-spacing:-0.5px; filter:drop-shadow(0 0 10px rgba(245,158,11,0.3));">${headerSfl} SFL</div>
+          <div style="font-size:14px;color:var(--emerald); font-weight:800; margin-top:2px;">$${headerUsd} USD</div>
         </div>
       </div>
       ${listHtml}
@@ -2974,45 +2983,98 @@ window.__app.UI.promptWalletPosition = () => {
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
   const items = Object.keys(p2p).sort();
   
-  const optionsHtml = items.map(i => `<option value="${i}">`).join('');
-  
-  const modalHtml = `
-    <div style="padding:16px; font-family:var(--font-sans);">
-      <h3 style="margin-top:0; color:var(--text-primary); font-weight:900;">Registrar Investimento</h3>
+  const step1Html = `
+    <div id="wallet-step-1" style="padding:16px; font-family:var(--font-sans);">
+      <h3 style="margin-top:0; color:var(--text-primary); font-weight:900;">1. Selecione o Item</h3>
+      <div style="margin-bottom:12px; position:relative;">
+        <input type="text" id="wallet-search-input" placeholder="Pesquisar..." style="width:100%; padding:12px 12px 12px 36px; border-radius:12px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary); font-size:14px;">
+        <span style="position:absolute; left:12px; top:12px; opacity:0.5;">🔍</span>
+      </div>
+      <div id="wallet-search-results" style="max-height:40vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+      </div>
+    </div>
+  `;
+
+  const step2Html = `
+    <div id="wallet-step-2" style="padding:16px; font-family:var(--font-sans); display:none;">
+      <button id="wallet-back-btn" style="background:none; border:none; color:var(--text-tertiary); margin-bottom:12px; cursor:pointer; font-weight:700;">← Voltar</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px; background:var(--surface-2); border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+         <img id="wallet-selected-img" src="" style="width:32px; height:32px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
+         <div id="wallet-selected-name" style="font-size:16px; font-weight:900; color:var(--text-primary);"></div>
+      </div>
+
       <div style="margin-bottom:12px;">
-        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Nome do Item (em Inglês)</label>
-        <input type="text" id="wallet-item-name" list="wallet-items-list" placeholder="Ex: Wood, Barley" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
-        <datalist id="wallet-items-list">${optionsHtml}</datalist>
+        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px; font-weight:700;">Quantidade Comprada</label>
+        <input type="number" id="wallet-item-qty" placeholder="Ex: 5000" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary); font-size:16px; font-weight:800;">
       </div>
-      <div style="margin-bottom:12px;">
-        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Quantidade Comprada</label>
-        <input type="number" id="wallet-item-qty" placeholder="Ex: 5000" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
+      
+      <div style="margin-bottom:20px;">
+        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px; font-weight:700;">Custo Total (em SFL)</label>
+        <input type="number" step="0.0001" id="wallet-item-cost" placeholder="Ex: 25.50" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary); font-size:16px; font-weight:800;">
       </div>
-      <div style="margin-bottom:16px;">
-        <label style="display:block; font-size:12px; color:var(--text-tertiary); margin-bottom:4px;">Custo Total (SFL)</label>
-        <input type="number" step="0.0001" id="wallet-item-cost" placeholder="Ex: 25.50" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface-border); background:var(--surface-1); color:var(--text-primary);">
-      </div>
-      <button id="wallet-save-btn" style="width:100%; padding:12px; border-radius:12px; background:var(--emerald); color:white; font-weight:800; border:none; cursor:pointer;">Salvar na Carteira</button>
+      
+      <button id="wallet-save-btn" style="width:100%; padding:14px; border-radius:12px; background:var(--emerald); color:white; font-weight:900; font-size:16px; border:none; cursor:pointer;">Confirmar Investimento</button>
     </div>
   `;
   
   if (window.__app.UI.showModal) {
-    window.__app.UI.showModal(modalHtml);
+    window.__app.UI.showModal(step1Html + step2Html);
+    
+    const searchInput = document.getElementById('wallet-search-input');
+    const resultsContainer = document.getElementById('wallet-search-results');
+    const step1 = document.getElementById('wallet-step-1');
+    const step2 = document.getElementById('wallet-step-2');
+    
+    let selectedItemName = '';
+    
+    const renderResults = (query) => {
+      const q = query.toLowerCase().trim();
+      const filtered = items.filter(i => i.toLowerCase().includes(q)).slice(0, 50);
+      
+      if (filtered.length === 0) {
+        resultsContainer.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-tertiary); font-size:14px;">Nenhum item encontrado</div>';
+        return;
+      }
+      
+      resultsContainer.innerHTML = filtered.map(item => `
+        <div class="wallet-search-item" data-name="${item}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px; cursor:pointer;">
+          <img src="https://sfl.world/img/source/${encodeURIComponent(item.replace(/\s+/g, ''))}.png" style="width:24px; height:24px; object-fit:contain; image-rendering:pixelated;" onerror="this.src='https://sfl.world/img/source/Sunflower.png'">
+          <div style="font-size:14px; font-weight:700; color:var(--text-primary);">${item}</div>
+        </div>
+      `).join('');
+      
+      document.querySelectorAll('.wallet-search-item').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedItemName = el.dataset.name;
+          document.getElementById('wallet-selected-name').textContent = selectedItemName;
+          document.getElementById('wallet-selected-img').src = \`https://sfl.world/img/source/\${encodeURIComponent(selectedItemName.replace(/\\s+/g, ''))}.png\`;
+          step1.style.display = 'none';
+          step2.style.display = 'block';
+        });
+      });
+    };
+    
+    renderResults('');
+    
+    searchInput.addEventListener('input', (e) => renderResults(e.target.value));
+    
+    document.getElementById('wallet-back-btn').addEventListener('click', () => {
+      step2.style.display = 'none';
+      step1.style.display = 'block';
+    });
     
     document.getElementById('wallet-save-btn').addEventListener('click', () => {
-      let name = document.getElementById('wallet-item-name').value;
       const qty = parseFloat(document.getElementById('wallet-item-qty').value);
       const cost = parseFloat(document.getElementById('wallet-item-cost').value);
       
-      if (!name || isNaN(qty) || qty <= 0 || isNaN(cost) || cost <= 0) {
+      if (!selectedItemName || isNaN(qty) || qty <= 0 || isNaN(cost) || cost <= 0) {
         alert("Preencha todos os campos corretamente.");
         return;
       }
       
-      name = name.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-      
       if (window.__app.addWalletPosition) {
-        window.__app.addWalletPosition(name, qty, cost);
+        window.__app.addWalletPosition(selectedItemName, qty, cost);
         window.__app.UI.hideModal();
       }
     });

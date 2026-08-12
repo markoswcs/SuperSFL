@@ -247,14 +247,14 @@ function renderHome(exchange, prices, parsedFarm) {
       const activeCrop = parsedFarm.crops.find(c => c.status === 'ready') || nextCrop || parsedFarm.crops[0];
       mainCropName = activeCrop.name;
     }
-    const cropIconUrl = `${window.getImgUrl(mainCropName.replace(/\s+/g, '')}`;
+    const cropIconUrl = `${window.getImgUrl(mainCropName.replace(/\s+/g, ''))}`;
 
     let mainFruitName = 'Apple';
     if (parsedFarm.fruits && parsedFarm.fruits.length > 0) {
       const activeFruit = parsedFarm.fruits.find(f => f.status === 'ready') || nextFruit || parsedFarm.fruits[0];
       mainFruitName = activeFruit.name;
     }
-    const fruitIconUrl = `${window.getImgUrl(mainFruitName.replace(/\s+/g, '')}`;
+    const fruitIconUrl = `${window.getImgUrl(mainFruitName.replace(/\s+/g, ''))}`;
 
     const activeAnimalsArr = readyAnimals > 0 ? [...collectAnimalsArr, ...attnAnimalsArr] : parsedFarm.animals;
     const animalTypes = activeAnimalsArr.reduce((acc, a) => {
@@ -2497,7 +2497,7 @@ window.__app.showCropsModal = () => {
     const byType = {};
     fruits.forEach(f => { byType[f.name] = (byType[f.name] || 0) + 1; });
     const typeChips = Object.entries(byType).map(([name, count]) => {
-      const icon = `${window.getImgUrl(name.replace(/\s+/g, '')}`;
+      const icon = `${window.getImgUrl(name.replace(/\s+/g, ''))}`;
       return `<div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:4px 12px;">
         <img src="${icon}" style="width:18px;height:18px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'">
         <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${count}x ${name}</span>
@@ -2814,7 +2814,7 @@ window.__app.showCompostModal = () => {
     else if (c.name === 'Compost Bin') composterImg = 'sprout_mix.png';
     
     const imgUrl = `https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/composters/${composterImg}`;
-    const produceImg = isProducing || isReady ? `<img src="${window.getImgUrl(c.type.replace(/\s+/g, '')}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
+    const produceImg = isProducing || isReady ? `<img src="${window.getImgUrl(c.type.replace(/\s+/g, ''))}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px;">` : '';
 
     return `
       <div style="background:var(--surface-2);border:1px solid var(--surface-border);border-radius:16px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">

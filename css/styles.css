@@ -178,9 +178,12 @@ body::before {
 }
 
 .app-logo-img {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .app-logo-text {
@@ -232,6 +235,39 @@ body::before {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Creator Island Shortcut Button */
+.btn-creator-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(16,185,129,0.1) 100%);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  animation: creatorBounce 2.2s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-creator-shortcut:hover {
+  animation: none;
+  transform: scale(1.15) rotate(-5deg);
+  box-shadow: 0 0 16px rgba(245,158,11,0.5);
+  border-color: var(--amber);
+}
+
+@keyframes creatorBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20%       { transform: translateY(-5px) rotate(-8deg); }
+  40%       { transform: translateY(0) rotate(0deg); }
+  60%       { transform: translateY(-3px) rotate(4deg); }
+  80%       { transform: translateY(0) rotate(0deg); }
+}
+
 
 .sync-icon {
   width: 14px;

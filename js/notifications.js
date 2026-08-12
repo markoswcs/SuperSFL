@@ -451,6 +451,8 @@ class NotificationEngine {
             title,
             body: options.body || '',
             channelId: LOCAL_CHANNEL_ID,
+            largeIcon: options.largeIcon || 'ic_launcher',
+            smallIcon: 'ic_launcher',
             schedule: this.localSchedule(Date.now() + 250),
           }],
         });
@@ -602,8 +604,9 @@ class NotificationEngine {
           channelId: LOCAL_CHANNEL_ID,
           schedule: this.localSchedule(readyAtMs),
           largeIcon: imageUrl,
-          attachments: [{ id: "icon", url: imageUrl }],
-          extra: { farmId, category, itemName, count }
+          smallIcon: 'ic_launcher',
+          attachments: [{ id: 'icon', url: imageUrl }],
+          extra: { farmId, category, itemName, count, imageUrl }
         });
       }
     });

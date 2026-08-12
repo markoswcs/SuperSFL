@@ -957,6 +957,41 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
     alerts = JSON.parse(localStorage.getItem('sfl_price_alerts') || '[]');
   } catch(e) {}
 
+  // Auto-snapshot: record current prices if no history or if snapshot is older than 1h
+  try {
+    const snapshotKey = 'prices_snapshot_v2';
+    const existing = JSON.parse(localStorage.getItem(snapshotKey) || 'null');
+    const now = Date.now();
+    if (!existing || (now - existing.ts) > 3600000) {
+      // Persist previous snapshot as history before overwriting
+      if (existing && existing.prices) {
+        const newHistory = {};
+        Object.entries(p2p).forEach(([name, cur]) => {
+          const prev = existing.prices[name];
+          if (prev && prev > 0) {
+            const trend = cur > prev ? 'up' : (cur < prev ? 'down' : 'stable');
+            newHistory[name] = { prev, trend, max: Math.max(cur, prev) };
+          }
+        });
+        localStorage.setItem('prices_history', JSON.stringify(newHistory));
+        history = newHistory;
+      }
+      localStorage.setItem(snapshotKey, JSON.stringify({ ts: now, prices: p2p }));
+    } else if (existing && existing.prices) {
+      // Build live comparison from snapshot vs current
+      const liveHistory = {};
+      Object.entries(p2p).forEach(([name, cur]) => {
+        const prev = existing.prices[name];
+        if (prev && prev > 0 && prev !== cur) {
+          const trend = cur > prev ? 'up' : 'down';
+          liveHistory[name] = { prev, trend, max: Math.max(cur, prev) };
+        }
+      });
+      // Merge: live comparison overrides stored history
+      history = { ...history, ...liveHistory };
+    }
+  } catch(e) {}
+
   if (filter === 'history') {
     let salesLog = [];
     try {
@@ -3018,8 +3053,11 @@ window.__app.UI.promptWalletPosition = () => {
     </div>
   `;
   
-  if (window.__app.UI.showModal) {
-    window.__app.UI.showModal(step1Html + step2Html);
+  // Use the local showModal directly (exported on __app.UI but also accessible as local fn)
+  const _showModal = (typeof showModal === 'function') ? showModal : window.__app.UI.showModal;
+  const _hideModal = (typeof hideModal === 'function') ? hideModal : window.__app.UI.hideModal;
+  if (_showModal) {
+    _showModal('💳 Registrar Investimento', step1Html + step2Html);
     
     const searchInput = document.getElementById('wallet-search-input');
     const resultsContainer = document.getElementById('wallet-search-results');
@@ -3075,8 +3113,35 @@ window.__app.UI.promptWalletPosition = () => {
       
       if (window.__app.addWalletPosition) {
         window.__app.addWalletPosition(selectedItemName, qty, cost);
-        window.__app.UI.hideModal();
+        _hideModal();
+        // Refresh wallet view
+        renderMarketFiltered('', 'wallet');
       }
     });
+  }
+};
+
+// ── Creator Island Shortcut ──
+window.__app.UI.goToCreatorIsland = () => {
+  const CREATOR_FARM_ID = 2; // SFL game creator farm
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    window.Capacitor.Plugins.Browser.open({ url: `https://www.sunflower-land.com/visit/${CREATOR_FARM_ID}` });
+  } else {
+    // Fallback: navigate to settings tab that has visit island option
+    const settingsTab = document.querySelector('[data-tab="settings"]');
+    if (settingsTab) settingsTab.click();
+    // Show a quick modal with the link
+    setTimeout(() => {
+      showModal('🌻 Visitar Ilha', `
+        <div style="padding:20px; text-align:center; font-family:var(--font-sans);">
+          <div style="font-size:48px; margin-bottom:12px;">🌻</div>
+          <div style="font-size:16px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Ilha do Criador</div>
+          <div style="font-size:13px; color:var(--text-tertiary); margin-bottom:20px;">Acesse a fazenda do criador do SFL PRO!</div>
+          <a href="https://www.sunflower-land.com/visit/2" target="_blank" style="display:block; background:var(--amber-subtle); border:1px solid var(--amber); color:var(--amber); border-radius:12px; padding:12px; font-weight:800; font-size:14px; text-decoration:none;">
+            Abrir no Navegador 🔗
+          </a>
+        </div>
+      `);
+    }, 100);
   }
 };

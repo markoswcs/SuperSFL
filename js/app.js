@@ -282,7 +282,7 @@ async function init() {
 
   // First-run Push Notification Prompt
   setTimeout(() => {
-    const hasSeenPrompt = localStorage.getItem('sfl_seen_push_prompt_v2');
+    const hasSeenPrompt = localStorage.getItem('sfl_seen_push_prompt_v3');
     if (!hasSeenPrompt && window.__app.UI && window.__app.UI.showModal) {
       const promptHtml = `
           <div style="text-align:center; padding: 10px;">
@@ -302,7 +302,7 @@ async function init() {
         
         if (btnActive) btnActive.addEventListener('click', async () => {
           window.__app.UI.hideModal();
-          localStorage.setItem('sfl_seen_push_prompt_v2', 'true');
+          localStorage.setItem('sfl_seen_push_prompt_v3', 'true');
           if (window.__app?.Notifications) {
             window.__app.UI.showToast('Processando...', 'info');
             await window.__app.Notifications.setPref('master', true);
@@ -315,7 +315,7 @@ async function init() {
         
         if (btnSkip) btnSkip.addEventListener('click', () => {
            window.__app.UI.hideModal();
-           localStorage.setItem('sfl_seen_push_prompt_v2', 'true');
+           localStorage.setItem('sfl_seen_push_prompt_v3', 'true');
         });
       }, 100);
     }

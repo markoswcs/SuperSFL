@@ -27,7 +27,13 @@ window.openExternal = async (url) => {
 // =====================================================
 window.getImgUrl = function(name) {
   if (!name) return window.getImgUrl('Sunflower');
-  if (window.SFL_IMAGES && window.SFL_IMAGES[name]) return window.SFL_IMAGES[name];
+  if (window.SFL_IMAGES) {
+    if (window.SFL_IMAGES[name]) return window.SFL_IMAGES[name];
+    // Try case-insensitive match
+    const lowerName = name.toLowerCase();
+    const key = Object.keys(window.SFL_IMAGES).find(k => k.toLowerCase() === lowerName);
+    if (key) return window.SFL_IMAGES[key];
+  }
   return `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
 };
 
@@ -247,14 +253,14 @@ function renderHome(exchange, prices, parsedFarm) {
       const activeCrop = parsedFarm.crops.find(c => c.status === 'ready') || nextCrop || parsedFarm.crops[0];
       mainCropName = activeCrop.name;
     }
-    const cropIconUrl = `${window.getImgUrl(mainCropName.replace(/\s+/g, ''))}`;
+    const cropIconUrl = `${window.getImgUrl((mainCropName || 'Sunflower').replace(/\s+/g, ''))}`;
 
     let mainFruitName = 'Apple';
     if (parsedFarm.fruits && parsedFarm.fruits.length > 0) {
       const activeFruit = parsedFarm.fruits.find(f => f.status === 'ready') || nextFruit || parsedFarm.fruits[0];
-      mainFruitName = activeFruit.name;
+      mainFruitName = activeFruit?.name || 'Apple';
     }
-    const fruitIconUrl = `${window.getImgUrl(mainFruitName.replace(/\s+/g, ''))}`;
+    const fruitIconUrl = `${window.getImgUrl((mainFruitName || 'Apple').replace(/\s+/g, ''))}`;
 
     const activeAnimalsArr = readyAnimals > 0 ? [...collectAnimalsArr, ...attnAnimalsArr] : parsedFarm.animals;
     const animalTypes = activeAnimalsArr.reduce((acc, a) => {
@@ -3024,42 +3030,16 @@ window.__app.UI.promptWalletPosition = () => {
   // Build complete item list: live p2p prices (all resources/crops/etc.) + NFT collectibles from SFL source
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
 
+  const items = Object.keys(p2p).sort();
+
   // Use the generated SFL_IMAGES mapping for official URLs
   const officialImages = window.SFL_IMAGES || {};
-  const sflItems = Object.keys(officialImages);
 
   const imgUrl = (name) => {
     if (officialImages[name]) return officialImages[name];
     // Fallback if missing from SFL official mapping
     return `${window.getImgUrl(name)}`;
   };
-
-  // Build full list with P2P items and all official SFL items (NFTs/Power-ups)
-  const p2pKeys = Object.keys(p2p);
-  const allPossibleItems = [...new Set([...p2pKeys, ...sflItems])].sort();
-  
-  // Filter out non-tradeable things that shouldn't appear in the market list
-  const items = allPossibleItems.filter(item => {
-    // Keep it if it has an active P2P market price
-    if (p2p[item] !== undefined) return true;
-    
-    // Otherwise, check its image category in SFL_IMAGES
-    const url = officialImages[item] || '';
-    if (!url) return false;
-    
-    // Exclude basic non-NFT categories that lack a P2P price
-    const junkCategories = ['/food/', '/processedFoods/', '/fish/', '/fruit/', '/flowers/', '/resources/', '/fertilisers/', '/pickled_crops/', '/icons/', '/clutter/'];
-    if (junkCategories.some(cat => url.includes(cat))) {
-      return false;
-    }
-    
-    const name = item.toLowerCase();
-    // Exclude base non-market animals
-    if (['chicken', 'pig', 'cow', 'sheep', 'rooster', 'bee', 'butterfly'].includes(name)) return false;
-    // Exclude raw seeds since they aren't NFTs or market items (except crops)
-    if (name.includes(' seed')) return false;
-    return true;
-  });
   
   const step1Html = `
     <div id="wallet-step-1" style="padding:16px; font-family:var(--font-sans);">

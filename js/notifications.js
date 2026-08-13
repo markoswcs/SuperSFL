@@ -452,7 +452,6 @@ class NotificationEngine {
             body: options.body || '',
             channelId: LOCAL_CHANNEL_ID,
             largeIcon: options.largeIcon || 'ic_launcher',
-            smallIcon: 'ic_launcher',
             schedule: this.localSchedule(Date.now() + 250),
           }],
         });
@@ -578,8 +577,19 @@ class NotificationEngine {
       
       const imageUrl = window.getImgUrl ? window.getImgUrl(itemName) : `https://sfl.world/img/source/${itemName.replace(/\s+/g, '')}.png`;
 
-      let title = `${itemName} is ready!`;
-      let body = `${count} ${itemName}${count > 1 && !itemName.endsWith('s') ? 's' : ''}`;
+      const emojiMap = {
+        'Apple': '🍎', 'Blueberry': '🫐', 'Orange': '🍊', 'Tomato': '🍅', 'Lemon': '🍋', 'Banana': '🍌', 
+        'Sunflower': '🌻', 'Potato': '🥔', 'Pumpkin': '🎃', 'Carrot': '🥕', 'Cabbage': '🥬', 'Beetroot': '🍠',
+        'Cauliflower': '🥦', 'Parsnip': '🥕', 'Eggplant': '🍆', 'Corn': '🌽', 'Radish': '🧄', 'Wheat': '🌾', 'Kale': '🥬',
+        'Chicken': '🐔', 'Cow': '🐄', 'Sheep': '🐑', 'Pig': '🐖',
+        'Stone': '🪨', 'Iron': '⛏️', 'Gold': '🏆', 'Crimstone': '💎', 'Sunstone': '☀️', 'Wood': '🪵',
+        'Compost Bin': '🐛', 'Turbo Composter': '🐛', 'Premium Composter': '🐛', 'Beehive': '🐝'
+      };
+      
+      const emoji = emojiMap[itemName] ? emojiMap[itemName] + ' ' : '';
+
+      let title = `${emoji}${itemName} pronto(a)!`;
+      let body = `${count}x ${itemName}`;
 
       if (!this.isNative()) {
         schedules.push({
@@ -599,8 +609,7 @@ class NotificationEngine {
           body: body,
           channelId: LOCAL_CHANNEL_ID,
           schedule: this.localSchedule(readyAtMs),
-          largeIcon: imageUrl,
-          smallIcon: 'ic_launcher',
+          // smallIcon omitted to prevent exclamation mark fallback on Android
           attachments: [{ id: 'icon', url: imageUrl }],
           extra: { farmId, category, itemName, count, imageUrl }
         });

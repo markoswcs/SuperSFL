@@ -3040,9 +3040,20 @@ window.__app.UI.promptWalletPosition = () => {
   
   // Filter out non-tradeable things that shouldn't appear in the market list
   const items = allPossibleItems.filter(item => {
+    // Keep it if it has an active P2P market price
+    if (p2p[item] !== undefined) return true;
+    
+    // Otherwise, check its image category in SFL_IMAGES
+    const url = officialImages[item] || '';
+    if (!url) return false;
+    
+    // Exclude basic non-NFT categories that lack a P2P price
+    const junkCategories = ['/food/', '/processedFoods/', '/fish/', '/fruit/', '/flowers/', '/resources/', '/fertilisers/', '/pickled_crops/', '/icons/', '/clutter/'];
+    if (junkCategories.some(cat => url.includes(cat))) {
+      return false;
+    }
+    
     const name = item.toLowerCase();
-    // Exclude baits
-    if (name.includes('bait') || name.includes('baitfish')) return false;
     // Exclude base non-market animals
     if (['chicken', 'pig', 'cow', 'sheep', 'rooster', 'bee', 'butterfly'].includes(name)) return false;
     // Exclude raw seeds since they aren't NFTs or market items (except crops)
@@ -3100,7 +3111,7 @@ window.__app.UI.promptWalletPosition = () => {
     
     const renderResults = (query) => {
       const q = query.toLowerCase().trim();
-      const filtered = items.filter(i => i.toLowerCase().includes(q)).slice(0, 50);
+      const filtered = items.filter(i => i.toLowerCase().includes(q)).slice(0, 1000);
       
       if (filtered.length === 0) {
         resultsContainer.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-tertiary); font-size:14px;">Nenhum item encontrado</div>';

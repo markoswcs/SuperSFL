@@ -547,7 +547,7 @@ class NotificationEngine {
 
     const grouped = {};
     itemsToSchedule.forEach(item => {
-       const minuteBucket = Math.round(item.readyAtMs / 60000);
+       const minuteBucket = Math.round(item.readyAtMs / 600000); // 10 minute buckets
        const key = `${item.itemName}_${minuteBucket}`;
        if (!grouped[key]) {
            grouped[key] = {
@@ -568,7 +568,7 @@ class NotificationEngine {
     Object.values(grouped).forEach(group => {
       const { itemName, category, readyAtMs, count, itemIds } = group;
       
-      const strId = `${farmId}:${itemName}:${Math.round(readyAtMs/60000)}`;
+      const strId = `${farmId}:${itemName}:${Math.round(readyAtMs/600000)}`;
       let hash = 0;
       for (let i = 0; i < strId.length; i++) {
         hash = (hash << 5) - hash + strId.charCodeAt(i);
@@ -576,14 +576,10 @@ class NotificationEngine {
       }
       const numId = Math.abs(hash);
       
-      const formattedName = itemName.replace(/\s+/g, '');
-      const imageUrl = `https://sfl.world/img/source/${formattedName}.png`;
+      const imageUrl = window.getImgUrl ? window.getImgUrl(itemName) : `https://sfl.world/img/source/${itemName.replace(/\s+/g, '')}.png`;
 
-      let title = `${itemName} Pronto(a)!`;
-      let body = `${itemName} terminaram e já podem ser coletados(as)!`;
-      if (count > 1) {
-         body = `${count}x ${itemName} terminaram e já podem ser coletados(as)!`;
-      }
+      let title = `${itemName} is ready!`;
+      let body = `${count} ${itemName}${count > 1 && !itemName.endsWith('s') ? 's' : ''}`;
 
       if (!this.isNative()) {
         schedules.push({

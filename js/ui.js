@@ -1283,7 +1283,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       ${listHtml}
     `);
 
-    // Event delegation — safe for all item names including special characters
+    // Event delegation — direct call to renderMarketFiltered for immediate update
     const grid = document.getElementById('market-grid');
     if (grid) {
       grid.addEventListener('click', (e) => {
@@ -1292,7 +1292,12 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         if (removeBtn) {
           const name = decodeURIComponent(removeBtn.dataset.item);
           if (confirm(`Remover ${name} da carteira?`)) {
-            if (window.__app.removeWalletPosition) window.__app.removeWalletPosition(name);
+            if (window.__app.removeWalletPosition) {
+              window.__app.removeWalletPosition(name);
+              // Direct call: we're in ui.js scope so renderMarketFiltered is available
+              const searchVal = document.querySelector('#market-search')?.value || '';
+              renderMarketFiltered(searchVal, 'wallet');
+            }
           }
         }
         if (sellBtn) {
@@ -1300,7 +1305,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
           const avg  = parseFloat(sellBtn.dataset.avg) || 0;
           if (window.__app.UI.promptSellPosition) window.__app.UI.promptSellPosition(name, avg);
         }
-      }, { once: true });
+      });
     }
     return;
   }
@@ -3058,7 +3063,35 @@ window.__app.UI.promptWalletPosition = () => {
   // Build complete item list: live p2p prices (all resources/crops/etc.) + NFT collectibles from SFL source
   const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
 
-  const items = Object.keys(p2p).sort();
+  // Complete NFT list extracted from the SFL Marketplace
+  const NFT_ITEMS = [
+    // --- From marketplace screenshots ---
+    'Crim Peckster','Alba','Heart of Davy Jones','Broccoli Hat','Swiss Whiskers','Genie Lamp','Maximus',
+    'Rock Golem','Merino Jumper','Super Star','Skill Shrimpy','King of Bears','Cabbage Girl','Banana Amulet',
+    'Nautilus','Dr Cow','Medic Apron','Crab Hat','Rocky the Mole','Bubble Aura','Chicken Suit',
+    'Moo-ver','Hungry Caterpillar','Sir Goldensnout','Woody the Beaver','Pistol Shrimp','Crimstone Clam','Black Bearry',
+    'Stone Beetle','Anemone Flower','Salt Crystal Flower','Walrus Onesie','Shrimp Onesie','Red Pepper Onesie','Pet Bowls',
+    'Turd Topper','Tofu Mask','Flamingo Chicken','Karkinos','Purple Trail','Speed Chicken','Easter Bunny',
+    'Eggplant Onesie','Fat Chicken','White Sheep Onesie','Victoria Sisters','Architect Ruler','Rich Chicken','Reelmaster\'s Chair',
+    'Dino Egg Trophy','Carrot Amulet','Banana Onesie','Pharaoh Chicken','Spa Sheep','Ladybug Suit','Sleepy Chicken',
+    'Janitor Chicken','Mushroom Hat','Pablo The Bunny','Sunflower Amulet','Squid Chicken','Corn Onesie','Obie',
+    'Chicory','Mushroom House','Oaken','Desert Rose','Olive Royalty Shirt','Nana','Meerkat',
+    'Giant Gold Bone','Bee Suit','Lemon Frog','Hungry Hare','Rice Panda','Banana Chicken','Saw Fish',
+    'Beetroot Amulet','Dream Scarf','Alien Chicken','Knight Chicken','Lady Bug','Chef Apron','Vinny',
+    'Maneki Neko','Mermaid Sheep','Summer Chicken','Camel Onesie','Poppy','Cabbage Boy','Pink Dolphin',
+    'Tiki Totem','Soil Krabby','Astronaut Sheep','Kernaldo','Foliant','Potent Potato','Crimstone Armor',
+    'Radical Radish','Spa Cow','Giant Zucchini','Giant Yam','Flower Fox','Jellyfish','Reveling Lemon',
+    'Nancy','Beekeeper Hat','Undead Rooster','Peeled Potato','Nurse Sheep','Mammoth','Stellar Sunflower',
+    'Queen Cornelia','Squirrel Monkey','Cannonball','Baby Cow','El Pollo Veloz','Lunar Temple','Frozen Cow',
+    'Observatory','Deep Sea Salt Cave Bat','Soybliss','Tunnel Mole','Crab Trap','Lunar Calendar','Poseidon',
+    'Lemon Shark','Carrot Sword','Rooster','Grain Grinder','Longhorn Cowfish','Speed Trap','Battle Fish',
+    'Fruit Tune Box','Freya Fox','Frozen Sheep','Grape Pants','Tin Turtle','Corn Silk Hair','Ayam Cemani',
+  ];
+
+  // Merge: p2p items first, then NFTs not already in p2p
+  const p2pKeys = new Set(Object.keys(p2p));
+  const allItems = [...Object.keys(p2p), ...NFT_ITEMS.filter(n => !p2pKeys.has(n))];
+  const items = allItems.sort((a, b) => a.localeCompare(b));
 
   // Use the generated SFL_IMAGES mapping for official URLs
   const officialImages = window.SFL_IMAGES || {};
@@ -3258,6 +3291,9 @@ window.__app.UI.promptSellPosition = (itemName, avgBuyPrice) => {
     if (window.__app.sellWalletPosition) {
       window.__app.sellWalletPosition(itemName, qty, sale);
       _hideModal();
+      // Direct call for immediate UI update — we're inside ui.js module scope
+      const searchVal = document.querySelector('#market-search')?.value || '';
+      setTimeout(() => renderMarketFiltered(searchVal, 'wallet'), 60);
     }
   });
 };

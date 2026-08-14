@@ -373,8 +373,21 @@ async function refreshData(force = false) {
   if (btn) btn.classList.add('loading');
 
   try {
-    const { exchange, prices, landInfo, farmData, errors } = await API.refreshAll(State.farmId, force);
+    const { exchange, prices, landInfo, farmData, nfts, errors } = await API.refreshAll(State.farmId, force);
     
+    // Merge NFTs into prices for unified UI access
+    if (prices && nfts) {
+      if (!prices.data) prices.data = {};
+      if (!prices.data.p2p) prices.data.p2p = {};
+      
+      const allNfts = [...(nfts.collectibles || []), ...(nfts.wearables || [])];
+      allNfts.forEach(nft => {
+        if (nft.floor) {
+          prices.data.p2p[nft.name] = nft.floor;
+        }
+      });
+    }
+
     State.exchange = exchange;
     State.prices   = prices;
     
@@ -795,6 +808,23 @@ function getWalletPositions() {
   }
 }
 
+function getWalletGlobalBalance() {
+  if (!State.farmId) return 0;
+  return parseFloat(localStorage.getItem(`sfl_wallet_balance_${State.farmId}`) || '0') || 0;
+}
+
+function saveWalletGlobalBalance(balance) {
+  if (!State.farmId) return;
+  localStorage.setItem(`sfl_wallet_balance_${State.farmId}`, String(balance));
+}
+
+function setWalletGlobalBalance(balance) {
+  saveWalletGlobalBalance(balance);
+  if (State.currentTab === 'market' && window.__app.UI && window.__app.UI.renderMarketFiltered) {
+    window.__app.UI.renderMarketFiltered(document.querySelector('#market-search')?.value || '', 'wallet');
+  }
+}
+
 function saveWalletPositions(positions) {
   if (!State.farmId) return;
   localStorage.setItem(`sfl_wallet_${State.farmId}`, JSON.stringify(positions));
@@ -856,6 +886,10 @@ function sellWalletPosition(itemName, qtySold, saleTotal) {
     localStorage.setItem(key, JSON.stringify(hist));
   } catch(e) {}
 
+  // Add the realized profit to the global balance
+  const currentBalance = getWalletGlobalBalance();
+  saveWalletGlobalBalance(currentBalance + profit);
+
   if (qty >= pos.qty) {
     // Sold everything: remove position
     positions = positions.filter(p => p.itemName !== itemName);
@@ -885,6 +919,8 @@ window.__app.getWalletPositions = getWalletPositions;
 window.__app.addWalletPosition = addWalletPosition;
 window.__app.removeWalletPosition = removeWalletPosition;
 window.__app.sellWalletPosition = sellWalletPosition;
+window.__app.getWalletGlobalBalance = getWalletGlobalBalance;
+window.__app.setWalletGlobalBalance = setWalletGlobalBalance;
 
 // =====================================================
 // BOOTSTRAP

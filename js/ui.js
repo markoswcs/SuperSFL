@@ -1197,22 +1197,21 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       positions = positions.filter(p => p.itemName.toLowerCase().includes(search.toLowerCase()));
     }
 
+    let totalInvested = 0;
+    let totalLiveValue = 0;
+    let listHtml = '';
+
     if (positions.length === 0) {
-      setHtml('#market-grid', `
+      listHtml = `
         <div class="empty-state" style="grid-column:1/-1">
           <span class="empty-state-icon">💳</span>
           <div class="empty-state-title">Sua Carteira está Vazia</div>
           <div class="empty-state-sub" style="margin-top:8px;">
             Registre suas compras e investimentos para acompanhar lucros e prejuízos.
           </div>
-          <button onclick="window.__app.UI.promptWalletPosition()" style="margin-top:16px; background:var(--emerald); color:var(--surface-1); border:none; padding:8px 16px; border-radius:8px; font-weight:800; cursor:pointer;">+ Registrar Investimento</button>
         </div>
-      `);
-      return;
-    }
-
-    let totalInvested = 0;
-    let totalLiveValue = 0;
+      `;
+    } else {
 
     const listHtml = positions.map(pos => {
       const livePrice = p2p[pos.itemName] || 0;
@@ -1264,17 +1263,22 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
           </div>
         </div>
       `;
-    }).join('');
+      }).join('');
+    }
 
-    const totalProfit = totalLiveValue - totalInvested;
-    const totalPct = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+    const openProfit = totalLiveValue - totalInvested;
+    const globalBalance = (window.__app && window.__app.getWalletGlobalBalance) ? window.__app.getWalletGlobalBalance() : 0;
+    const totalProfit = openProfit + globalBalance;
     
     setHtml('#market-grid', `
       <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Carteira (P&L Aberto)</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Saldo Global da Carteira</div>
+            <button onclick="window.__app.UI.promptEditWalletBalance()" style="background:none;border:none;padding:0;color:var(--text-tertiary);cursor:pointer;" title="Editar Saldo">✏️</button>
+          </div>
           <div style="font-size:22px;font-weight:900;color:${totalProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">` + (totalProfit >= 0 ? '+' : '') + `${totalProfit.toFixed(3)} SFL</div>
-          <div style="font-size:12px;color:var(--text-secondary); margin-top:2px;">Total Investido: ${totalInvested.toFixed(2)} SFL</div>
+          <div style="font-size:12px;color:var(--text-secondary); margin-top:2px;">Investido: ${totalInvested.toFixed(2)} SFL | PnL Realizado: ${globalBalance >= 0 ? '+' : ''}${globalBalance.toFixed(2)} SFL</div>
         </div>
         <div style="text-align:right;">
           <button onclick="window.__app.UI.promptWalletPosition()" style="background:var(--emerald-subtle);border:1px solid var(--emerald);color:var(--emerald);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Registrar</button>
@@ -3224,6 +3228,42 @@ window.__app.UI.promptWalletPosition = () => {
         // Refresh wallet view
         renderMarketFiltered('', 'wallet');
       }
+    });
+  }
+};
+
+// ── Edit Global Balance Modal ──
+window.__app.UI.promptEditWalletBalance = () => {
+  const _showModal = (typeof showModal === 'function') ? showModal : window.__app.UI.showModal;
+  const _hideModal = (typeof hideModal === 'function') ? hideModal : window.__app.UI.hideModal;
+  if (!_showModal) return;
+
+  const currentBalance = window.__app.getWalletGlobalBalance ? window.__app.getWalletGlobalBalance() : 0;
+
+  const html = `
+    <div style="padding:16px; font-family:var(--font-sans);">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;color:var(--text-tertiary);margin-bottom:4px;font-weight:700;">Novo Saldo PnL Realizado (SFL)</label>
+        <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">Este valor representa seu lucro ou prejuízo acumulado de transações passadas.</p>
+        <input type="number" step="0.01" id="edit-balance-input" value="${currentBalance.toFixed(4)}" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--surface-border);background:var(--surface-1);color:var(--text-primary);font-size:16px;font-weight:800;box-sizing:border-box;">
+      </div>
+      <button id="edit-balance-confirm-btn" style="width:100%;padding:14px;border-radius:12px;background:var(--emerald);color:white;font-weight:900;font-size:16px;border:none;cursor:pointer;">✅ Salvar Saldo</button>
+    </div>
+  `;
+
+  _showModal('✏️ Editar Saldo da Carteira', html);
+
+  const confirmBtn = document.getElementById('edit-balance-confirm-btn');
+  const balanceInput = document.getElementById('edit-balance-input');
+  
+  if (confirmBtn && balanceInput) {
+    confirmBtn.addEventListener('click', () => {
+      const val = parseFloat(balanceInput.value);
+      if (isNaN(val)) return;
+      if (window.__app.setWalletGlobalBalance) {
+        window.__app.setWalletGlobalBalance(val);
+      }
+      _hideModal();
     });
   }
 };

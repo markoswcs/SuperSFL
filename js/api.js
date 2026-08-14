@@ -12,6 +12,7 @@ const ENDPOINTS = {
   EXCHANGE:   'https://sfl.world/api/v1.1/exchange',
   PRICES:     'https://sfl.world/api/v1/prices',
   AUCTIONS:   'https://sfl.world/api/v1/auctions',
+  NFTS:       'https://sfl.world/api/v1/nfts',
   LAND_INFO:  (id) => `https://sfl.world/api/v1.1/land/${id}`,
   FARM_DATA:  (id) => `https://api.sunflower-land.com/community/farms/${id}`,
 };
@@ -146,6 +147,19 @@ async function getAuctions(forceRefresh = false) {
   return data;
 }
 
+// --- NFTs / Marketplace Prices ---
+// Response shape: { collectibles: [{name, floor, lastSalePrice, ...}], wearables: [...] }
+async function getNFTs(forceRefresh = false) {
+  const CACHE_KEY = 'nfts';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  const data = await fetchJson(ENDPOINTS.NFTS);
+  Storage.setCache(CACHE_KEY, data, 900_000); // 15min TTL (API updates every 15min)
+  return data;
+}
+
 // --- Land Info via sfl.world (public — no API key required) ---
 // Response shape: { land: { type, level, coins, balance, gem, marks, vip, taxResource, vip_info, ... }, bumpkin: { level, experience, skills } }
 async function getLandInfo(farmId, forceRefresh = false) {
@@ -192,6 +206,7 @@ async function refreshAll(farmId, forceRefresh = false) {
     getPrices(forceRefresh),
     farmId ? getLandInfo(farmId, forceRefresh) : Promise.resolve(null),
     farmId ? getFarmData(farmId, forceRefresh) : Promise.resolve(null),
+    getNFTs(forceRefresh),
   ]);
 
   return {
@@ -199,6 +214,7 @@ async function refreshAll(farmId, forceRefresh = false) {
     prices:    results[1].status === 'fulfilled' ? results[1].value : null,
     landInfo:  results[2].status === 'fulfilled' ? results[2].value : null,
     farmData:  results[3].status === 'fulfilled' ? results[3].value : null,
+    nfts:      results[4].status === 'fulfilled' ? results[4].value : null,
     errors:    results.filter(r => r.status === 'rejected').map(r => r.reason?.message),
   };
 }
@@ -207,6 +223,7 @@ export default {
   getExchange,
   getPrices,
   getAuctions,
+  getNFTs,
   getFarmData,
   getLandInfo,
   refreshAll,

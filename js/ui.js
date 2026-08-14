@@ -3086,6 +3086,22 @@ window.__app.UI.promptWalletPosition = () => {
     'Observatory','Deep Sea Salt Cave Bat','Soybliss','Tunnel Mole','Crab Trap','Lunar Calendar','Poseidon',
     'Lemon Shark','Carrot Sword','Rooster','Grain Grinder','Longhorn Cowfish','Speed Trap','Battle Fish',
     'Fruit Tune Box','Freya Fox','Frozen Sheep','Grape Pants','Tin Turtle','Corn Silk Hair','Ayam Cemani',
+    // --- From new screenshots ---
+    'Giant Kale','Giant Artichoke','Mootant','Tomato Bombard','Camel','Autumn Guardian',
+    'Sheaf of Plenty','Lemon Shield','Pickaxe Shark','Apprentice Beaver','Lemon Tea Bath','Winter Guardian','Frozen Heart',
+    'Spring Guardian','Deep Sea Slug','Blossom Ward','Chicken Coop','Farm Dog','Golden Cauliflower','Sickle',
+    'Oil Gallon','Training Whistle','Golden Spatula','Oracle Syringe','Black Sheep Onesie','Barn Blueprint','Walrus',
+    'Olive Shield','Mysterious Parsnip','Knowledge Crab','Milk Apron','Oil Can','Squirrel Onesie','Crimstone Amulet',
+    'Grape Granny','Scarecrow','Hornet Mask','Toxic Tuft','Sol & Luna','Humming Bird','Beast Shoes',
+    'Giant Turnip','Crimson Carp','Victoria\'s Apron','Tomato Clown','Paw Shield','Wood Nymph Wendy','Non La Hat',
+    'Summer Guardian','Giant Onion','Nugget','Gnome','Cluckulator','Navigation Table','Sunflower Shield',
+    'Solflare Aegis','Queen Bee','Magma Stone','Master Chef\'s Cleaver','Groovy Gramophone','Iron Idol','Honeycomb Shield',
+    'Green Amulet','Flower Crown','Royal Crab Pot','Crab House','Hoot','Obsidian Necklace','Oil Overalls',
+    'Cowbell Necklace','Cattlegrim','Dev Wrench','Obsidian Turtle','Crimstone Hammer','Turbo Sprout','Luna\'s Crescent',
+    'Golden Sheep','Gold Egg','Autumn\'s Embrace','Infernal Bullwhip','Emerald Turtle','Quarry','Kuebiko',
+    'Lava Swimwear','Ancient Rod','Pan','Foreman Beaver','Pharaoh Gnome','Luna\'s Hat','Crimstone Spikes Hair',
+    'Paw Aura','Angel Wings','Infernal Drill','Ancient Shovel','Grinx\'s Hammer','Golden Cow','Devil Wings',
+    'Christmas Tree','Infernal Pitchfork',
   ];
 
   // Merge: p2p items first, then NFTs not already in p2p

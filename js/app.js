@@ -495,6 +495,8 @@ async function refreshData(force = false) {
       // ser vinculada novamente ao Farm ID antes de enviar as agendas.
       await window.__app.Notifications.syncAfterFarmLoad();
       await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
+      await window.__app.Notifications.checkMarketplaceActivity(State.parsedFarm);
+      window.__app.Notifications.scheduleDailyReset();
     }
 
     renderCurrentTab();
@@ -835,9 +837,54 @@ function removeWalletPosition(itemName) {
   }
 }
 
+function sellWalletPosition(itemName, qtySold, saleTotal) {
+  let positions = getWalletPositions();
+  const pos = positions.find(p => p.itemName === itemName);
+  if (!pos) return;
+
+  const qty    = parseFloat(qtySold);
+  const sale   = parseFloat(saleTotal);
+  const cost   = pos.averagePrice * qty;
+  const profit = sale - cost;
+
+  // Log the realized PnL to history
+  try {
+    const key  = `sfl_wallet_history_${State.farmId}`;
+    const hist = JSON.parse(localStorage.getItem(key) || '[]');
+    hist.push({ itemName, qty, sale, cost, profit, timestamp: Date.now() });
+    if (hist.length > 500) hist.splice(0, hist.length - 500);
+    localStorage.setItem(key, JSON.stringify(hist));
+  } catch(e) {}
+
+  if (qty >= pos.qty) {
+    // Sold everything: remove position
+    positions = positions.filter(p => p.itemName !== itemName);
+  } else {
+    pos.qty          -= qty;
+    pos.totalCostSfl -= cost;
+    // averagePrice stays the same
+  }
+
+  saveWalletPositions(positions);
+
+  // Show toast with realized P&L
+  const sign = profit >= 0 ? '+' : '';
+  const col  = profit >= 0 ? 'success' : 'error';
+  if (window.__app.UI && window.__app.UI.showToast) {
+    window.__app.UI.showToast(`Venda registrada! P&L: ${sign}${profit.toFixed(4)} SFL`, col);
+  }
+
+  if (State.currentTab === 'market') {
+    if (window.__app.UI && window.__app.UI.renderMarketFiltered) {
+      window.__app.UI.renderMarketFiltered(document.querySelector('#market-search')?.value || '', 'wallet');
+    }
+  }
+}
+
 window.__app.getWalletPositions = getWalletPositions;
 window.__app.addWalletPosition = addWalletPosition;
 window.__app.removeWalletPosition = removeWalletPosition;
+window.__app.sellWalletPosition = sellWalletPosition;
 
 // =====================================================
 // BOOTSTRAP

@@ -577,19 +577,74 @@ class NotificationEngine {
       
       const imageUrl = window.getImgUrl ? window.getImgUrl(itemName) : `https://sfl.world/img/source/${itemName.replace(/\s+/g, '')}.png`;
 
+      // Complete emoji map for all SFL item types
       const emojiMap = {
-        'Apple': '🍎', 'Blueberry': '🫐', 'Orange': '🍊', 'Tomato': '🍅', 'Lemon': '🍋', 'Banana': '🍌', 
-        'Sunflower': '🌻', 'Potato': '🥔', 'Pumpkin': '🎃', 'Carrot': '🥕', 'Cabbage': '🥬', 'Beetroot': '🍠',
-        'Cauliflower': '🥦', 'Parsnip': '🥕', 'Eggplant': '🍆', 'Corn': '🌽', 'Radish': '🧄', 'Wheat': '🌾', 'Kale': '🥬',
-        'Chicken': '🐔', 'Cow': '🐄', 'Sheep': '🐑', 'Pig': '🐖',
-        'Stone': '🪨', 'Iron': '⛏️', 'Gold': '🏆', 'Crimstone': '💎', 'Sunstone': '☀️', 'Wood': '🪵',
-        'Compost Bin': '🐛', 'Turbo Composter': '🐛', 'Premium Composter': '🐛', 'Beehive': '🐝'
+        // Crops
+        'Sunflower': '🌻', 'Potato': '🥔', 'Pumpkin': '🎃', 'Carrot': '🥕', 'Cabbage': '🥬',
+        'Beetroot': '🍠', 'Cauliflower': '🥦', 'Parsnip': '🥕', 'Eggplant': '🍆', 'Corn': '🌽',
+        'Radish': '🧄', 'Wheat': '🌾', 'Kale': '🥬', 'Soybean': '🫘', 'Artichoke': '🌿',
+        'Yam': '🍠', 'Broccoli': '🥦', 'Leek': '🌿', 'Turnip': '🫛', 'Pepper': '🌶️',
+        'Squash': '🎃', 'Fennel': '🌿', 'Onion': '🧅', 'Garlic': '🧄',
+        // Fruits
+        'Apple': '🍎', 'Blueberry': '🫐', 'Orange': '🍊', 'Tomato': '🍅', 'Lemon': '🍋',
+        'Banana': '🍌', 'Grape': '🍇', 'Peach': '🍑', 'Mango': '🥭', 'Avocado': '🥑',
+        'Dragonfruit': '🐉', 'Starfruit': '⭐', 'Strawberry': '🍓', 'Kiwi': '🥝',
+        'Pineapple': '🍍', 'Coconut': '🥥', 'Watermelon': '🍉', 'Pomegranate': '💎',
+        'Fig': '🍈', 'Passion Fruit': '💜', 'Guava': '🟢', 'Papaya': '🟠',
+        // Trees
+        'Wood': '🪵', 'Enchanted Tree': '✨', 'Crimson Cap': '🍄',
+        // Rocks / Mining
+        'Stone': '🪨', 'Iron': '⛏️', 'Gold': '🥇', 'Crimstone': '💎', 'Sunstone': '☀️',
+        'Diamond': '💠', 'Ruby': '🔴', 'Sapphire': '🔵', 'Amethyst': '💜', 'Obsidian': '⬛',
+        // Mushrooms
+        'Mushroom': '🍄', 'Wild Mushroom': '🍄',
+        // Animals
+        'Chicken': '🐔', 'Cow': '🐄', 'Sheep': '🐑', 'Pig': '🐖', 'Bee': '🐝',
+        'Horse': '🐴', 'Rabbit': '🐰', 'Duck': '🦆', 'Fish': '🐟', 'Lobster': '🦞',
+        'Anchovy': '🐟', 'Tuna': '🐡', 'Seahorse': '🌊',
+        // Beehives
+        'Beehive': '🍯', 'Bee Box': '🍯',
+        // Flowers
+        'Red Lotus': '🌹', 'Blue Lotus': '🌸', 'Yellow Lotus': '💛', 'White Lotus': '🤍',
+        'Red Carnation': '🌹', 'Yellow Carnation': '🌼', 'White Carnation': '🤍',
+        'Red Daffodil': '🌺', 'Yellow Daffodil': '🌻', 'White Daffodil': '🌸',
+        'Clover': '🍀', 'Pansy': '💜', 'Cosmos': '🌸', 'Borage': '💙',
+        'Sunpetal': '🌻', 'Primula': '🌷',
+        // Composting
+        'Compost Bin': '🐛', 'Turbo Composter': '🐛', 'Premium Composter': '🐛',
+        // Crop Machine & Oil
+        'Crop Machine': '🏭', 'Oil Well': '🛢️',
+        // Greenhouse
+        'Greenhouse': '🌱',
+        // Crab Traps & Shrines
+        'Crab Trap': '🦀', 'Shrine': '🏮',
+        // Aging Shed & Salt
+        'Barn': '🏚️', 'Salt Rock': '🧂',
+        // Deliveries
+        'Delivery': '📦',
+        // Buildings
+        'Kitchen': '🍳', 'Bakehouse': '🥐', 'Deli': '🥙', 'Smoothie Shack': '🥤',
+        'Toolshed': '🔧', 'Hen House': '🐔', 'Barn': '🏚️', 'Crop Machine': '🏭',
       };
-      
-      const emoji = emojiMap[itemName] ? emojiMap[itemName] + ' ' : '';
 
-      let title = `${emoji}${itemName} pronto(a)!`;
-      let body = `${count}x ${itemName}`;
+      const emoji = emojiMap[itemName] ? emojiMap[itemName] + ' ' : '🌾 ';
+      
+      const catLabels = {
+        crops: 'Plantação', fruits: 'Fruta', trees: 'Árvore', rocks: 'Mineração',
+        animals: 'Animal', beehives: 'Colmeia', flowers: 'Flor', composting: 'Compostagem',
+        cropMachine: 'Máquina de Cultivo', oil: 'Poço de Óleo', greenhouse: 'Estufa',
+        buildings: 'Construção', crabTraps: 'Armadilha', shrines: 'Santuário',
+        agingShed: 'Celeiro', saltFarm: 'Salina', deliveries: 'Entrega',
+      };
+
+      let title, body;
+      if (count === 1) {
+        title = `${emoji}${itemName} pronto!`;
+        body = `Colete agora!`;
+      } else {
+        title = `${emoji}${count}x ${itemName} prontos!`;
+        body = `${catLabels[category] || category} pronta para coletar!`;
+      }
 
       if (!this.isNative()) {
         schedules.push({
@@ -605,12 +660,11 @@ class NotificationEngine {
       if (localReady) {
         localSchedules.push({
           id: numId,
-          title: title,
-          body: body,
+          title,
+          body,
           channelId: LOCAL_CHANNEL_ID,
           schedule: this.localSchedule(readyAtMs),
-          // smallIcon omitted to prevent exclamation mark fallback on Android
-          attachments: [{ id: 'icon', url: imageUrl }],
+          // largeIcon via URL not supported on Android native — emoji used instead
           extra: { farmId, category, itemName, count, imageUrl }
         });
       }
@@ -651,6 +705,80 @@ class NotificationEngine {
     }
   }
 
+  /**
+   * Detect marketplace activity (sales and purchases) by comparing
+   * the saved previous farm state against the current one.
+   */
+  async checkMarketplaceActivity(parsedFarm) {
+    if (!this.prefs.master || !this.prefs.market) return;
+    if (!parsedFarm || parsedFarm.isPartial) return;
+
+    const rawFarm = window.__app && window.__app.State && window.__app.State.rawFarm;
+    if (!rawFarm) return;
+
+    const farm = rawFarm.farm || rawFarm;
+    try {
+      const prevListingsRaw = localStorage.getItem('sfl_prev_listings_notif');
+      const prevListings = prevListingsRaw ? JSON.parse(prevListingsRaw) : null;
+      const currentListings = Object.entries(farm.tradeListings || {}).map(([id, l]) => ({ id, ...l }));
+
+      if (prevListings && prevListings.length > 0) {
+        for (const prev of prevListings) {
+          const stillExists = currentListings.find(c => c.id === prev.id);
+          if (!stillExists) {
+            const itemName = Object.keys(prev.items || {})[0];
+            const qty = itemName ? (prev.items[itemName] || 0) : 0;
+            const sfl = parseFloat(prev.sfl || 0);
+            if (itemName && sfl > 0) {
+              const emoji = '💰';
+              await this.sendPush(`${emoji} ${itemName} vendido!`, {
+                body: `${qty}x ${itemName} → +${sfl.toFixed(2)} SFL`,
+                icon: window.getImgUrl ? window.getImgUrl(itemName) : './icons/icon-192.png',
+              });
+            }
+          }
+        }
+      }
+
+      localStorage.setItem('sfl_prev_listings_notif', JSON.stringify(currentListings));
+    } catch (e) {
+      console.warn('[Notif] checkMarketplaceActivity error:', e);
+    }
+  }
+
+  /**
+   * Schedule a daily reset notification (00:00 UTC).
+   */
+  scheduleDailyReset() {
+    if (!this.prefs.master || !this.prefs.dailyReset) return;
+    const local = this.getLocalPlugin();
+    if (!local) return;
+
+    const now = new Date();
+    const nextReset = new Date();
+    nextReset.setUTCHours(0, 0, 0, 0);
+    if (nextReset <= now) nextReset.setUTCDate(nextReset.getUTCDate() + 1);
+
+    const msLeft = nextReset.getTime() - now.getTime();
+    if (msLeft <= 0 || msLeft > 86400000) return;
+
+    const notifId = this.localId(`daily-reset-${nextReset.toISOString().split('T')[0]}`);
+    const alreadyScheduledKey = `sfl_daily_reset_scheduled_${nextReset.toISOString().split('T')[0]}`;
+    if (localStorage.getItem(alreadyScheduledKey)) return;
+
+    local.schedule({
+      notifications: [{
+        id: notifId,
+        title: '🌅 Reset Diário!',
+        body: 'O jogo reiniciou. Colete seus bônus e deliveries do dia!',
+        channelId: LOCAL_CHANNEL_ID,
+        schedule: this.localSchedule(nextReset.getTime()),
+      }]
+    }).then(() => {
+      localStorage.setItem(alreadyScheduledKey, '1');
+    }).catch(e => console.warn('[Notif] scheduleDailyReset error:', e));
+  }
+
   init() {
     if (this.isNative()) {
       const push = this.getPushPlugin();
@@ -673,3 +801,4 @@ class NotificationEngine {
 window.__app.Notifications = new NotificationEngine();
 window.__app.Notifications.init();
 console.log('notifications.js carregado com sucesso!');
+

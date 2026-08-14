@@ -362,7 +362,7 @@ function renderHome(exchange, prices, parsedFarm) {
           </div>
           <div style="flex:1; min-width:0;">
             <div class="stat-label" style="font-size:12px; margin-bottom:2px;">Diamantes</div>
-            <div class="stat-value" style="font-size:20px; line-height:1; color: #a855f7;">${formatNumber(parsedFarm.gems, 0)}</div>
+            <div class="stat-value" style="font-size:20px; line-height:1; color: #a855f7;">${parsedFarm.gems !== undefined ? Math.floor(parsedFarm.gems).toLocaleString('pt-BR') : '—'}</div>
             <div class="stat-sub" style="margin-top:2px;">Gems</div>
           </div>
         </div>
@@ -1226,18 +1226,24 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       const isPositive = profit >= 0;
       const valColor = isPositive ? 'var(--emerald)' : 'var(--coral)';
       const valSign = isPositive ? '+' : '';
+      // encode item name safely for data attribute
+      const encodedName = encodeURIComponent(pos.itemName);
+      const isNft = !p2p[pos.itemName];
 
       return `
-        <div class="market-card" style="display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="market-card wallet-pos-card" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <img src="${window.getImgUrl(pos.itemName)}" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" onerror="this.src=ASSETS.SUNFLOWER">
+              <img src="${window.getImgUrl(pos.itemName)}" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${window.getImgUrl('Sunflower')}'">
               <div>
                 <div style="font-size:14px;font-weight:800;color:var(--text-primary);">${pos.itemName}</div>
-                <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${pos.qty}</div>
+                <div style="font-size:11px;color:var(--text-tertiary);">Qtd: ${pos.qty}${isNft ? ' <span style="color:var(--amber);font-weight:700;">🏆 NFT</span>' : ''}</div>
               </div>
             </div>
-            <button onclick="if(confirm('Remover ${pos.itemName} da carteira?')) window.__app.removeWalletPosition('${pos.itemName}')" style="background:none; border:none; color:var(--text-tertiary); font-size:18px; cursor:pointer; padding:0 4px;">&times;</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="wallet-sell-btn" data-item="${encodedName}" data-avg="${pos.averagePrice}" style="background:var(--emerald-subtle);border:1px solid var(--emerald);color:var(--emerald);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">💰 Vender</button>
+              <button class="wallet-remove-btn" data-item="${encodedName}" style="background:none;border:none;color:var(--text-tertiary);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
+            </div>
           </div>
           
           <div style="margin-top:auto; padding-top:8px; border-top:1px solid var(--surface-border); display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -1247,11 +1253,13 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
             </div>
             <div style="text-align:right;">
               <div style="font-size:10px; color:var(--text-tertiary);">Preço Atual:</div>
-              <div style="font-size:12px; font-weight:700; color:var(--text-primary);">${livePrice.toFixed(4)} SFL</div>
+              <div style="font-size:12px; font-weight:700; color:var(--text-primary);">${livePrice > 0 ? livePrice.toFixed(4) + ' SFL' : '— (NFT)'}</div>
             </div>
             <div style="grid-column:1/-1; padding-top:6px; border-top:1px dashed var(--surface-border); display:flex; justify-content:space-between; align-items:baseline;">
-              <div style="font-size:10px; color:var(--text-tertiary);">Lucro (P&L):</div>
-              <div style="font-size:14px; font-weight:800; color:${valColor};">${valSign}${profit.toFixed(3)} SFL <span style="font-size:10px;">(${valSign}${pctChange.toFixed(1)}%)</span></div>
+              <div style="font-size:10px; color:var(--text-tertiary);">P&L Aberto:</div>
+              <div style="font-size:14px; font-weight:800; color:${livePrice > 0 ? valColor : 'var(--text-tertiary)'};">` +
+              (livePrice > 0 ? `${valSign}${profit.toFixed(3)} SFL <span style="font-size:10px;">(${valSign}${pctChange.toFixed(1)}%)</span>` : '— sem cotação') +
+              `</div>
             </div>
           </div>
         </div>
@@ -1265,7 +1273,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       <div style="grid-column:1/-1;margin-bottom:16px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--surface-border);border-radius:14px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Carteira (P&L Aberto)</div>
-          <div style="font-size:22px;font-weight:900;color:${totalProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(3)} SFL</div>
+          <div style="font-size:22px;font-weight:900;color:${totalProfit >= 0 ? 'var(--emerald)' : 'var(--coral)'};">` + (totalProfit >= 0 ? '+' : '') + `${totalProfit.toFixed(3)} SFL</div>
           <div style="font-size:12px;color:var(--text-secondary); margin-top:2px;">Total Investido: ${totalInvested.toFixed(2)} SFL</div>
         </div>
         <div style="text-align:right;">
@@ -1274,6 +1282,26 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       </div>
       ${listHtml}
     `);
+
+    // Event delegation — safe for all item names including special characters
+    const grid = document.getElementById('market-grid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.wallet-remove-btn');
+        const sellBtn   = e.target.closest('.wallet-sell-btn');
+        if (removeBtn) {
+          const name = decodeURIComponent(removeBtn.dataset.item);
+          if (confirm(`Remover ${name} da carteira?`)) {
+            if (window.__app.removeWalletPosition) window.__app.removeWalletPosition(name);
+          }
+        }
+        if (sellBtn) {
+          const name = decodeURIComponent(sellBtn.dataset.item);
+          const avg  = parseFloat(sellBtn.dataset.avg) || 0;
+          if (window.__app.UI.promptSellPosition) window.__app.UI.promptSellPosition(name, avg);
+        }
+      }, { once: true });
+    }
     return;
   }
 
@@ -3149,6 +3177,89 @@ window.__app.UI.promptWalletPosition = () => {
       }
     });
   }
+};
+
+// ── Sell Position Modal ──
+window.__app.UI.promptSellPosition = (itemName, avgBuyPrice) => {
+  const _showModal = (typeof showModal === 'function') ? showModal : window.__app.UI.showModal;
+  const _hideModal = (typeof hideModal === 'function') ? hideModal : window.__app.UI.hideModal;
+  if (!_showModal) return;
+
+  const positions = window.__app.getWalletPositions ? window.__app.getWalletPositions() : [];
+  const pos = positions.find(p => p.itemName === itemName);
+  if (!pos) return;
+
+  const imgUrl = window.getImgUrl(itemName);
+
+  const html = `
+    <div style="padding:16px; font-family:var(--font-sans);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px;background:var(--surface-2);border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
+        <img src="${imgUrl}" style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;" onerror="this.src='${window.getImgUrl('Sunflower')}'">
+        <div>
+          <div style="font-size:16px;font-weight:900;color:var(--text-primary);">${itemName}</div>
+          <div style="font-size:12px;color:var(--text-tertiary);">Em carteira: ${pos.qty} | Preço médio de compra: ${avgBuyPrice.toFixed(4)} SFL</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:var(--text-tertiary);margin-bottom:4px;font-weight:700;">Quantidade Vendida</label>
+        <input type="number" id="sell-qty-input" max="${pos.qty}" placeholder="Ex: 100" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--surface-border);background:var(--surface-1);color:var(--text-primary);font-size:16px;font-weight:800;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;color:var(--text-tertiary);margin-bottom:4px;font-weight:700;">Valor Total Recebido (em SFL)</label>
+        <input type="number" step="0.0001" id="sell-price-input" placeholder="Ex: 30.00" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--surface-border);background:var(--surface-1);color:var(--text-primary);font-size:16px;font-weight:800;box-sizing:border-box;">
+      </div>
+
+      <div id="sell-pnl-preview" style="padding:12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--surface-border);margin-bottom:16px;min-height:44px;text-align:center;color:var(--text-tertiary);font-size:13px;">
+        Preencha os campos para ver o resultado
+      </div>
+
+      <button id="sell-confirm-btn" style="width:100%;padding:14px;border-radius:12px;background:var(--emerald);color:white;font-weight:900;font-size:16px;border:none;cursor:pointer;">✅ Confirmar Venda</button>
+    </div>
+  `;
+
+  _showModal('💰 Registrar Venda', html);
+
+  const qtyInput   = document.getElementById('sell-qty-input');
+  const priceInput = document.getElementById('sell-price-input');
+  const preview    = document.getElementById('sell-pnl-preview');
+  const confirmBtn = document.getElementById('sell-confirm-btn');
+
+  const updatePreview = () => {
+    const qty  = parseFloat(qtyInput.value);
+    const sale = parseFloat(priceInput.value);
+    if (!qty || !sale || qty <= 0 || sale <= 0) {
+      preview.innerHTML = 'Preencha os campos para ver o resultado';
+      preview.style.color = 'var(--text-tertiary)';
+      return;
+    }
+    const cost   = avgBuyPrice * qty;
+    const profit = sale - cost;
+    const pct    = cost > 0 ? ((profit / cost) * 100).toFixed(1) : '—';
+    const col    = profit >= 0 ? 'var(--emerald)' : 'var(--coral)';
+    const sign   = profit >= 0 ? '+' : '';
+    preview.innerHTML = `
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Lucro / Prejuízo Realizado</div>
+      <div style="font-size:20px;font-weight:900;color:${col};">${sign}${profit.toFixed(4)} SFL <span style="font-size:13px;">(${sign}${pct}%)</span></div>
+    `;
+    preview.style.color = col;
+  };
+
+  qtyInput.addEventListener('input', updatePreview);
+  priceInput.addEventListener('input', updatePreview);
+
+  confirmBtn.addEventListener('click', () => {
+    const qty  = parseFloat(qtyInput.value);
+    const sale = parseFloat(priceInput.value);
+    if (!qty || qty <= 0 || qty > pos.qty || !sale || sale <= 0) {
+      alert('Verifique os campos. A quantidade não pode ser maior do que o que você tem em carteira.');
+      return;
+    }
+    if (window.__app.sellWalletPosition) {
+      window.__app.sellWalletPosition(itemName, qty, sale);
+      _hideModal();
+    }
+  });
 };
 
 // ── Creator Island Shortcut ──

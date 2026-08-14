@@ -61,6 +61,7 @@ const Storage = (() => {
     currency: 'usd',
     language: 'pt', // Default to Portuguese
     communityApiKey: 'sfl.MjYwMTg3Njc1MzM2MzU1Nw.LAzux_ZbJcdgj8xUU_UMDukfG4iuEKdyvUxvxzu1kdo', // Full valid key from game
+    mysteryTimes: ['', '', ''], // 3 slots for Mystery Island times
   };
 
   function getSettings() {

@@ -2215,6 +2215,20 @@ function renderSettingsPage() {
       ` : '') : ''}
     </div>
 
+    <!-- ③ MYSTERY ISLAND TIMES -->
+    <div class="sett-section-title" style="margin-top:24px;">Horários da Mystery Island</div>
+    <div class="sett-card">
+      <div class="sett-card-desc" style="margin-bottom:12px">
+        O jogo abre a Ilha do Coração 3 vezes por dia. Como os horários variam por jogador, digite os seus aqui para receber um aviso do Super App na hora exata!<br>
+        <span style="color:var(--text-tertiary); font-size:11px;">Exemplo: 10:00, 14:00, 20:00</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <input type="time" class="mystery-time-input" data-index="0" value="${settings.mysteryTimes?.[0] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
+        <input type="time" class="mystery-time-input" data-index="1" value="${settings.mysteryTimes?.[1] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
+        <input type="time" class="mystery-time-input" data-index="2" value="${settings.mysteryTimes?.[2] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
+      </div>
+    </div>
+
     <div class="sett-section-title" style="margin-top:24px;">Apoiar Desenvolvedor</div>
     <div class="sett-card" style="border-color: rgba(34, 197, 94, 0.3);">
       <div class="sett-card-desc" style="margin-bottom:12px; text-align: center;">
@@ -2272,6 +2286,18 @@ function bindSettingsEvents() {
       if (e.key === 'Enter') apiKeyInput.blur();
     });
   }
+
+  const mysteryInputs = document.querySelectorAll('.mystery-time-input');
+  mysteryInputs.forEach(input => {
+    input.addEventListener('change', () => {
+      const settings = Storage.getSettings();
+      const times = settings.mysteryTimes || ['', '', ''];
+      const idx = parseInt(input.dataset.index);
+      times[idx] = input.value;
+      Storage.saveSettings({ mysteryTimes: times });
+      showToast('Horário da Mystery Island salvo!', 'success');
+    });
+  });
 
   const farmInput = $('#settings-farm-input');
   if (farmInput) {

@@ -795,6 +795,56 @@ class NotificationEngine {
       }
     }
     console.log('[Notif] Motor inicializado. Plataforma nativa:', this.isNative());
+    
+    // Check Mystery Island times every minute
+    setInterval(() => this.checkMysteryIsland(), 60000);
+    this.checkMysteryIsland(); // initial check
+  }
+
+  checkMysteryIsland() {
+    if (!this.prefs.master) return;
+    const settings = window.__app && window.__app.Storage ? window.__app.Storage.getSettings() : null;
+    if (!settings || !settings.mysteryTimes) return;
+
+    const now = new Date();
+    const currentHHMM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    const todayStr = now.toISOString().split('T')[0];
+
+    for (let timeStr of settings.mysteryTimes) {
+      if (timeStr && timeStr === currentHHMM) {
+        // We matched a time! Check if we already notified for this exact time today
+        const key = `sfl_mystery_${todayStr}_${timeStr}`;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '1');
+          
+          // Show Toast if app is open
+          if (window.__app && window.__app.UI && window.__app.UI.showToast) {
+            window.__app.UI.showToast('🎈 A Mystery Island abriu agora pelos próximos 30 minutos!', 'info');
+          }
+          
+          // Play a sound if supported
+          try {
+            const audio = new Audio('https://sfl.world/sounds/alert.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+          } catch(e) {}
+
+          // Send Native Local Notification if on Mobile
+          const local = this.getLocalPlugin();
+          if (local) {
+            local.schedule({
+              notifications: [{
+                id: this.localId(`mystery-${now.getTime()}`),
+                title: '🎈 Mystery Island Aberta!',
+                body: 'A Ilha do Coração ficará disponível pelos próximos 30 minutos. Aproveite!',
+                channelId: LOCAL_CHANNEL_ID,
+                schedule: this.localSchedule(Date.now() + 100),
+              }]
+            }).catch(() => {});
+          }
+        }
+      }
+    }
   }
 }
 

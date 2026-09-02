@@ -26,6 +26,7 @@ const DEFAULT_PREFS = {
   deliveries: true,
   market: true,
   dailyReset: true,
+  floatingIsland: true,
 };
 
 const SUPABASE_URL = 'https://ykbpkhsrxtnnisnorwhd.supabase.co';
@@ -550,6 +551,22 @@ class NotificationEngine {
       (parsedFarm.agingShed || []).forEach((item) => addSchedule(`aging_${item.id}`, item.name, item.name, 'agingShed', item.readyAt, item.msLeft));
       (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, item.name, 'Salt', 'saltFarm', item.readyAt, item.msLeft));
       (parsedFarm.deliveries || []).forEach((item) => addSchedule(`delivery_${item.id}`, item.name, item.name, 'deliveries', item.readyAt, item.msLeft));
+
+      // Floating Island (Mystery Island / Love Island) openings from API
+      if (parsedFarm.floatingIsland && Array.isArray(parsedFarm.floatingIsland.schedule)) {
+        parsedFarm.floatingIsland.schedule.forEach((slot) => {
+          if (slot.startAt > now) {
+            addSchedule(
+              `floating_island_${slot.index}_${slot.startAt}`,
+              'Ilha do Coração Aberta',
+              'Heart Air Balloon',
+              'floatingIsland',
+              slot.startAt,
+              slot.startAt - now
+            );
+          }
+        });
+      }
     } catch (error) {
       console.error('[Notif] Erro ao montar agendas:', error);
       return;
@@ -583,6 +600,7 @@ class NotificationEngine {
       cropMachine: 'Máquina de Cultivo', oil: 'Poço de Óleo', greenhouse: 'Estufa',
       buildings: 'Construção', crabTraps: 'Armadilha', shrines: 'Santuário',
       agingShed: 'Celeiro', saltFarm: 'Salina', deliveries: 'Entrega',
+      floatingIsland: 'Ilha do Coração',
     };
 
     Object.values(grouped).forEach(group => {
@@ -754,6 +772,48 @@ class NotificationEngine {
       }
     }
     console.log('[Notif] Motor inicializado. Plataforma nativa:', this.isNative());
+  }
+
+  checkFloatingIsland(parsedFarm) {
+    if (!this.prefs.master || this.prefs.floatingIsland === false) return;
+    const fi = parsedFarm?.floatingIsland;
+    if (!fi || !fi.currentSlot) return;
+
+    const startAt = fi.currentSlot.startAt;
+    const key = `sfl_notif_floating_island_${startAt}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+
+      const imageUrl = window.getImgUrl ? window.getImgUrl('Heart Air Balloon') : 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/sfts/heart_air_balloon.webp';
+
+      // Show in-app Toast with real item image
+      if (window.__app?.UI?.showToast) {
+        window.__app.UI.showToast('🎈 A Ilha do Coração (Mystery Island) abriu agora!', 'info', imageUrl);
+      }
+
+      // Audio chime
+      try {
+        const audio = new Audio('https://sfl.world/sounds/alert.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch(e) {}
+
+      // Native push if on mobile
+      const local = this.getLocalPlugin();
+      if (local) {
+        local.schedule({
+          notifications: [{
+            id: this.localId(`floating-island-${startAt}`),
+            title: 'Ilha do Coração Aberta!',
+            body: 'A Mystery Island está disponível agora por 30 minutos. Complete o puzzle das pétalas e colete Love Charms!',
+            channelId: LOCAL_CHANNEL_ID,
+            schedule: this.localSchedule(Date.now() + 100),
+            largeIcon: imageUrl,
+            extra: { type: 'floatingIsland', startAt, imageUrl }
+          }]
+        }).catch(() => {});
+      }
+    }
   }
 }
 

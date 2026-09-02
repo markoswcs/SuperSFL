@@ -518,6 +518,7 @@ async function refreshData(force = false) {
       await window.__app.Notifications.syncAfterFarmLoad();
       await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
       await window.__app.Notifications.checkMarketplaceActivity(State.parsedFarm);
+      window.__app.Notifications.checkFloatingIsland(State.parsedFarm);
       window.__app.Notifications.scheduleDailyReset();
     }
 
@@ -585,6 +586,7 @@ function setupAutoRefresh() {
     try {
       if (State.rawFarm && State.parsedFarm && !State.parsedFarm.isPartial && window.__app.Notifications) {
         State.parsedFarm = Farm.parseFarm(State.rawFarm, Storage.getCache(`land_info_${State.farmId}`, true));
+        window.__app.Notifications.checkFloatingIsland(State.parsedFarm);
         await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
         renderCurrentTab();
       }

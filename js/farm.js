@@ -1054,6 +1054,49 @@ function parseDailyReset(farm) {
   return items;
 }
 
+function parseFloatingIsland(farm) {
+  const island = farm?.floatingIsland;
+  if (!island) return null;
+
+  const now = Date.now();
+  const rawSchedule = Array.isArray(island.schedule) ? island.schedule : [];
+
+  const schedule = rawSchedule.map((slot, index) => {
+    const startAt = Number(slot.startAt) || 0;
+    const endAt = Number(slot.endAt) || 0;
+    const isActive = now >= startAt && now <= endAt;
+    const isPast = now > endAt;
+    const msLeft = startAt - now;
+
+    return {
+      index,
+      startAt,
+      endAt,
+      isActive,
+      isPast,
+      msLeft: isPast ? 0 : (isActive ? 0 : msLeft),
+      msRemaining: isActive ? endAt - now : 0,
+      status: isActive ? 'ready' : (isPast ? 'idle' : getTimerClass(msLeft)),
+      countdown: isActive ? `Aberta (${formatCountdown(endAt - now)})` : (isPast ? 'Finalizada' : formatCountdown(msLeft)),
+      name: `Ilha do Coração #${index + 1}`,
+      emoji: '🎈',
+      type: 'floatingIsland',
+    };
+  });
+
+  const currentSlot = schedule.find(s => s.isActive);
+  const nextSlot = schedule.filter(s => !s.isPast && !s.isActive).sort((a, b) => a.startAt - b.startAt)[0];
+
+  return {
+    schedule,
+    currentSlot: currentSlot || null,
+    nextSlot: nextSlot || null,
+    isActive: !!currentSlot,
+    petalPuzzleSolvedAt: island.petalPuzzleSolvedAt || 0,
+    items: schedule.filter(s => !s.isPast), // active and upcoming slots
+  };
+}
+
 function parseFarm(farmData) {
   if (!farmData) return null;
   const farm = farmData.farm || farmData;
@@ -1131,6 +1174,7 @@ function parseFarm(farmData) {
       deliveries:  parseDeliveries(farm),
       dailyReset:  parseDailyReset(farm),
       shrines:     parseShrines(farm),
+      floatingIsland: parseFloatingIsland(farm),
     rawInventory: (function() {
       // Flat name->qty map for fast lookup (e.g. rawInventory['Pumpkin'] = 42)
       const raw = {};

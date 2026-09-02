@@ -773,6 +773,17 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
     { id: 'oil', title: `🛢️ Poços de Óleo`, badge: oil.filter(o => o.status === 'ready').length, items: oil, badgeClass: 'sky' },
   ];
 
+  if (parsedFarm.floatingIsland && parsedFarm.floatingIsland.items && parsedFarm.floatingIsland.items.length > 0) {
+    const fi = parsedFarm.floatingIsland;
+    allSections.push({
+      id: 'floatingIsland',
+      title: `🎈 Ilha do Coração (Mystery Island)`,
+      badge: fi.isActive ? 1 : 0,
+      badgeClass: fi.isActive ? 'emerald' : 'sky',
+      items: fi.items
+    });
+  }
+
   const settings = Storage.getSettings();
   let order = settings.farmSectionOrder || [];
   let collapsed = settings.farmSectionCollapsed || {};
@@ -929,8 +940,12 @@ function renderFarmItem(item, index) {
   if (item.type === 'Chicken' || item.type === 'Cow' || item.type === 'Sheep') iconName = item.type;
   if (item.type === 'building' && item.cooking && item.cooking !== 'Unknown') iconName = item.cooking;
   if (item.type === 'cropMachine' && item.name.includes('(')) iconName = item.name.split('(')[1].replace(')', '');
+  if (item.type === 'floatingIsland') iconName = 'Heart Air Balloon';
   
   const iconUrl = `${window.getImgUrl(iconName)}`;
+  const subText = item.type === 'floatingIsland'
+    ? (item.isActive ? 'Aberta agora!' : (item.startTimeStr ? `Abre às ${item.startTimeStr}` : 'Em breve'))
+    : `${item.type ?? ''} ${item.amount ? `x ${item.amount}` : ''}`;
 
   return `
     <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="animation-delay:${index * 30}ms">
@@ -938,7 +953,7 @@ function renderFarmItem(item, index) {
       <span style="font-size:24px;line-height:1;display:none" class="farm-item-emoji">${item.emoji || '🌱'}</span>
       <div class="farm-item-info">
         <div class="farm-item-name">${item.name}</div>
-        <div class="farm-item-sub">${item.type ?? ''} ${item.amount ? `x ${item.amount}` : ''}</div>
+        <div class="farm-item-sub">${subText}</div>
       </div>
       <div class="farm-item-timer ${item.status}">${item.countdown}</div>
     </div>
@@ -2070,6 +2085,10 @@ function renderAlertsPage() {
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
           <span style="font-size:13px; font-weight:700;">📦 Entregas Prontas</span>
           <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('deliveries', this.checked)" ${prefs.deliveries !== false ? 'checked' : ''}><span class="slider round"></span></label>
+        </div>
+        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+          <span style="font-size:13px; font-weight:700;">🎈 Ilha do Coração (Mystery Island)</span>
+          <label class="switch"><input type="checkbox" onchange="window.__app.Notifications.setPref('floatingIsland', this.checked)" ${prefs.floatingIsland !== false ? 'checked' : ''}><span class="slider round"></span></label>
         </div>
         <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:13px; font-weight:700;">⏰ Daily Reset (00:00 UTC)</span>

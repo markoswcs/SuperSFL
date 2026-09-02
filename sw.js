@@ -94,13 +94,17 @@ self.addEventListener('push', (event) => {
     try {
       const data = event.data.json();
       const title = data.title || 'SFL Pro';
+      const itemIcon = data.icon || data.imageUrl || 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png';
+      const itemImage = data.image || data.imageUrl || undefined;
       const options = {
         body: data.body || '',
-        icon: data.icon || 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
+        icon: itemIcon,
+        image: itemImage,
         tag: data.tag || ('sfl-push-' + Date.now()),
         badge: 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
         renotify: true,
-        vibrate: [200, 100, 200]
+        vibrate: [200, 100, 200],
+        data: data.data || {}
       };
       
       event.waitUntil(self.registration.showNotification(title, options));

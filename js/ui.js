@@ -27,15 +27,36 @@ window.openExternal = async (url) => {
 // =====================================================
 window.getImgUrl = function(name) {
   if (!name) return window.getImgUrl('Sunflower');
+  const aliases = {
+    'tree': 'Wood',
+    'madeira': 'Wood',
+    'árvore (madeira)': 'Wood',
+    'arvore (madeira)': 'Wood',
+    'colmeia (mel)': 'Honey',
+    'colmeia': 'Honey',
+    'mel': 'Honey',
+    'stone rock': 'Stone',
+    'iron rock': 'Iron',
+    'gold rock': 'Gold',
+    'mushroom': 'Wild Mushroom',
+  };
+  const resolvedName = aliases[name.toString().toLowerCase()] || name;
   if (window.SFL_IMAGES) {
-    if (window.SFL_IMAGES[name]) return window.SFL_IMAGES[name];
+    if (window.SFL_IMAGES[resolvedName]) return window.SFL_IMAGES[resolvedName];
     // Try case-insensitive match
-    const lowerName = name.toLowerCase();
+    const lowerName = resolvedName.toLowerCase();
     const key = Object.keys(window.SFL_IMAGES).find(k => k.toLowerCase() === lowerName);
     if (key) return window.SFL_IMAGES[key];
   }
-  return `https://sfl.world/img/source/${encodeURIComponent(name)}.png`;
+  return `https://sfl.world/img/source/${encodeURIComponent(resolvedName)}.png`;
 };
+
+function getEstimatedCost(itemName) {
+  if (window.__app && typeof window.__app.getEstimatedCost === 'function' && window.__app.getEstimatedCost !== getEstimatedCost) {
+    return window.__app.getEstimatedCost(itemName);
+  }
+  return 0;
+}
 
 const ASSETS = {
   SFL: 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/icons/flower_token.webp',
@@ -946,7 +967,11 @@ let _sflUsd    = 0;
 function renderMarketPage(prices, exchange) {
   _sflUsd = exchange?.sfl?.usd ?? 0.0065;
   
-  let p2p = prices?.data?.p2p ?? prices?.p2p;
+  // Use State.p2p (normalized flat map) as primary source
+  let p2p = window.__app?.State?.p2p || {};
+  if (Object.keys(p2p).length === 0) {
+    p2p = prices?.data?.p2p ?? prices?.p2p ?? {};
+  }
   if (!p2p || Object.keys(p2p).length === 0) {
     p2p = (Object.keys(_allPrices).length > 0) ? _allPrices : FALLBACK_PRICES;
   }
@@ -961,7 +986,9 @@ function renderMarketPage(prices, exchange) {
 }
 
 function renderMarketFiltered(search = '', filter = 'inventory') {
-  const p2p = Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES;
+  const p2p = (window.__app?.State?.p2p && Object.keys(window.__app.State.p2p).length > 0)
+    ? window.__app.State.p2p
+    : (Object.keys(_allPrices).length > 0 ? _allPrices : FALLBACK_PRICES);
   let history = {};
   let alerts = [];
   try {
@@ -1212,8 +1239,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
         </div>
       `;
     } else {
-
-    const listHtml = positions.map(pos => {
+      listHtml = positions.map(pos => {
       const livePrice = p2p[pos.itemName] || 0;
       const liveTotal = livePrice * pos.qty;
       const profit = liveTotal - pos.totalCostSfl;
@@ -1317,7 +1343,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
   let entries = [];
   // ── OPPORTUNITIES filter: show market-wide price movements (independent of inventory) ──
   if (filter === 'opportunities') {
-    const p2pItems = Object.entries(p2p);
+    const p2pItems = Object.entries(p2p).filter(([name, price]) => price > 0);
     const opsList = p2pItems.map(([name, priceInSfl]) => {
       const h = history[name] || {};
       let pctChange = 0;
@@ -1328,8 +1354,10 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       if (h.prev && h.prev > 0) {
         valChange = priceInSfl - h.prev;
       }
+      const baseCost = getEstimatedCost(name);
+      const profitMargin = baseCost > 0 ? ((priceInSfl - baseCost) / baseCost) * 100 : 0;
       const isPump = h.trend === 'up' && h.prev && priceInSfl > h.prev * 1.10;
-      return { name, priceInSfl, pctChange, valChange, isPump, trend: h.trend, prev: h.prev, max: h.max };
+      return { name, priceInSfl, pctChange, valChange, isPump, trend: h.trend, prev: h.prev, max: h.max, baseCost, profitMargin };
     });
 
     // Sort by % change descending (only show items with a price movement)
@@ -1338,7 +1366,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       .sort((a, b) => b.pctChange - a.pctChange);
     const stable = opsList
       .filter(i => i.pctChange === 0 && i.priceInSfl > 0)
-      .sort((a, b) => b.priceInSfl - a.priceInSfl);
+      .sort((a, b) => (b.profitMargin || 0) - (a.profitMargin || 0) || b.priceInSfl - a.priceInSfl);
     const falling = opsList
       .filter(i => i.pctChange < 0)
       .sort((a, b) => a.pctChange - b.pctChange);
@@ -1372,7 +1400,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
             <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">
               Atual: <b style="color:var(--text-secondary)">${item.priceInSfl.toFixed(4)} SFL</b>
               ${item.prev ? ` • Antes: ${item.prev.toFixed(4)}` : ''}
-              ${item.max ? ` • Máx: ${item.max.toFixed(4)}` : ''}
+              ${item.profitMargin > 0 ? ` • <span style="color:var(--emerald);font-weight:700;">Margem: +${item.profitMargin.toFixed(0)}%</span>` : ''}
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
@@ -1386,22 +1414,21 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
   }
 
   // ── PORTFOLIO filter: show ALL inventory items ──
-  if (window.__app.State.parsedFarm && window.__app.State.parsedFarm.inventory) {
-    const inv = window.__app.State.parsedFarm.inventory;
-    const allOwned = [...(inv.crops || []), ...(inv.resources || []), ...(inv.food || []), ...(inv.special || [])];
-    
-    allOwned.forEach(item => {
-      if (item.qty <= 0) return;
-      const priceInSfl = p2p[item.name] || 0;
-      const baseCost = window.__app && window.__app.getEstimatedCost ? window.__app.getEstimatedCost(item.name) : 0;
-      const totalValue = item.qty * priceInSfl;
+  if (window.__app.State.parsedFarm && (window.__app.State.parsedFarm.rawInventory || window.__app.State.parsedFarm.inventory)) {
+    const rawInv = window.__app.State.parsedFarm.rawInventory || {};
+    Object.entries(rawInv).forEach(([name, qty]) => {
+      const numQty = parseFloat(qty) || 0;
+      if (numQty <= 0) return;
+      const priceInSfl = p2p[name] || 0;
+      const baseCost = getEstimatedCost(name);
+      const totalValue = numQty * priceInSfl;
       const unitProfit = priceInSfl > 0 ? priceInSfl - baseCost : 0;
-      const totalProfit = unitProfit * item.qty;
+      const totalProfit = unitProfit * numQty;
       const profitMargin = baseCost > 0 ? (unitProfit / baseCost) * 100 : 0;
 
       entries.push({
-        name: item.name,
-        qty: item.qty,
+        name,
+        qty: numQty,
         priceInSfl,
         hasPrice: priceInSfl > 0,
         baseCost,
@@ -2215,20 +2242,6 @@ function renderSettingsPage() {
       ` : '') : ''}
     </div>
 
-    <!-- ③ MYSTERY ISLAND TIMES -->
-    <div class="sett-section-title" style="margin-top:24px;">Horários da Mystery Island</div>
-    <div class="sett-card">
-      <div class="sett-card-desc" style="margin-bottom:12px">
-        O jogo abre a Ilha do Coração 3 vezes por dia. Como os horários variam por jogador, digite os seus aqui para receber um aviso do Super App na hora exata!<br>
-        <span style="color:var(--text-tertiary); font-size:11px;">Exemplo: 10:00, 14:00, 20:00</span>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <input type="time" class="mystery-time-input" data-index="0" value="${settings.mysteryTimes?.[0] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
-        <input type="time" class="mystery-time-input" data-index="1" value="${settings.mysteryTimes?.[1] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
-        <input type="time" class="mystery-time-input" data-index="2" value="${settings.mysteryTimes?.[2] || ''}" style="flex:1; padding:8px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:14px; text-align:center;">
-      </div>
-    </div>
-
     <div class="sett-section-title" style="margin-top:24px;">Apoiar Desenvolvedor</div>
     <div class="sett-card" style="border-color: rgba(34, 197, 94, 0.3);">
       <div class="sett-card-desc" style="margin-bottom:12px; text-align: center;">
@@ -2286,18 +2299,6 @@ function bindSettingsEvents() {
       if (e.key === 'Enter') apiKeyInput.blur();
     });
   }
-
-  const mysteryInputs = document.querySelectorAll('.mystery-time-input');
-  mysteryInputs.forEach(input => {
-    input.addEventListener('change', () => {
-      const settings = Storage.getSettings();
-      const times = settings.mysteryTimes || ['', '', ''];
-      const idx = parseInt(input.dataset.index);
-      times[idx] = input.value;
-      Storage.saveSettings({ mysteryTimes: times });
-      showToast('Horário da Mystery Island salvo!', 'success');
-    });
-  });
 
   const farmInput = $('#settings-farm-input');
   if (farmInput) {
@@ -2817,7 +2818,7 @@ window.__app.showAnimalsModal = () => {
 // TOAST
 // =====================================================
 
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', iconUrl = null) {
   const existing = $('#toast');
   if (existing) existing.remove();
 
@@ -2825,15 +2826,26 @@ function showToast(message, type = 'success') {
   toast.id = 'toast';
   toast.style.cssText = `
     position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%);
-    background:${type === 'error' ? 'var(--coral)' : 'var(--emerald)'};
-    color:var(--obsidian-base);padding:10px 20px;border-radius:24px;
+    background:${type === 'error' ? 'var(--coral)' : (type === 'info' ? 'var(--surface-3)' : 'var(--emerald)')};
+    color:${type === 'info' ? 'var(--text-primary)' : 'var(--obsidian-base)'};
+    padding:10px 20px;border-radius:24px;
     font-family:var(--font-display);font-size:13px;font-weight:700;
     z-index:9999;animation:springIn 300ms cubic-bezier(0.34,1.56,0.64,1);
     box-shadow:0 4px 20px rgba(0,0,0,0.3);white-space:nowrap;max-width:90vw;
+    display:flex;align-items:center;gap:10px;
+    border:1px solid rgba(255,255,255,0.1);
   `;
-  toast.textContent = message;
+  if (iconUrl) {
+    const img = document.createElement('img');
+    img.src = iconUrl;
+    img.style.cssText = 'width:22px;height:22px;object-fit:contain;image-rendering:pixelated;';
+    toast.appendChild(img);
+  }
+  const span = document.createElement('span');
+  span.textContent = message;
+  toast.appendChild(span);
   document.body.appendChild(toast);
-  setTimeout(() => toast?.remove(), 3000);
+  setTimeout(() => toast?.remove(), 3200);
 }
 
 export default {

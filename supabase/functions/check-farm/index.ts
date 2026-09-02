@@ -100,9 +100,10 @@ serve(async () => {
         if (bodyText.length > 120) bodyText = bodyText.substring(0, 117) + '...';
 
         const firstName = allowedItems[0].item_name;
-        let iconUrl = "https://markoswcs.github.io/SuperSFL/icons/icon-192.png";
+        // Accurate image URL for the specific mature item
+        const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(firstName)}.png`;
         
-        const titleStr = `SFL Pro: ${allowedItems.length === 1 ? firstName + ' pronto!' : allowedItems.length + ' itens prontos!'}`;
+        const titleStr = allowedItems.length === 1 ? `${firstName} pronto!` : `${allowedItems.length} itens prontos!`;
 
         if (sub.endpoint.startsWith('fcm://')) {
           if (!messaging) throw new Error("FCM requested but Firebase Admin not initialized");
@@ -112,9 +113,13 @@ serve(async () => {
             notification: {
               title: titleStr,
               body: bodyText,
+              imageUrl: iconUrl,
             },
             android: {
-              priority: 'high'
+              priority: 'high',
+              notification: {
+                imageUrl: iconUrl,
+              }
             }
           });
         } else {
@@ -122,6 +127,8 @@ serve(async () => {
             title: titleStr,
             body: bodyText,
             icon: iconUrl,
+            image: iconUrl,
+            imageUrl: iconUrl,
             badge: 'https://markoswcs.github.io/SuperSFL/icons/icon-192.png',
             tag: "farm-ready-" + Date.now()
           });

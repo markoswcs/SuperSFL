@@ -299,6 +299,7 @@ function parseTrees(farm) {
       id,
       name:  'Tree',
       emoji: '🌳',
+      readyAt,
       msLeft: msLeft < 0 ? -1 : msLeft,
       status:    choppedAt ? getTimerClass(msLeft) : 'ready',
       countdown: choppedAt ? formatCountdown(msLeft) : 'Standing',
@@ -327,6 +328,7 @@ function parseRocks(farm) {
         id: `${name}-${id}`,
         name,
         emoji,
+        readyAt,
         msLeft: msLeft,
         status:    minedAt ? getTimerClass(msLeft) : 'ready',
         countdown: minedAt ? formatCountdown(msLeft) : 'Available',
@@ -364,6 +366,7 @@ function parseMushrooms(farm) {
       id,
       name: m.name || 'Wild Mushroom',
       emoji: '🍄',
+      readyAt,
       msLeft,
       status:    msLeft <= 0 ? 'ready' : getTimerClass(msLeft),
       countdown: msLeft <= 0 ? 'Pronto!' : formatCountdown(msLeft),
@@ -442,15 +445,13 @@ function parseAnimals(farm) {
         countdownStr = 'FEED ME';
       }
 
-      // DEBUG - remove after fix
-      console.log(`[ANIMAL DEBUG] id=${id} type=${type} state=${state} awakeAt=${awakeAt} msLeft=${msLeft === Infinity ? 'Inf' : Math.round(msLeft/1000)+'s'} => status=${statusStr}`);
-
       items.push({
         id,
         name:    `${type} #${parseInt(id) + 1}`,
         type,
         emoji:   ANIMAL_EMOJI[type] ?? '🐾',
         state,
+        readyAt: awakeAt,
         msLeft:     isReady ? 0 : (isHungry ? 0 : Math.max(0, msLeft)),
         isHungry:   isHungry,
         hasProduceReady: isReady,
@@ -465,38 +466,22 @@ function parseAnimals(farm) {
   };
 
   const hasBuilding = (name) => {
-    const hasInv = farm?.inventory?.[name];
-    const hasBld = farm?.buildings?.[name];
-    return (hasInv && parseFloat(hasInv) > 0) || (hasBld && hasBld.length > 0);
+    return farm?.buildings?.[name] && farm.buildings[name].length > 0;
   };
 
-  if (farm?.animals) {
-    Object.entries(farm.animals).forEach(([id, animal]) => {
-      const type = animal.type ?? 'Animal';
-      addAnimals({ [id]: animal }, type);
-    });
-  }
-  if (hasBuilding('Hen House')) {
-    if (farm?.henHouse?.animals) {
-      Object.entries(farm.henHouse.animals).forEach(([id, animal]) => {
-        const type   = animal.type ?? 'Chicken';
-        addAnimals({ [id]: animal }, type);
-      });
-    } else if (farm?.chickens) {
-      addAnimals(farm.chickens, 'Chicken');
-    }
-  }
+  // Only parse animals if user actually has the corresponding building
+  if (hasBuilding('Hen House')) addAnimals(farm?.chickens, 'Chicken');
   if (hasBuilding('Barn')) {
-    if (farm?.barn?.animals) {
-      Object.entries(farm.barn.animals).forEach(([id, animal]) => {
-        const type   = animal.type ?? 'Cow';
-        addAnimals({ [id]: animal }, type);
-      });
-    }
+    addAnimals(farm?.cows,   'Cow');
+    addAnimals(farm?.sheep,  'Sheep');
+    addAnimals(farm?.pigs,   'Pig');
   }
 
   return items.sort((a, b) => {
-    if (a.isHungry !== b.isHungry) return a.isHungry ? -1 : 1;
+    if (a.hasProduceReady && !b.hasProduceReady) return -1;
+    if (!a.hasProduceReady && b.hasProduceReady) return 1;
+    if (a.isHungry && !b.isHungry) return -1;
+    if (!a.isHungry && b.isHungry) return 1;
     return (a.msLeft ?? 0) - (b.msLeft ?? 0);
   });
 }
@@ -517,6 +502,7 @@ function parseBeehives(farm) {
       id,
       name:     `Beehive #${parseInt(id) + 1}`,
       emoji:    '🍯',
+      readyAt,
       msLeft,
       status:    getTimerClass(msLeft),
       countdown: formatCountdown(msLeft),
@@ -588,6 +574,7 @@ function parseGreenhouse(farm) {
       id,
       name,
       emoji:    CROP_EMOJI[name] ?? '🌱',
+      readyAt,
       msLeft,
       status:    getTimerClass(msLeft),
       countdown: formatCountdown(msLeft),
@@ -612,6 +599,7 @@ function parseOil(farm) {
       id,
       name:     `Oil Reserve #${parseInt(id) + 1}`,
       emoji:    '🛢',
+      readyAt,
       msLeft,
       status:    drilledAt ? getTimerClass(msLeft) : 'ready',
       countdown: drilledAt ? formatCountdown(msLeft) : 'Available',
@@ -705,6 +693,7 @@ function parseFlowers(farm) {
       id,
       name,
       emoji: getGenericEmoji(name) ?? '🌸',
+      readyAt,
       msLeft,
       status: getTimerClass(msLeft),
       countdown: formatCountdown(msLeft),
@@ -730,11 +719,13 @@ function parseCropMachine(farm) {
     const active = machine.queue.find(q => q.readyAt > now) || machine.queue[machine.queue.length - 1];
     
     if (active) {
-      const msLeft = (active.readyAt ?? 0) - now;
+      const readyAt = active.readyAt ?? 0;
+      const msLeft = readyAt - now;
       items.push({
         id: `cropmachine-${i}`,
         name: `Crop Machine (${active.crop})`,
         emoji: '🚜',
+        readyAt,
         msLeft,
         status: getTimerClass(msLeft),
         countdown: formatCountdown(msLeft),

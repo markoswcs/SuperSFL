@@ -11,10 +11,16 @@ import Storage from './storage.js?v=28';
 const ENDPOINTS = {
   EXCHANGE:   'https://sfl.world/api/v1.1/exchange',
   PRICES:     'https://sfl.world/api/v1/prices',
-  AUCTIONS:   'https://sfl.world/api/v1/auctions',
+  AUCTIONS:   'https://api.sunflower-land.com/community/auctions',
   NFTS:       'https://sfl.world/api/v1/nfts',
   LAND_INFO:  (id) => `https://sfl.world/api/v1.1/land/${id}`,
   FARM_DATA:  (id) => `https://api.sunflower-land.com/community/farms/${id}`,
+  // New Community API endpoints
+  AUCTION_RESULTS:      (id) => `https://api.sunflower-land.com/community/auctions/${id}/results`,
+  MARKETPLACE_ACTIVITY: 'https://api.sunflower-land.com/community/marketplace/activity',
+  MARKETPLACE_ITEM:     (name) => `https://api.sunflower-land.com/community/marketplace/items/${encodeURIComponent(name)}`,
+  MARKETPLACE_PROFILE:  (id) => `https://api.sunflower-land.com/community/marketplace/profile/${id}`,
+  TRADEABLE_CATALOG:    'https://api.sunflower-land.com/community/data?type=tradeable',
 };
 
 const host = window.location.hostname || 'localhost';
@@ -219,6 +225,68 @@ async function refreshAll(farmId, forceRefresh = false) {
   };
 }
 
+// --- Auction Results ---
+// Response shape: { auctionId, status, summary: { minWinningBid, totalBids, totalWinners }, results: [...] }
+async function getAuctionResults(auctionId) {
+  if (!auctionId) return null;
+  const CACHE_KEY = `auction_results_${auctionId}`;
+  const cached = Storage.getCache(CACHE_KEY);
+  if (cached) return cached;
+  const data = await fetchJson(ENDPOINTS.AUCTION_RESULTS(auctionId));
+  Storage.setCache(CACHE_KEY, data, 300_000); // 5min TTL
+  return data;
+}
+
+// --- Marketplace Activity (live trades feed) ---
+// Response shape: { activity: [{ item, quantity, sfl, type, timestamp, ... }] }
+async function getMarketplaceActivity(forceRefresh = false) {
+  const CACHE_KEY = 'marketplace_activity';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  const data = await fetchJson(ENDPOINTS.MARKETPLACE_ACTIVITY);
+  Storage.setCache(CACHE_KEY, data, 120_000); // 2min TTL
+  return data;
+}
+
+// --- Marketplace Item (deep item data: floor, volume, order book) ---
+// Response shape: { item, floorPrice, lastSalePrice, volume24h, supply, listings: [...] }
+async function getMarketplaceItem(itemName) {
+  if (!itemName) return null;
+  const CACHE_KEY = `mkt_item_${itemName}`;
+  const cached = Storage.getCache(CACHE_KEY);
+  if (cached) return cached;
+  const data = await fetchJson(ENDPOINTS.MARKETPLACE_ITEM(itemName));
+  Storage.setCache(CACHE_KEY, data, 300_000); // 5min TTL
+  return data;
+}
+
+// --- Marketplace Profile (farm trading history & listings) ---
+// Response shape: { farmId, reputation, totalTrades, activeListings: [...], history: [...] }
+async function getMarketplaceProfile(farmId) {
+  if (!farmId) return null;
+  const CACHE_KEY = `mkt_profile_${farmId}`;
+  const cached = Storage.getCache(CACHE_KEY);
+  if (cached) return cached;
+  const data = await fetchJson(ENDPOINTS.MARKETPLACE_PROFILE(farmId));
+  Storage.setCache(CACHE_KEY, data, 300_000); // 5min TTL
+  return data;
+}
+
+// --- Tradeable Catalog (master list of all tradeable items) ---
+// Response shape: list of items with types, categories, metadata
+async function getTradeableCatalog(forceRefresh = false) {
+  const CACHE_KEY = 'tradeable_catalog';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  const data = await fetchJson(ENDPOINTS.TRADEABLE_CATALOG);
+  Storage.setCache(CACHE_KEY, data, 3600_000); // 1h TTL (changes rarely)
+  return data;
+}
+
 export default {
   getExchange,
   getPrices,
@@ -227,4 +295,9 @@ export default {
   getFarmData,
   getLandInfo,
   refreshAll,
+  getAuctionResults,
+  getMarketplaceActivity,
+  getMarketplaceItem,
+  getMarketplaceProfile,
+  getTradeableCatalog,
 };

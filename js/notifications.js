@@ -506,39 +506,50 @@ class NotificationEngine {
 
     const itemsToSchedule = [];
 
-    const addSchedule = (itemId, itemName, category, msLeft) => {
+    const addSchedule = (itemId, itemName, imageItemName, category, readyAt, msLeft) => {
       if (this.prefs[category] === false) return;
-      const remaining = Number(msLeft);
-      if (!Number.isFinite(remaining) || remaining <= 0) return;
+      
+      let readyAtMs = 0;
+      if (readyAt && Number.isFinite(Number(readyAt)) && Number(readyAt) > 0) {
+        readyAtMs = Number(readyAt);
+      } else {
+        const remaining = Number(msLeft);
+        if (Number.isFinite(remaining) && remaining > 0) {
+          readyAtMs = now + remaining;
+        }
+      }
 
-      const readyAtMs = now + remaining;
+      // Do NOT schedule past events or items already ready
+      if (!readyAtMs || readyAtMs <= now + 5000) return;
+
       itemsToSchedule.push({
         itemId: String(itemId),
         itemName,
+        imageItemName: imageItemName || itemName,
         category,
         readyAtMs
       });
     };
 
     try {
-      (parsedFarm.crops || []).forEach((item) => addSchedule(`crop_${item.id}`, item.name, 'crops', item.msLeft));
-      (parsedFarm.fruits || []).forEach((item) => addSchedule(`fruit_${item.id}`, item.name, 'fruits', item.msLeft));
-      (parsedFarm.trees || []).forEach((item) => addSchedule(`tree_${item.id}`, 'Árvore (Madeira)', 'trees', item.msLeft));
-      (parsedFarm.rocks || []).forEach((item) => addSchedule(`rock_${item.id}`, item.name, 'rocks', item.msLeft));
-      (parsedFarm.mushrooms || []).forEach((item) => addSchedule(`mushroom_${item.id}`, item.name, 'rocks', item.msLeft));
-      (parsedFarm.animals || []).forEach((item) => addSchedule(`animal_${item.id}`, item.name, 'animals', item.msLeft));
-      (parsedFarm.beehives || []).forEach((item) => addSchedule(`hive_${item.id}`, 'Colmeia (Mel)', 'beehives', item.msLeft));
-      (parsedFarm.flowers || []).forEach((item) => addSchedule(`flower_${item.id}`, item.name, 'flowers', item.msLeft));
-      (parsedFarm.composting || []).forEach((item) => addSchedule(`compost_${item.id}`, item.name, 'composting', item.msLeft));
-      (parsedFarm.cropMachine || []).forEach((item) => addSchedule(`crop-machine_${item.id}`, item.name, 'cropMachine', item.msLeft));
-      (parsedFarm.oil || []).forEach((item) => addSchedule(`oil_${item.id}`, item.name, 'oil', item.msLeft));
-      (parsedFarm.greenhouse || []).forEach((item) => addSchedule(`greenhouse_${item.id}`, item.name, 'greenhouse', item.msLeft));
-      (parsedFarm.buildings || []).forEach((item) => addSchedule(`building_${item.id}`, item.name, 'buildings', item.msLeft));
-      (parsedFarm.crabTraps || []).forEach((item) => addSchedule(`crab-trap_${item.id}`, item.name, 'crabTraps', item.msLeft));
-      (parsedFarm.shrines || []).forEach((item) => addSchedule(`shrine_${item.id}`, item.name, 'shrines', item.msLeft));
-      (parsedFarm.agingShed || []).forEach((item) => addSchedule(`aging_${item.id}`, item.name, 'agingShed', item.msLeft));
-      (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, item.name, 'saltFarm', item.msLeft));
-      (parsedFarm.deliveries || []).forEach((item) => addSchedule(`delivery_${item.id}`, item.name, 'deliveries', item.msLeft));
+      (parsedFarm.crops || []).forEach((item) => addSchedule(`crop_${item.id}`, item.name, item.name, 'crops', item.readyAt, item.msLeft));
+      (parsedFarm.fruits || []).forEach((item) => addSchedule(`fruit_${item.id}`, item.name, item.name, 'fruits', item.readyAt, item.msLeft));
+      (parsedFarm.trees || []).forEach((item) => addSchedule(`tree_${item.id}`, 'Madeira', 'Wood', 'trees', item.readyAt, item.msLeft));
+      (parsedFarm.rocks || []).forEach((item) => addSchedule(`rock_${item.id}`, item.name, item.name, 'rocks', item.readyAt, item.msLeft));
+      (parsedFarm.mushrooms || []).forEach((item) => addSchedule(`mushroom_${item.id}`, item.name, 'Wild Mushroom', 'rocks', item.readyAt, item.msLeft));
+      (parsedFarm.animals || []).forEach((item) => addSchedule(`animal_${item.id}`, item.type || item.name, item.type || item.name, 'animals', item.readyAt, item.msLeft));
+      (parsedFarm.beehives || []).forEach((item) => addSchedule(`hive_${item.id}`, 'Mel', 'Honey', 'beehives', item.readyAt, item.msLeft));
+      (parsedFarm.flowers || []).forEach((item) => addSchedule(`flower_${item.id}`, item.name, item.name, 'flowers', item.readyAt, item.msLeft));
+      (parsedFarm.composting || []).forEach((item) => addSchedule(`compost_${item.id}`, item.name, item.name, 'composting', item.readyAt, item.msLeft));
+      (parsedFarm.cropMachine || []).forEach((item) => addSchedule(`crop-machine_${item.id}`, item.name, item.name, 'cropMachine', item.readyAt, item.msLeft));
+      (parsedFarm.oil || []).forEach((item) => addSchedule(`oil_${item.id}`, item.name, 'Oil Reserve', 'oil', item.readyAt, item.msLeft));
+      (parsedFarm.greenhouse || []).forEach((item) => addSchedule(`greenhouse_${item.id}`, item.name, item.name, 'greenhouse', item.readyAt, item.msLeft));
+      (parsedFarm.buildings || []).forEach((item) => addSchedule(`building_${item.id}`, item.cooking || item.name, item.cooking || item.name, 'buildings', item.readyAt, item.msLeft));
+      (parsedFarm.crabTraps || []).forEach((item) => addSchedule(`crab-trap_${item.id}`, item.name, item.name, 'crabTraps', item.readyAt, item.msLeft));
+      (parsedFarm.shrines || []).forEach((item) => addSchedule(`shrine_${item.id}`, item.name, item.name, 'shrines', item.readyAt, item.msLeft));
+      (parsedFarm.agingShed || []).forEach((item) => addSchedule(`aging_${item.id}`, item.name, item.name, 'agingShed', item.readyAt, item.msLeft));
+      (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, item.name, 'Salt', 'saltFarm', item.readyAt, item.msLeft));
+      (parsedFarm.deliveries || []).forEach((item) => addSchedule(`delivery_${item.id}`, item.name, item.name, 'deliveries', item.readyAt, item.msLeft));
     } catch (error) {
       console.error('[Notif] Erro ao montar agendas:', error);
       return;
@@ -546,11 +557,13 @@ class NotificationEngine {
 
     const grouped = {};
     itemsToSchedule.forEach(item => {
-       const minuteBucket = Math.round(item.readyAtMs / 600000); // 10 minute buckets
-       const key = `${item.itemName}_${minuteBucket}`;
+       // Group items maturing within 2 minutes of each other
+       const bucket = Math.round(item.readyAtMs / 120000);
+       const key = `${item.itemName}_${bucket}`;
        if (!grouped[key]) {
            grouped[key] = {
                itemName: item.itemName,
+               imageItemName: item.imageItemName,
                category: item.category,
                readyAtMs: item.readyAtMs,
                count: 0,
@@ -564,98 +577,44 @@ class NotificationEngine {
        }
     });
 
+    const catLabels = {
+      crops: 'Plantação', fruits: 'Fruta', trees: 'Árvore', rocks: 'Mineração',
+      animals: 'Animal', beehives: 'Colmeia', flowers: 'Flor', composting: 'Compostagem',
+      cropMachine: 'Máquina de Cultivo', oil: 'Poço de Óleo', greenhouse: 'Estufa',
+      buildings: 'Construção', crabTraps: 'Armadilha', shrines: 'Santuário',
+      agingShed: 'Celeiro', saltFarm: 'Salina', deliveries: 'Entrega',
+    };
+
     Object.values(grouped).forEach(group => {
-      const { itemName, category, readyAtMs, count, itemIds } = group;
+      const { itemName, imageItemName, category, readyAtMs, count, itemIds } = group;
       
-      const strId = `${farmId}:${itemName}:${Math.round(readyAtMs/600000)}`;
+      const strId = `${farmId}:${itemName}:${Math.round(readyAtMs/120000)}`;
       let hash = 0;
       for (let i = 0; i < strId.length; i++) {
         hash = (hash << 5) - hash + strId.charCodeAt(i);
         hash |= 0;
       }
-      const numId = Math.abs(hash);
+      const numId = (Math.abs(hash) >>> 0) % 2147483646 + 1;
       
-      const imageUrl = window.getImgUrl ? window.getImgUrl(itemName) : `https://sfl.world/img/source/${itemName.replace(/\s+/g, '')}.png`;
-
-      // Complete emoji map for all SFL item types
-      const emojiMap = {
-        // Crops
-        'Sunflower': '🌻', 'Potato': '🥔', 'Pumpkin': '🎃', 'Carrot': '🥕', 'Cabbage': '🥬',
-        'Beetroot': '🍠', 'Cauliflower': '🥦', 'Parsnip': '🥕', 'Eggplant': '🍆', 'Corn': '🌽',
-        'Radish': '🧄', 'Wheat': '🌾', 'Kale': '🥬', 'Soybean': '🫘', 'Artichoke': '🌿',
-        'Yam': '🍠', 'Broccoli': '🥦', 'Leek': '🌿', 'Turnip': '🫛', 'Pepper': '🌶️',
-        'Squash': '🎃', 'Fennel': '🌿', 'Onion': '🧅', 'Garlic': '🧄',
-        // Fruits
-        'Apple': '🍎', 'Blueberry': '🫐', 'Orange': '🍊', 'Tomato': '🍅', 'Lemon': '🍋',
-        'Banana': '🍌', 'Grape': '🍇', 'Peach': '🍑', 'Mango': '🥭', 'Avocado': '🥑',
-        'Dragonfruit': '🐉', 'Starfruit': '⭐', 'Strawberry': '🍓', 'Kiwi': '🥝',
-        'Pineapple': '🍍', 'Coconut': '🥥', 'Watermelon': '🍉', 'Pomegranate': '💎',
-        'Fig': '🍈', 'Passion Fruit': '💜', 'Guava': '🟢', 'Papaya': '🟠',
-        // Trees
-        'Wood': '🪵', 'Enchanted Tree': '✨', 'Crimson Cap': '🍄',
-        // Rocks / Mining
-        'Stone': '🪨', 'Iron': '⛏️', 'Gold': '🥇', 'Crimstone': '💎', 'Sunstone': '☀️',
-        'Diamond': '💠', 'Ruby': '🔴', 'Sapphire': '🔵', 'Amethyst': '💜', 'Obsidian': '⬛',
-        // Mushrooms
-        'Mushroom': '🍄', 'Wild Mushroom': '🍄',
-        // Animals
-        'Chicken': '🐔', 'Cow': '🐄', 'Sheep': '🐑', 'Pig': '🐖', 'Bee': '🐝',
-        'Horse': '🐴', 'Rabbit': '🐰', 'Duck': '🦆', 'Fish': '🐟', 'Lobster': '🦞',
-        'Anchovy': '🐟', 'Tuna': '🐡', 'Seahorse': '🌊',
-        // Beehives
-        'Beehive': '🍯', 'Bee Box': '🍯',
-        // Flowers
-        'Red Lotus': '🌹', 'Blue Lotus': '🌸', 'Yellow Lotus': '💛', 'White Lotus': '🤍',
-        'Red Carnation': '🌹', 'Yellow Carnation': '🌼', 'White Carnation': '🤍',
-        'Red Daffodil': '🌺', 'Yellow Daffodil': '🌻', 'White Daffodil': '🌸',
-        'Clover': '🍀', 'Pansy': '💜', 'Cosmos': '🌸', 'Borage': '💙',
-        'Sunpetal': '🌻', 'Primula': '🌷',
-        // Composting
-        'Compost Bin': '🐛', 'Turbo Composter': '🐛', 'Premium Composter': '🐛',
-        // Crop Machine & Oil
-        'Crop Machine': '🏭', 'Oil Well': '🛢️',
-        // Greenhouse
-        'Greenhouse': '🌱',
-        // Crab Traps & Shrines
-        'Crab Trap': '🦀', 'Shrine': '🏮',
-        // Aging Shed & Salt
-        'Barn': '🏚️', 'Salt Rock': '🧂',
-        // Deliveries
-        'Delivery': '📦',
-        // Buildings
-        'Kitchen': '🍳', 'Bakehouse': '🥐', 'Deli': '🥙', 'Smoothie Shack': '🥤',
-        'Toolshed': '🔧', 'Hen House': '🐔', 'Barn': '🏚️', 'Crop Machine': '🏭',
-      };
-
-      const emoji = emojiMap[itemName] ? emojiMap[itemName] + ' ' : '🌾 ';
-      
-      const catLabels = {
-        crops: 'Plantação', fruits: 'Fruta', trees: 'Árvore', rocks: 'Mineração',
-        animals: 'Animal', beehives: 'Colmeia', flowers: 'Flor', composting: 'Compostagem',
-        cropMachine: 'Máquina de Cultivo', oil: 'Poço de Óleo', greenhouse: 'Estufa',
-        buildings: 'Construção', crabTraps: 'Armadilha', shrines: 'Santuário',
-        agingShed: 'Celeiro', saltFarm: 'Salina', deliveries: 'Entrega',
-      };
+      const imageUrl = window.getImgUrl ? window.getImgUrl(imageItemName) : `https://sfl.world/img/source/${encodeURIComponent(imageItemName)}.png`;
 
       let title, body;
       if (count === 1) {
-        title = `${emoji}${itemName} pronto!`;
-        body = `Colete agora!`;
+        title = `${itemName} pronto!`;
+        body = `Sua produção está pronta para coletar no jogo.`;
       } else {
-        title = `${emoji}${count}x ${itemName} prontos!`;
-        body = `${catLabels[category] || category} pronta para coletar!`;
+        title = `${count}x ${itemName} prontos!`;
+        body = `${count} itens de ${catLabels[category] || category} prontos para colheita!`;
       }
 
-      if (!this.isNative()) {
-        schedules.push({
-          farm_id: farmId,
-          item_id: itemIds[0],
-          item_name: itemName,
-          item_category: category,
-          ready_at: new Date(readyAtMs).toISOString(),
-          notification_sent: false,
-        });
-      }
+      schedules.push({
+        farm_id: farmId,
+        item_id: itemIds[0],
+        item_name: itemName,
+        item_category: category,
+        ready_at: new Date(readyAtMs).toISOString(),
+        notification_sent: false,
+      });
 
       if (localReady) {
         localSchedules.push({
@@ -664,8 +623,8 @@ class NotificationEngine {
           body,
           channelId: LOCAL_CHANNEL_ID,
           schedule: this.localSchedule(readyAtMs),
-          // largeIcon via URL not supported on Android native — emoji used instead
-          extra: { farmId, category, itemName, count, imageUrl }
+          largeIcon: imageUrl,
+          extra: { farmId, category, itemName, imageItemName, count, imageUrl }
         });
       }
     });
@@ -795,56 +754,6 @@ class NotificationEngine {
       }
     }
     console.log('[Notif] Motor inicializado. Plataforma nativa:', this.isNative());
-    
-    // Check Mystery Island times every minute
-    setInterval(() => this.checkMysteryIsland(), 60000);
-    this.checkMysteryIsland(); // initial check
-  }
-
-  checkMysteryIsland() {
-    if (!this.prefs.master) return;
-    const settings = window.__app && window.__app.Storage ? window.__app.Storage.getSettings() : null;
-    if (!settings || !settings.mysteryTimes) return;
-
-    const now = new Date();
-    const currentHHMM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    const todayStr = now.toISOString().split('T')[0];
-
-    for (let timeStr of settings.mysteryTimes) {
-      if (timeStr && timeStr === currentHHMM) {
-        // We matched a time! Check if we already notified for this exact time today
-        const key = `sfl_mystery_${todayStr}_${timeStr}`;
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, '1');
-          
-          // Show Toast if app is open
-          if (window.__app && window.__app.UI && window.__app.UI.showToast) {
-            window.__app.UI.showToast('🎈 A Mystery Island abriu agora pelos próximos 30 minutos!', 'info');
-          }
-          
-          // Play a sound if supported
-          try {
-            const audio = new Audio('https://sfl.world/sounds/alert.mp3');
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
-          } catch(e) {}
-
-          // Send Native Local Notification if on Mobile
-          const local = this.getLocalPlugin();
-          if (local) {
-            local.schedule({
-              notifications: [{
-                id: this.localId(`mystery-${now.getTime()}`),
-                title: '🎈 Mystery Island Aberta!',
-                body: 'A Ilha do Coração ficará disponível pelos próximos 30 minutos. Aproveite!',
-                channelId: LOCAL_CHANNEL_ID,
-                schedule: this.localSchedule(Date.now() + 100),
-              }]
-            }).catch(() => {});
-          }
-        }
-      }
-    }
   }
 }
 

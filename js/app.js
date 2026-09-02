@@ -27,6 +27,24 @@ const State = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 
+// Central price normalizer — merges P2P crop prices + NFT floor prices into one flat map
+function normalizePrices(prices, nfts) {
+  const p2p = {};
+  // Extract P2P prices from whichever shape the API returns
+  const raw = prices?.data?.p2p || prices?.p2p || {};
+  Object.assign(p2p, raw);
+  // Merge NFT floor prices (collectibles + wearables)
+  if (nfts) {
+    const allNfts = [...(nfts.collectibles || []), ...(nfts.wearables || [])];
+    allNfts.forEach(nft => {
+      if (nft.floor && nft.name) {
+        p2p[nft.name] = nft.floor;
+      }
+    });
+  }
+  return p2p;
+}
+
 // =====================================================
 // INIT
 // =====================================================
@@ -374,22 +392,13 @@ async function refreshData(force = false) {
 
   try {
     const { exchange, prices, landInfo, farmData, nfts, errors } = await API.refreshAll(State.farmId, force);
-    
-    // Merge NFTs into prices for unified UI access
-    if (prices && nfts) {
-      if (!prices.data) prices.data = {};
-      if (!prices.data.p2p) prices.data.p2p = {};
-      
-      const allNfts = [...(nfts.collectibles || []), ...(nfts.wearables || [])];
-      allNfts.forEach(nft => {
-        if (nft.floor) {
-          prices.data.p2p[nft.name] = nft.floor;
-        }
-      });
-    }
 
     State.exchange = exchange;
     State.prices   = prices;
+    State.nfts     = nfts;
+    
+    // Build a single flat p2p map from all price sources (Fix Bug B)
+    State.p2p = normalizePrices(prices, nfts);
     
     const hasKeyError = errors.some(e => e?.includes('API Key') || e?.includes('unauthorized'));
     State.hasKeyError = hasKeyError;
@@ -447,11 +456,11 @@ async function refreshData(force = false) {
         
         // --- Detect Automatic Purchases (Heuristic) ---
         const currentBalance = State.parsedFarm?.balance ?? 0;
-        const currentInventory = State.parsedFarm?.inventory || {};
+        const currentInventory = State.parsedFarm?.rawInventory || {};
         
         if (prevBalance > 0 && currentBalance < prevBalance && Object.keys(prevInventory).length > 0) {
           const sflSpent = prevBalance - currentBalance;
-          const p2pPrices = State.prices?.p2p || State.prices?.data?.p2p || {};
+          const p2pPrices = State.p2p || {};
           
           let purchasedItem = null;
           let purchasedQty = 0;
@@ -604,8 +613,13 @@ function setupAutoRefresh() {
         }
         // If on market tab update prices too
         if (State.currentTab === 'market') {
-          const prices = await API.getPrices(true);
+          const [prices, nfts] = await Promise.all([
+            API.getPrices(true),
+            API.getNFTs(true),
+          ]);
           if (prices) State.prices = prices;
+          if (nfts) State.nfts = nfts;
+          State.p2p = normalizePrices(State.prices, State.nfts);
           UI.renderMarketPage(State.prices, exchange);
         }
       }

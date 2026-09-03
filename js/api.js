@@ -167,17 +167,6 @@ async function getPrices(forceRefresh = false) {
   return data;
 }
 
-// --- Auctions ---
-async function getAuctions(forceRefresh = false) {
-  const CACHE_KEY = 'auctions';
-  if (!forceRefresh) {
-    const cached = Storage.getCache(CACHE_KEY);
-    if (cached) return cached;
-  }
-  const data = await fetchJson(ENDPOINTS.AUCTIONS);
-  Storage.setCache(CACHE_KEY, data, 300_000); // 5min TTL
-  return data;
-}
 
 // --- NFTs / Marketplace Prices ---
 // Response shape: { collectibles: [{name, floor, lastSalePrice, ...}], wearables: [...] }

@@ -18,8 +18,10 @@ const Storage = (() => {
 
   function getFarmIds() {
     try {
-      return JSON.parse(localStorage.getItem(KEYS.FARM_IDS) || '[]');
-    } catch { return []; }
+      const ids = JSON.parse(localStorage.getItem(KEYS.FARM_IDS) || '[]');
+      if (ids && ids.length > 0) return ids;
+      return [{ id: '2601876753363557', label: 'Fazenda Oficial #2601876753363557', addedAt: Date.now() }];
+    } catch { return [{ id: '2601876753363557', label: 'Fazenda Oficial #2601876753363557', addedAt: Date.now() }]; }
   }
 
   function addFarmId(farmId, label = '') {
@@ -36,12 +38,12 @@ const Storage = (() => {
     const ids = getFarmIds().filter(f => f.id !== String(farmId));
     localStorage.setItem(KEYS.FARM_IDS, JSON.stringify(ids));
     if (getActiveFarm() === String(farmId)) {
-      localStorage.setItem(KEYS.ACTIVE_FARM, ids[0]?.id || '');
+      localStorage.setItem(KEYS.ACTIVE_FARM, ids[0]?.id || '2601876753363557');
     }
   }
 
   function getActiveFarm() {
-    return localStorage.getItem(KEYS.ACTIVE_FARM) || '';
+    return localStorage.getItem(KEYS.ACTIVE_FARM) || '2601876753363557';
   }
 
   function setActiveFarm(farmId) {

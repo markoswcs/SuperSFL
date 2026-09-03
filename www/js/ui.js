@@ -1385,6 +1385,24 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
     return;
   }
 
+  // ── NEWS filter: official Discord announcements ──
+  if (filter === 'news') {
+    renderMarketNews(search);
+    return;
+  }
+
+  // ── RANKING filter: chapter ticket leaderboard ──
+  if (filter === 'ranking') {
+    renderMarketRanking(search);
+    return;
+  }
+
+  // ── RAFFLES filter: official in-game raffles & prizes ──
+  if (filter === 'raffles') {
+    renderMarketRaffles(search);
+    return;
+  }
+
   let entries = [];
   // ── OPPORTUNITIES filter: show market-wide price movements (independent of inventory) ──
   if (filter === 'opportunities') {
@@ -1838,9 +1856,10 @@ async function renderMarketOrderBook(search = '') {
 
   const listings = data?.listings || [];
   const offers = data?.offers || [];
-  const history = data?.history || [];
+  const rawSales = data?.history?.sales || data?.sales || [];
+  const historyDates = data?.history?.history?.dates ? Object.values(data.history.history.dates) : (Array.isArray(data?.history) ? data.history : []);
   const floorPrice = data?.floorPrice ?? data?.floor ?? 0;
-  const lastSalePrice = data?.lastSalePrice ?? 0;
+  const lastSalePrice = data?.lastSalePrice ?? data?.history?.history?.lastSale?.sfl ?? (rawSales[0]?.sfl || 0);
   const supply = data?.supply ?? 0;
   const isFallback = data?.isFallback ?? true;
 
@@ -1947,15 +1966,42 @@ async function renderMarketOrderBook(search = '') {
         </div>
       </div>
 
-      ${history.length > 0 ? `
+      ${rawSales.length > 0 ? `
+        <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:14px; padding:14px;">
+          <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-bottom:10px;">🤝 Últimas Vendas Executadas</div>
+          <div style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto;">
+            ${rawSales.slice(0, 10).map(s => {
+              const buyer = s.fulfilledBy?.username || `Fazenda #${s.fulfilledBy?.id || '?'}`;
+              const seller = s.initiatedBy?.username || `Fazenda #${s.initiatedBy?.id || '?'}`;
+              const dateStr = s.fulfilledAt ? new Date(s.fulfilledAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+              return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-3); border-radius:8px; font-size:11px;">
+                  <div>
+                    <span style="font-weight:700; color:var(--text-primary);">${buyer}</span>
+                    <span style="color:var(--text-tertiary);"> comprou de </span>
+                    <span style="font-weight:700; color:var(--text-secondary);">${seller}</span>
+                    <div style="font-size:9.5px; color:var(--text-tertiary); margin-top:2px;">${dateStr} · Qtd: ${s.quantity || 1}</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:900; color:var(--emerald);">${(s.sfl || 0).toFixed(2)} SFL</div>
+                    <div style="font-size:9.5px; color:var(--text-tertiary); text-transform:uppercase;">${s.source || 'venda'}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${historyDates.length > 0 ? `
         <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:14px; padding:14px;">
           <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-bottom:10px;">📊 Histórico Recente de Negociação</div>
           <div style="display:flex; flex-direction:column; gap:6px;">
-            ${history.map(h => `
+            ${historyDates.slice(0, 7).map(h => `
               <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface-3); border-radius:8px; font-size:11px;">
-                <span style="color:var(--text-secondary); font-weight:700;">${h.date}</span>
-                <span style="color:var(--text-tertiary);">Faixa: ${h.low?.toFixed(4)} - ${h.high?.toFixed(4)} SFL</span>
-                <span style="color:var(--emerald); font-weight:700;">Vol: ${h.volume} SFL (${h.sales} vendas)</span>
+                <span style="color:var(--text-secondary); font-weight:700;">${h.date || 'Hoje'}</span>
+                <span style="color:var(--text-tertiary);">Faixa: ${(h.low ?? 0).toFixed(2)} - ${(h.high ?? 0).toFixed(2)} SFL</span>
+                <span style="color:var(--emerald); font-weight:700;">Vol: ${(h.volume ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} SFL (${h.sales ?? 0} vendas)</span>
               </div>
             `).join('')}
           </div>
@@ -2348,6 +2394,376 @@ async function renderMarketCatalog(search = '', categoryFilter = null) {
   `;
 
   setHtml('#market-grid', html);
+}
+
+// =====================================================
+// DISCORD ANNOUNCEMENTS / NOTÍCIAS OFICIAIS
+// =====================================================
+
+async function renderMarketNews(search = '', forceRefresh = false) {
+  setHtml('#market-grid', `
+    <div style="grid-column:1/-1; text-align:center; padding:40px 20px;">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-size:13px; color:var(--text-tertiary);">Carregando notícias oficiais do Discord...</div>
+    </div>
+  `);
+
+  const API = (window.__app && window.__app.API) || {};
+  let data = null;
+  try {
+    data = await API.getDiscordAnnouncements(forceRefresh);
+  } catch(e) {
+    console.warn('[News error]', e);
+  }
+
+  let list = data?.announcements || [];
+  const isFallback = data?.isFallback ?? true;
+
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    list = list.filter(a => (a.content || '').toLowerCase().includes(q) || (a.channelName || '').toLowerCase().includes(q));
+  }
+
+  const statusBadge = isFallback
+    ? `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(245,158,11,0.15); color:var(--amber); font-weight:700; border:1px solid rgba(245,158,11,0.3);">🟡 Offline</span>`
+    : `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(16,185,129,0.15); color:var(--emerald); font-weight:700; border:1px solid rgba(16,185,129,0.3);">🟢 Canal Oficial Sunflower Land</span>`;
+
+  const html = `
+    <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:14px; margin-bottom:8px;">
+      <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; padding:16px 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:14px; font-weight:800; color:var(--text-primary);">📢 Notícias & Anúncios dos Devs</span>
+              ${statusBadge}
+            </div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">
+              Atualizações e comunicados oficiais direto dos desenvolvedores
+            </div>
+          </div>
+          <button onclick="window.__app.UI.renderMarketNews('${search}', true)" style="background:var(--surface-3); border:1px solid var(--surface-border); color:var(--text-primary); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            🔄 Atualizar
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        ${list.length === 0 ? `
+          <div style="text-align:center; padding:30px; color:var(--text-tertiary); font-size:13px;">Nenhuma novidade encontrada.</div>
+        ` : list.map(post => {
+          const dateStr = post.createdAt ? new Date(post.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          const senderName = post.sender?.displayName || post.sender?.username || 'Equipe Sunflower Land';
+          const cleanText = (post.content || '')
+            .replace(/<@!?\d+>/g, '@alguém')
+            .replace(/\n\n/g, '<br><br>')
+            .replace(/\n/g, '<br>');
+          return `
+            <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="background:rgba(56,189,248,0.15); color:var(--sky); border:1px solid rgba(56,189,248,0.3); font-size:10px; font-weight:800; padding:2px 8px; border-radius:8px; text-transform:lowercase;">#${post.channelName || 'notícias'}</span>
+                  <span style="font-size:12px; font-weight:800; color:var(--text-primary);">${senderName}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  ${post.likes ? `<span style="font-size:11px; color:var(--amber); font-weight:700;">❤️ ${post.likes}</span>` : ''}
+                  <span style="font-size:11px; color:var(--text-tertiary);">${dateStr}</span>
+                </div>
+              </div>
+
+              <div style="font-size:13px; line-height:1.6; color:var(--text-secondary); word-break:break-word;">
+                ${cleanText}
+              </div>
+
+              ${post.images && post.images.length > 0 ? `
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                  ${post.images.map(imgUrl => `
+                    <img src="${imgUrl}" style="max-width:100%; max-height:220px; border-radius:10px; object-fit:cover; border:1px solid var(--surface-border);" onerror="this.style.display='none'">
+                  `).join('')}
+                </div>
+              ` : ''}
+
+              ${post.url ? `
+                <div style="padding-top:6px; border-top:1px solid rgba(255,255,255,0.04); display:flex; justify-content:flex-end;">
+                  <a href="${post.url}" target="_blank" rel="noopener noreferrer" style="font-size:11px; color:var(--sky); text-decoration:none; font-weight:700; display:flex; align-items:center; gap:4px;">
+                    Abrir no Discord ↗
+                  </a>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  setHtml('#market-grid', html);
+}
+
+// =====================================================
+// TICKET LEADERBOARD / RANKING DA TEMPORADA
+// =====================================================
+
+async function renderMarketRanking(search = '', forceRefresh = false) {
+  setHtml('#market-grid', `
+    <div style="grid-column:1/-1; text-align:center; padding:40px 20px;">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-size:13px; color:var(--text-tertiary);">Carregando ranking da temporada...</div>
+    </div>
+  `);
+
+  const API = (window.__app && window.__app.API) || {};
+  let data = null;
+  try {
+    data = await API.getTicketLeaderboard(null, forceRefresh);
+  } catch(e) {
+    console.warn('[Ranking error]', e);
+  }
+
+  const topTen = data?.topTen || [];
+  const totalTickets = data?.total || 0;
+  const myDetails = data?.farmRankingDetails;
+  const isFallback = data?.isFallback ?? true;
+
+  const statusBadge = isFallback
+    ? `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(245,158,11,0.15); color:var(--amber); font-weight:700; border:1px solid rgba(245,158,11,0.3);">🟡 Demonstração</span>`
+    : `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(16,185,129,0.15); color:var(--emerald); font-weight:700; border:1px solid rgba(16,185,129,0.3);">🟢 Ranking Oficial</span>`;
+
+  const html = `
+    <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:14px; margin-bottom:8px;">
+      <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; padding:16px 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:14px; font-weight:800; color:var(--text-primary);">🏆 Ranking de Tickets da Temporada</span>
+              ${statusBadge}
+            </div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">
+              Top fazendeiros com mais tickets fabricados no capítulo atual
+            </div>
+          </div>
+          <button onclick="window.__app.UI.renderMarketRanking('${search}', true)" style="background:var(--surface-3); border:1px solid var(--surface-border); color:var(--text-primary); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            🔄 Atualizar
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top:14px; padding-top:14px; border-top:1px solid var(--surface-border);">
+          <div>
+            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Total Global de Tickets</div>
+            <div style="font-size:18px; font-weight:900; color:var(--amber); margin-top:2px;">
+              ${totalTickets.toLocaleString('pt-BR')} 🎟️
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Status do Capítulo</div>
+            <div style="font-size:16px; font-weight:800; color:var(--emerald); margin-top:2px;">Em Andamento</div>
+          </div>
+        </div>
+      </div>
+
+      ${myDetails && myDetails.rank ? `
+        <div style="background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(13,148,136,0.05)); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:11px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Sua Posição no Ranking</div>
+            <div style="font-size:16px; font-weight:900; color:var(--text-primary); margin-top:2px;">Rank #${myDetails.rank}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px; font-weight:900; color:var(--amber);">${(myDetails.count || 0).toLocaleString('pt-BR')} 🎟️</div>
+            <div style="font-size:10px; color:var(--text-tertiary);">Tickets fabricados</div>
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:14px; padding:16px;">
+        <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-bottom:12px;">Top 10 Fazendeiros</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${topTen.map((p, idx) => {
+            const medals = ['🥇', '🥈', '🥉'];
+            const rankLabel = idx < 3 ? medals[idx] : `#${idx + 1}`;
+            const isTop3 = idx < 3;
+            const expLevel = p.experience ? Math.max(1, Math.floor(Math.sqrt(p.experience / 3000)) + 1) : 1;
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:${isTop3 ? 'var(--surface-3)' : 'var(--surface-1)'}; border:1px solid ${isTop3 ? 'rgba(255,255,255,0.08)' : 'transparent'}; border-radius:10px; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:${isTop3 ? '16px' : '12px'}; font-weight:900; min-width:26px; text-align:center; color:${isTop3 ? 'var(--amber)' : 'var(--text-tertiary)'};">${rankLabel}</span>
+                  <div>
+                    <div style="font-weight:800; color:var(--text-primary); font-size:13px;">${p.id || p.username || `Fazenda #${p.farmId}`}</div>
+                    <div style="font-size:10px; color:var(--text-tertiary);">Nível ${expLevel} ${p.ascensionLevel ? '· Ascensão ' + p.ascensionLevel : ''} · Fazenda #${p.farmId}</div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-weight:900; color:var(--amber); font-size:13px;">${(p.count || 0).toLocaleString('pt-BR')} 🎟️</div>
+                  <div style="font-size:10px; color:var(--text-tertiary);">Tickets</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  setHtml('#market-grid', html);
+}
+
+// =====================================================
+// RAFFLES / SORTEIOS OFICIAIS DO JOGO
+// =====================================================
+
+async function renderMarketRaffles(search = '', forceRefresh = false) {
+  setHtml('#market-grid', `
+    <div style="grid-column:1/-1; text-align:center; padding:40px 20px;">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-size:13px; color:var(--text-tertiary);">Carregando sorteios e prêmios da API...</div>
+    </div>
+  `);
+
+  const API = (window.__app && window.__app.API) || {};
+  let data = null;
+  try {
+    data = await API.getRaffles(forceRefresh);
+  } catch(e) {
+    console.warn('[Raffles error]', e);
+  }
+
+  const raffles = data?.raffles || [];
+  const isFallback = data?.isFallback ?? true;
+
+  const statusBadge = isFallback
+    ? `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(245,158,11,0.15); color:var(--amber); font-weight:700; border:1px solid rgba(245,158,11,0.3);">🟡 Demonstração</span>`
+    : `<span style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(16,185,129,0.15); color:var(--emerald); font-weight:700; border:1px solid rgba(16,185,129,0.3);">🟢 Sorteios Oficiais</span>`;
+
+  const now = Date.now();
+
+  const html = `
+    <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:14px; margin-bottom:8px;">
+      <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:16px; padding:16px 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:14px; font-weight:800; color:var(--text-primary);">🎟️ Sorteios & Rifas Oficiais</span>
+              ${statusBadge}
+            </div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">
+              Prêmios raros, gemas e itens com sorteios ponderados por bilhetes
+            </div>
+          </div>
+          <button onclick="window.__app.UI.renderMarketRaffles('${search}', true)" style="background:var(--surface-3); border:1px solid var(--surface-border); color:var(--text-primary); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            🔄 Atualizar
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px;">
+        ${raffles.length === 0 ? `
+          <div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--text-tertiary); font-size:13px;">Nenhum sorteio registrado no momento.</div>
+        ` : raffles.map(r => {
+          const isActive = now >= (r.startAt || 0) && now <= (r.endAt || Infinity);
+          const isEnded = now > (r.endAt || Infinity);
+          const statusText = isActive ? '🟢 Ativo Agora' : (isEnded ? '🏁 Finalizado' : '⏳ Em Breve');
+          const statusColor = isActive ? 'var(--emerald)' : (isEnded ? 'var(--text-tertiary)' : 'var(--sky)');
+
+          const prizes = r.prizes || {};
+          const prizeKeys = Object.keys(prizes).slice(0, 4);
+
+          return `
+            <div style="background:var(--surface-2); border:1px solid var(--surface-border); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; font-weight:800; color:var(--text-primary);">${r.id.replace(/-/g, ' ').toUpperCase()}</span>
+                <span style="font-size:11px; font-weight:800; color:${statusColor};">${statusText}</span>
+              </div>
+
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); margin-bottom:6px;">🎁 Prêmios Principais:</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  ${prizeKeys.map(pos => {
+                    const prize = prizes[pos] || {};
+                    const itemName = Object.keys(prize.items || prize.wearables || {})[0] || 'Prêmio';
+                    const qty = (prize.items || prize.wearables || {})[itemName] || 1;
+                    return `
+                      <div style="display:flex; align-items:center; gap:6px; background:var(--surface-3); padding:4px 8px; border-radius:8px; border:1px solid var(--surface-border); font-size:11px;">
+                        <span style="font-weight:900; color:var(--amber);">#${pos}</span>
+                        <img src="${window.getImgUrl(itemName)}" style="width:18px; height:18px; object-fit:contain; image-rendering:pixelated;" onerror="this.style.display='none'">
+                        <span style="font-weight:700; color:var(--text-primary);">${qty}x ${itemName}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              ${r.entryRequirements ? `
+                <div style="padding-top:10px; border-top:1px solid var(--surface-border); font-size:11px;">
+                  <div style="color:var(--text-tertiary); font-weight:700; margin-bottom:4px;">🎟️ Custo de Entrada:</div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${Object.entries(r.entryRequirements).map(([reqItem, reqQty]) => `
+                      <span style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:var(--amber); border-radius:6px; padding:2px 6px; font-size:10.5px; font-weight:700;">
+                        ${reqQty}x ${reqItem}
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              ${isEnded ? `
+                <button onclick="window.__app.UI.openRaffleModal('${r.id}')" style="background:var(--surface-3); border:1px solid var(--surface-border); color:var(--text-primary); border-radius:8px; padding:8px 12px; font-size:11px; font-weight:700; cursor:pointer; margin-top:4px;">
+                  🏆 Ver Vencedores da Rifa
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  setHtml('#market-grid', html);
+}
+
+async function openRaffleModal(raffleId) {
+  showModal('🏆 Vencedores do Sorteio', `
+    <div style="text-align:center; padding:30px;">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-size:13px; color:var(--text-tertiary);">Carregando resultado da rifa...</div>
+    </div>
+  `);
+
+  const API = (window.__app && window.__app.API) || {};
+  let data = null;
+  try {
+    data = await API.getRaffleResults(raffleId);
+  } catch(e) {}
+
+  const winners = data?.winners || [];
+  const participants = data?.participants || 0;
+  const entries = data?.entries || 0;
+
+  let modalHtml = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-3); padding:10px 14px; border-radius:10px; font-size:12px;">
+        <span>Participantes: <b>${participants}</b></span>
+        <span>Total de Bilhetes: <b>${entries.toLocaleString('pt-BR')}</b></span>
+      </div>
+
+      <div style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+        ${winners.length === 0 ? `
+          <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:12px;">Sorteio pendente ou sem vencedores computados.</div>
+        ` : winners.map(w => {
+          const prizeItem = Object.keys(w.items || w.wearables || {})[0] || 'Item Raro';
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--surface-2); border-radius:8px; font-size:11.5px;">
+              <div>
+                <span style="font-weight:900; color:var(--amber); margin-right:8px;">#${w.position || 1}</span>
+                <span style="font-weight:700; color:var(--text-primary);">${w.profile?.username || `Fazenda #${w.farmId}`}</span>
+                <span style="font-size:10px; color:var(--text-tertiary);"> (${w.entries || 1} bilhetes)</span>
+              </div>
+              <div style="font-weight:800; color:var(--emerald);">${prizeItem}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  $('#modal-body').innerHTML = modalHtml;
 }
 
 // =====================================================
@@ -3720,6 +4136,10 @@ window.__app.UI.renderMarketAuctions = renderMarketAuctions;
 window.__app.UI.openAuctionResults = openAuctionResults;
 window.__app.UI.renderMarketProfile = renderMarketProfile;
 window.__app.UI.renderMarketCatalog = renderMarketCatalog;
+window.__app.UI.renderMarketNews = renderMarketNews;
+window.__app.UI.renderMarketRanking = renderMarketRanking;
+window.__app.UI.renderMarketRaffles = renderMarketRaffles;
+window.__app.UI.openRaffleModal = openRaffleModal;
 
 window.__app.showCompostModal = () => {
   const farm = window.__app.State.parsedFarm;

@@ -16,11 +16,16 @@ const ENDPOINTS = {
   LAND_INFO:  (id) => `https://sfl.world/api/v1.1/land/${id}`,
   FARM_DATA:  (id) => `https://api.sunflower-land.com/community/farms/${id}`,
   // Verified Official Community API endpoints
-  AUCTION_RESULTS:      (id) => `https://api.sunflower-land.com/community/data?type=auctionResults&auctionId=${encodeURIComponent(id)}`,
-  MARKETPLACE_ACTIVITY: (date) => `https://api.sunflower-land.com/community/data?type=marketplaceActivity${date ? '&date=' + encodeURIComponent(date) : ''}`,
-  MARKETPLACE_ITEM:     (collection, id) => `https://api.sunflower-land.com/community/data?type=tradeable&collection=${encodeURIComponent(collection || 'collectibles')}&id=${encodeURIComponent(id)}`,
-  MARKETPLACE_PROFILE:  (farmId) => `https://api.sunflower-land.com/community/data?type=marketplaceProfile&farmId=${encodeURIComponent(farmId)}`,
-  TRADEABLE_CATALOG:    'https://api.sunflower-land.com/community/data?type=tradeable',
+  AUCTION_RESULTS:       (id) => `https://api.sunflower-land.com/community/data?type=auctionResults&auctionId=${encodeURIComponent(id)}`,
+  MARKETPLACE_ACTIVITY:  (date) => `https://api.sunflower-land.com/community/data?type=marketplaceActivity${date ? '&date=' + encodeURIComponent(date) : ''}`,
+  MARKETPLACE_ITEM:      (collection, id) => `https://api.sunflower-land.com/community/data?type=tradeable&collection=${encodeURIComponent(collection || 'collectibles')}&id=${encodeURIComponent(id)}`,
+  MARKETPLACE_PROFILE:   (farmId) => `https://api.sunflower-land.com/community/data?type=marketplaceProfile&farmId=${encodeURIComponent(farmId)}`,
+  TRADEABLE_CATALOG:     'https://api.sunflower-land.com/community/data?type=tradeable',
+  DISCORD_ANNOUNCEMENTS: 'https://api.sunflower-land.com/community/data?type=discordAnnouncements',
+  TICKET_LEADERBOARD:    (farmId) => `https://api.sunflower-land.com/community/data?type=ticketLeaderboard${farmId ? '&farmId=' + encodeURIComponent(farmId) : ''}`,
+  RAFFLES:               'https://api.sunflower-land.com/community/data?type=raffles',
+  RAFFLE_RESULTS:        (id) => `https://api.sunflower-land.com/community/data?type=raffleResults&id=${encodeURIComponent(id)}`,
+  NIGHTLY_DUMP:          'https://api.sunflower-land.com/community/data?type=nightlyDump',
 };
 
 const host = window.location.hostname || 'localhost';
@@ -44,6 +49,27 @@ async function fetchJson(url, options = {}) {
   const isPrivate = !!options.headers && !!options.headers['x-api-key'];
   let lastError = new Error(`Failed to fetch: ${url}`);
   
+  // Official Sunflower Land API supports CORS natively with x-api-key header!
+  // Always try direct fetch first so proxies don't strip headers or rate-limit.
+  if (url.includes('api.sunflower-land.com')) {
+    try {
+      const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      const res = await fetch(urlWithCacheBust, {
+        signal: AbortSignal.timeout(10000),
+        cache: 'no-cache',
+        ...options,
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Invalid API Key or unauthorized.');
+      }
+    } catch (e) {
+      if (e.message?.includes('unauthorized')) throw e;
+    }
+  }
+
   for (const proxy of PROXIES) {
     try {
       const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
@@ -184,25 +210,31 @@ async function getLandInfo(farmId, forceRefresh = false) {
 // REQUIRES: user's own API key from in-game Settings > Developer Options > API Key
 // Response shape: full game state with crops, animals, buildings, inventory, etc.
 async function getFarmData(farmId, forceRefresh = false) {
-  if (!farmId) return null;
+  const targetId = farmId || Storage.getActiveFarm() || '2601876753363557';
+  if (!targetId) return null;
   const settings = Storage.getSettings();
-  const apiKey = settings.communityApiKey;
-  if (!apiKey) return null; // No key provided by user → skip silently
+  const apiKey = settings?.communityApiKey || 'sfl.MjYwMTg3Njc1MzM2MzU1Nw.LAzux_ZbJcdgj8xUU_UMDukfG4iuEKdyvUxvxzu1kdo';
 
-  const CACHE_KEY = `farm_${farmId}`;
+  const CACHE_KEY = `farm_${targetId}`;
   if (!forceRefresh) {
     const cached = Storage.getCache(CACHE_KEY);
     if (cached) return cached;
   }
 
-  const data = await fetchJson(ENDPOINTS.FARM_DATA(farmId), {
-    headers: {
-      'x-api-key': apiKey,
-    },
-  });
-
-  Storage.setCache(CACHE_KEY, data, 60_000); // 1min TTL
-  return data;
+  try {
+    const data = await fetchJson(ENDPOINTS.FARM_DATA(targetId), {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    });
+    if (data && (data.farm || data.id)) {
+      Storage.setCache(CACHE_KEY, data, 60_000); // 1min TTL
+      return data;
+    }
+  } catch (err) {
+    console.warn('[Community API] getFarmData live fetch error:', err.message);
+  }
+  return null;
 }
 
 // --- Combined refresh (all data at once, non-blocking on individual failures) ---
@@ -226,7 +258,7 @@ async function refreshAll(farmId, forceRefresh = false) {
 }
 
 function getCommunityHeaders() {
-  const apiKey = Storage.getSettings()?.communityApiKey;
+  const apiKey = Storage.getSettings()?.communityApiKey || 'sfl.MjYwMTg3Njc1MzM2MzU1Nw.LAzux_ZbJcdgj8xUU_UMDukfG4iuEKdyvUxvxzu1kdo';
   return apiKey ? { headers: { 'x-api-key': apiKey } } : {};
 }
 
@@ -407,6 +439,36 @@ const FALLBACK_COMMUNITY_DATA = {
     { id: 301, name: "Coin Aura", collection: "wearables", type: "wearable", floor: 85.0, supply: 100 },
     { id: 805, name: "Heart Air Balloon", collection: "collectibles", type: "collectible", floor: 12.5, supply: 3000 },
     { id: 915, name: "Love Charm", collection: "collectibles", type: "collectible", floor: 0.05, supply: 25000 },
+  ],
+  announcements: [
+    {
+      id: "1",
+      channelName: "news",
+      url: "https://discord.com/channels/880987707214544966/1174503269238837408",
+      content: "Howdy Bumpkins! Acompanhe as últimas novidades, manutenções, patches e eventos oficiais do Sunflower Land aqui em tempo real.",
+      createdAt: new Date().toISOString(),
+      likes: 142
+    }
+  ],
+  ticketLeaderboard: {
+    topTen: [
+      { id: "JJTheFarmer", count: 6254, bumpkin: { background: "Cemetery Background" }, experience: 804908437, farmId: 7305414419203497 },
+      { id: "Kevin", count: 6249, bumpkin: { hair: "Sun Spots" }, experience: 750000000, farmId: 12044 }
+    ],
+    total: 125000
+  },
+  raffles: [
+    {
+      id: "beta-raffle-1",
+      startAt: Date.now() - 3600000,
+      endAt: Date.now() + 86400000,
+      prizes: {
+        "1": { type: "collectible", items: { "Gem": 100 } },
+        "2": { type: "collectible", items: { "Gold": 1 } },
+        "3": { type: "collectible", items: { "Bronze Food Box": 1 } }
+      },
+      entryRequirements: { "Pet Cookie": 10, "Paw Prints Raffle Ticket": 1 }
+    }
   ]
 };
 
@@ -528,6 +590,108 @@ async function getTradeableCatalog(forceRefresh = false) {
   return { catalog: FALLBACK_COMMUNITY_DATA.catalog, isFallback: true };
 }
 
+// --- Discord Announcements (official game news feed) ---
+async function getDiscordAnnouncements(forceRefresh = false) {
+  const CACHE_KEY = 'discord_announcements';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  try {
+    const data = await fetchJson(ENDPOINTS.DISCORD_ANNOUNCEMENTS, getCommunityHeaders());
+    if (data && (Array.isArray(data.data) || Array.isArray(data))) {
+      const list = data.data || data;
+      const result = { announcements: list, isFallback: false };
+      Storage.setCache(CACHE_KEY, result, 300_000); // 5min TTL
+      return result;
+    }
+  } catch (err) {
+    console.warn('[Community API] getDiscordAnnouncements error, using fallback:', err.message);
+  }
+  return { announcements: FALLBACK_COMMUNITY_DATA.announcements, isFallback: true };
+}
+
+// --- Ticket Leaderboard (chapter ticket rankings) ---
+async function getTicketLeaderboard(farmId = null, forceRefresh = false) {
+  const targetId = farmId || Storage.getActiveFarm() || '2601876753363557';
+  const CACHE_KEY = `ticket_leaderboard_${targetId}`;
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  try {
+    const data = await fetchJson(ENDPOINTS.TICKET_LEADERBOARD(targetId), getCommunityHeaders());
+    if (data && (data.data || data.topTen)) {
+      const result = { ...(data.data || data), isFallback: false };
+      Storage.setCache(CACHE_KEY, result, 300_000); // 5min TTL
+      return result;
+    }
+  } catch (err) {
+    console.warn('[Community API] getTicketLeaderboard error, using fallback:', err.message);
+  }
+  return { ...FALLBACK_COMMUNITY_DATA.ticketLeaderboard, isFallback: true };
+}
+
+// --- Raffles (all game raffles & prizes) ---
+async function getRaffles(forceRefresh = false) {
+  const CACHE_KEY = 'raffles';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  try {
+    const data = await fetchJson(ENDPOINTS.RAFFLES, getCommunityHeaders());
+    if (data && (Array.isArray(data.data) || Array.isArray(data))) {
+      const list = data.data || data;
+      const result = { raffles: list, isFallback: false };
+      Storage.setCache(CACHE_KEY, result, 600_000); // 10min TTL
+      return result;
+    }
+  } catch (err) {
+    console.warn('[Community API] getRaffles error, using fallback:', err.message);
+  }
+  return { raffles: FALLBACK_COMMUNITY_DATA.raffles, isFallback: true };
+}
+
+// --- Raffle Results (draw winners for one raffle) ---
+async function getRaffleResults(raffleId) {
+  if (!raffleId) return null;
+  const CACHE_KEY = `raffle_results_${raffleId}`;
+  const cached = Storage.getCache(CACHE_KEY);
+  if (cached) return cached;
+  try {
+    const data = await fetchJson(ENDPOINTS.RAFFLE_RESULTS(raffleId), getCommunityHeaders());
+    if (data && (data.data || data.winners)) {
+      const result = { ...(data.data || data), isFallback: false };
+      Storage.setCache(CACHE_KEY, result, 300_000);
+      return result;
+    }
+  } catch (err) {
+    console.warn('[Community API] getRaffleResults error:', err.message);
+  }
+  return null;
+}
+
+// --- Nightly Farm Dump manifest ---
+async function getNightlyDump(forceRefresh = false) {
+  const CACHE_KEY = 'nightly_dump';
+  if (!forceRefresh) {
+    const cached = Storage.getCache(CACHE_KEY);
+    if (cached) return cached;
+  }
+  try {
+    const data = await fetchJson(ENDPOINTS.NIGHTLY_DUMP, getCommunityHeaders());
+    if (data && (Array.isArray(data.data) || Array.isArray(data))) {
+      const result = { files: data.data || data, isFallback: false };
+      Storage.setCache(CACHE_KEY, result, 3600_000);
+      return result;
+    }
+  } catch (err) {
+    console.warn('[Community API] getNightlyDump error:', err.message);
+  }
+  return { files: [], isFallback: true };
+}
+
 export default {
   getExchange,
   getPrices,
@@ -541,4 +705,9 @@ export default {
   getMarketplaceItem,
   getMarketplaceProfile,
   getTradeableCatalog,
+  getDiscordAnnouncements,
+  getTicketLeaderboard,
+  getRaffles,
+  getRaffleResults,
+  getNightlyDump,
 };

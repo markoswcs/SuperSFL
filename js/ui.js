@@ -830,52 +830,40 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
   }
 
   const settings = Storage.getSettings();
-  let order = settings.farmSectionOrder || [];
   let collapsed = settings.farmSectionCollapsed || {};
   
-  const sectionMap = {};
-  allSections.forEach(s => sectionMap[s.id] = s);
-  
-  const sortedSections = [];
-  order.forEach(id => {
-    if (sectionMap[id]) {
-       sortedSections.push(sectionMap[id]);
-       delete sectionMap[id];
-    }
-  });
-  Object.values(sectionMap).forEach(s => sortedSections.push(s));
+  // Fixed, consistent, permanent section order — no jumping or accidental dragging on mobile
+  const sortedSections = allSections;
 
-  const sectionsHtml = sortedSections.map((s, si) => {
+  const sectionsHtml = sortedSections.map((s) => {
     const isCollapsed = !!collapsed[s.id];
     return `
-      <div class="mb-4 spring-in farm-section-card" data-id="${s.id}" style="animation-delay:${si * 40}ms">
-        <div class="section-header mb-2 drag-handle" style="display:flex; justify-content:space-between; align-items:center; cursor: grab;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <i class="bi bi-grip-vertical" style="color:var(--text-tertiary); margin-right:4px;"></i>
-            <div class="section-title">${s.title}</div>
-            ${s.badge > 0 ? `<div class="section-badge ${s.badgeClass}">${s.badge} ${t('home_ready')}</div>` : ''}
+      <div class="mb-4 farm-section-card" data-id="${s.id}">
+        <div class="section-header mb-3" style="display:flex; justify-content:space-between; align-items:center; padding: 2px 0;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="section-title" style="font-size:15px; font-weight:800; color:var(--text-primary); letter-spacing:0.2px;">${s.title}</div>
+            ${s.badge > 0 ? `<div class="section-badge ${s.badgeClass}" style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">${s.badge} ${t('home_ready')}</div>` : ''}
           </div>
-          <div style="display:flex; align-items:center; gap:4px;">
-            <button onclick="window.__app.toggleFarmSection('${s.id}')" style="background:var(--surface-3);border:1px solid var(--surface-border);color:var(--text-primary);cursor:pointer;padding:4px 8px;border-radius:6px;" title="Minimizar/Expandir"><i class="bi bi-chevron-${isCollapsed ? 'left' : 'down'}"></i></button>
-          </div>
+          <button onclick="window.__app.toggleFarmSection('${s.id}')" style="background:var(--surface-3); border:1px solid var(--surface-border); color:var(--text-secondary); cursor:pointer; padding:5px 9px; border-radius:8px; font-size:12px; display:flex; align-items:center; gap:4px;" title="Minimizar/Expandir">
+            <i class="bi bi-chevron-${isCollapsed ? 'right' : 'down'}"></i>
+          </button>
         </div>
         
         <div style="display: ${isCollapsed ? 'none' : 'block'};">
           ${s.items.length > 0 ? `
-            <div class="farm-items-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));gap:10px;">
-              ${s.items.slice(0, 12).map((item, i) => renderFarmItem(item, i)).join('')}
+            <div class="farm-items-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(155px, 1fr)); gap:10px;">
+              ${s.items.map((item, i) => renderFarmItem(item, i)).join('')}
             </div>
-            ${s.items.length > 12 ? `<div style="text-align:center;font-family:var(--font-mono);font-size:13px;color:var(--text-tertiary);padding:8px">+${s.items.length - 12} ${t('market_all')}</div>` : ''}
           ` : `
-            <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
+            <div class="card" style="padding:14px 16px; font-size:13px; color:var(--text-tertiary); display:flex; align-items:center; gap:10px; background:var(--surface-2); border-radius:12px; border:1px dashed var(--surface-border);">
               ${isPartial ? (hasKey ? `
                 <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-                
+                <span>Carregando dados da fazenda...</span>
               ` : `
                 <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-                <span>Insira sua <strong>API Key</strong> em Config para ver dados reais.</span>
+                <span>Insira sua <strong>API Key</strong> em Ajustes para ver dados em tempo real.</span>
               `) : `
-                <span style="opacity:0.6;">Nenhum item em produ&ccedil;&atilde;o.</span>
+                <span style="opacity:0.7;">Nenhum item em produção neste momento.</span>
               `}
             </div>
           `}
@@ -908,10 +896,10 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
         <div class="card" style="padding:10px 14px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;">
           ${isPartial ? (hasKey ? `
             <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-            
+            <span>Carregando recursos...</span>
           ` : `
             <i class="bi bi-lock-fill" style="color:var(--amber);font-size:14px;"></i>
-            <span>Insira sua <strong>API Key</strong> em Config para carregar o inventário.</span>
+            <span>Insira sua <strong>API Key</strong> em Ajustes para carregar o inventário completo.</span>
           `) : `
             <span style="opacity:0.6;">Nenhum recurso.</span>
           `}
@@ -949,40 +937,6 @@ function renderFarmPage(parsedFarm, farmId, exchange) {
     ${invHtml}
     ${choresHtml}
   `);
-
-  // Inject CSS for drag states if not already present
-  if (!document.getElementById('sortable-styles')) {
-    const style = document.createElement('style');
-    style.id = 'sortable-styles';
-    style.innerHTML = `
-      .sortable-chosen { opacity: 0.9; cursor: grabbing !important; }
-      .sortable-ghost { opacity: 0.3; background: var(--surface-2); border: 2px dashed var(--text-tertiary); }
-      .drag-handle { cursor: grab; }
-      .drag-handle:active { cursor: grabbing; }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Initialize Sortable JS
-  setTimeout(() => {
-    const el = document.getElementById('farm-sections-container');
-    if (el && window.Sortable) {
-      console.log('Initializing SortableJS on farm-sections-container with bulletproof config');
-      window.Sortable.create(el, {
-        animation: 150,
-        handle: '.drag-handle', // Drag instantly using the header
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        onEnd: function (evt) {
-          const newOrder = Array.from(el.children).map(child => child.dataset.id);
-          Storage.saveSettings({ farmSectionOrder: newOrder });
-          console.log('Saved new order:', newOrder);
-        }
-      });
-    } else {
-      console.error('Failed to initialize SortableJS', { el, sortable: window.Sortable });
-    }
-  }, 100);
 }
 
 // =====================================================
@@ -999,17 +953,23 @@ function renderFarmItem(item, index) {
   const iconUrl = `${window.getImgUrl(iconName)}`;
   const subText = item.type === 'floatingIsland'
     ? (item.isActive ? 'Aberta agora!' : (item.startTimeStr ? `Abre às ${item.startTimeStr}` : 'Em breve'))
-    : `${item.type ?? ''} ${item.amount ? `x ${item.amount}` : ''}`;
+    : (item.amount ? `Qtd: ${item.amount}` : (item.type ?? ''));
+
+  const isReady = item.status === 'ready';
 
   return `
-    <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="animation-delay:${index * 30}ms">
-      <img src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" class="farm-item-icon">
-      <span style="font-size:24px;line-height:1;display:none" class="farm-item-emoji">${item.emoji || '🌱'}</span>
-      <div class="farm-item-info">
-        <div class="farm-item-name">${item.name}</div>
-        <div class="farm-item-sub">${subText}</div>
+    <div class="farm-item ${item.status}" data-readyat="${item.readyAt ?? 0}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--surface-2); border:1px solid ${isReady ? 'rgba(34,197,94,0.35)' : 'var(--surface-border)'}; border-radius:12px; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.12);">
+      <div style="width:38px; height:38px; background:var(--surface-3); border:1px solid var(--surface-border); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <img src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'" style="width:28px; height:28px; object-fit:contain; image-rendering:pixelated;" class="farm-item-icon">
+        <span style="font-size:20px; line-height:1; display:none" class="farm-item-emoji">${item.emoji || '🌱'}</span>
       </div>
-      <div class="farm-item-timer ${item.status}">${item.countdown}</div>
+      <div class="farm-item-info" style="flex:1; min-width:0;">
+        <div class="farm-item-name" style="font-size:13px; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
+        <div class="farm-item-sub" style="font-size:11px; color:var(--text-tertiary); font-weight:600; margin-top:2px;">${subText}</div>
+      </div>
+      <div class="farm-item-timer ${item.status}" style="font-size:11px; font-weight:800; padding:4px 8px; border-radius:8px; flex-shrink:0; text-align:center; ${isReady ? 'background:rgba(34,197,94,0.18); color:var(--emerald); border:1px solid rgba(34,197,94,0.35);' : 'background:var(--surface-3); color:var(--text-secondary);'}">
+        ${isReady ? '✓ PRONTO' : item.countdown}
+      </div>
     </div>
   `;
 }
@@ -1213,17 +1173,24 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
   if (filter === 'inventory') {
     const rawInv = window.__app?.State?.parsedFarm?.rawInventory || {};
     let totalSflValue = 0;
+    const inventoryList = [];
     
-    const inventoryList = Object.entries(rawInv)
-      .map(([name, qty]) => {
-        const priceInSfl = p2p[name] || 0;
-        const totalValue = priceInSfl * qty;
-        totalSflValue += totalValue;
-        return { name, qty, priceInSfl, totalValue };
-      })
-      .filter(item => item.totalValue > 0 || search.trim() !== '')
-      .filter(item => search.trim() === '' || item.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => b.totalValue - a.totalValue); // Sort by highest value
+    Object.entries(rawInv).forEach(([name, qty]) => {
+      const numQty = parseFloat(qty) || 0;
+      if (numQty <= 0) return;
+      const priceInSfl = p2p[name] || 0;
+      const totalValue = priceInSfl * numQty;
+      
+      const matchesSearch = search.trim() === '' || name.toLowerCase().includes(search.toLowerCase());
+      if (matchesSearch && (totalValue > 0 || search.trim() !== '')) {
+        if (priceInSfl > 0) {
+          totalSflValue += totalValue;
+        }
+        inventoryList.push({ name, qty: numQty, priceInSfl, totalValue });
+      }
+    });
+
+    inventoryList.sort((a, b) => b.totalValue - a.totalValue);
       
     if (inventoryList.length === 0) {
       setHtml('#market-grid', `
@@ -1239,7 +1206,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
       const usdTotal = item.totalValue * _sflUsd;
       const sflFmt = item.totalValue >= 1 ? item.totalValue.toFixed(2) : item.totalValue.toFixed(4);
       const usdFmt = usdTotal >= 1 ? usdTotal.toFixed(2) : usdTotal.toFixed(4);
-      const qtyFmt = item.qty >= 1000 ? (item.qty/1000).toFixed(1) + 'k' : item.qty;
+      const qtyFmt = item.qty >= 1000 ? (item.qty/1000).toFixed(1) + 'k' : (item.qty % 1 === 0 ? item.qty : item.qty.toFixed(2));
       
       return `
         <div class="market-card" style="display:flex; flex-direction:column; gap:10px; padding:12px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.05); border-radius:12px;">
@@ -1250,7 +1217,7 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
               </div>
               <div>
                 <div style="font-size:15px;font-weight:800;color:var(--text-primary);letter-spacing:0.3px;">${item.name}</div>
-                <div style="font-size:12px;color:var(--text-tertiary); font-weight:600;">Qtd: <span style="color:var(--text-secondary);">${item.qty}</span></div>
+                <div style="font-size:12px;color:var(--text-tertiary); font-weight:600;">Qtd: <span style="color:var(--text-secondary);">${qtyFmt}</span></div>
               </div>
             </div>
           </div>
@@ -1272,9 +1239,13 @@ function renderMarketFiltered(search = '', filter = 'inventory') {
     setHtml('#market-grid', `
       <div style="grid-column:1/-1;margin-bottom:16px;padding:16px;background:linear-gradient(145deg, var(--surface-2) 0%, rgba(30,41,59,0.8) 100%);border:1px solid rgba(245,158,11,0.2);border-radius:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 16px rgba(0,0,0,0.2);">
         <div>
-          <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px; margin-bottom:4px;">💰 Valor do Inventário</div>
+          <div style="font-size:11px;font-weight:800;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px; margin-bottom:4px;">💰 Valor do Inventário (Recursos)</div>
           <div style="font-size:26px;font-weight:900;color:var(--amber-glow); letter-spacing:-0.5px; filter:drop-shadow(0 0 10px rgba(245,158,11,0.3));">${headerSfl} SFL</div>
           <div style="font-size:14px;color:var(--emerald); font-weight:800; margin-top:2px;">$${headerUsd} USD</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-secondary);">${inventoryList.filter(i => i.priceInSfl > 0).length} itens avaliados</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Cotação P2P Oficial</div>
         </div>
       </div>
       ${listHtml}

@@ -27,22 +27,25 @@ const State = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 
-// Central price normalizer — merges P2P crop prices + NFT floor prices into one flat map
-function normalizePrices(prices, nfts) {
+// Central price normalizer — separates P2P commodity prices and NFT floor prices
+function normalizePrices(prices) {
   const p2p = {};
-  // Extract P2P prices from whichever shape the API returns
   const raw = prices?.data?.p2p || prices?.p2p || {};
   Object.assign(p2p, raw);
-  // Merge NFT floor prices (collectibles + wearables)
+  return p2p;
+}
+
+function normalizeNftFloors(nfts) {
+  const nftFloors = {};
   if (nfts) {
     const allNfts = [...(nfts.collectibles || []), ...(nfts.wearables || [])];
     allNfts.forEach(nft => {
       if (nft.floor && nft.name) {
-        p2p[nft.name] = nft.floor;
+        nftFloors[nft.name] = nft.floor;
       }
     });
   }
-  return p2p;
+  return nftFloors;
 }
 
 // =====================================================
@@ -400,8 +403,8 @@ async function refreshData(force = false) {
     State.prices   = prices;
     State.nfts     = nfts;
     
-    // Build a single flat p2p map from all price sources (Fix Bug B)
-    State.p2p = normalizePrices(prices, nfts);
+    State.p2p = normalizePrices(prices);
+    State.nftFloors = normalizeNftFloors(nfts);
     
     const hasKeyError = errors.some(e => e?.includes('API Key') || e?.includes('unauthorized'));
     State.hasKeyError = hasKeyError;
@@ -514,13 +517,15 @@ async function refreshData(force = false) {
     }
 
     if (State.parsedFarm && window.__app.Notifications) {
-      // Quando uma fazenda é carregada depois da permissão, a inscrição precisa
-      // ser vinculada novamente ao Farm ID antes de enviar as agendas.
-      await window.__app.Notifications.syncAfterFarmLoad();
-      await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
-      await window.__app.Notifications.checkMarketplaceActivity(State.parsedFarm);
-      window.__app.Notifications.checkFloatingIsland(State.parsedFarm);
-      window.__app.Notifications.scheduleDailyReset();
+      try {
+        await window.__app.Notifications.syncAfterFarmLoad();
+        await window.__app.Notifications.scheduleToSupabase(State.parsedFarm);
+        await window.__app.Notifications.checkMarketplaceActivity(State.parsedFarm);
+        window.__app.Notifications.checkFloatingIsland(State.parsedFarm);
+        window.__app.Notifications.scheduleDailyReset();
+      } catch (notifErr) {
+        console.warn('[Sync] Notification scheduling error (non-fatal):', notifErr);
+      }
     }
 
     renderCurrentTab();

@@ -60,12 +60,12 @@ async function init() {
 
   // Setup globals for UI callbacks
   window.__app = {
+    ...(window.__app || {}),
     State: State,
     UI: UI,
     API: API,
     Storage: Storage,
-    Notifications: window.Notifications || Notifications,
-    ...(window.__app || {}),
+    Notifications: window.__app?.Notifications || window.Notifications || null,
     removeFarm,
     syncData: async () => {
       if (!State.farmId) return;

@@ -833,7 +833,9 @@ class NotificationEngine {
   }
 }
 
+window.__app = window.__app || {};
 window.__app.Notifications = new NotificationEngine();
 window.__app.Notifications.init();
+window.Notifications = window.__app.Notifications;
 console.log('notifications.js carregado com sucesso!');
 

@@ -28,24 +28,69 @@ window.openExternal = async (url) => {
 window.getImgUrl = function(name) {
   if (!name) return window.getImgUrl('Sunflower');
   const aliases = {
+    // Trees & Wood
     'tree': 'Wood',
     'madeira': 'Wood',
+    'árvore': 'Wood',
+    'arvore': 'Wood',
     'árvore (madeira)': 'Wood',
     'arvore (madeira)': 'Wood',
+    // Beehives & Honey
     'colmeia (mel)': 'Honey',
     'colmeia': 'Honey',
     'mel': 'Honey',
+    // Mining & Rocks
     'stone rock': 'Stone',
+    'pedra': 'Stone',
     'iron rock': 'Iron',
+    'ferro': 'Iron',
     'gold rock': 'Gold',
+    'ouro': 'Gold',
+    'crimstone rock': 'Crimstone',
+    'sunstone rock': 'Sunstone',
+    // Mushrooms
     'mushroom': 'Wild Mushroom',
+    'wild mushroom': 'Wild Mushroom',
+    'cogumelo': 'Wild Mushroom',
+    // Oil
+    'oil reserve': 'Oil',
+    'oil': 'Oil',
+    'petróleo': 'Oil',
+    'petroleo': 'Oil',
+    'poço de óleo': 'Oil',
+    'poco de oleo': 'Oil',
+    // Mystery / Floating Island
+    'floating island': 'Heart Air Balloon',
+    'mystery island': 'Heart Air Balloon',
+    'ilha do coração': 'Heart Air Balloon',
+    'ilha do coracao': 'Heart Air Balloon',
+    'ilha do coração aberta': 'Heart Air Balloon',
+    'ilha do coracao aberta': 'Heart Air Balloon',
+    // Daily Reset
+    'daily reset': 'Sundial',
+    'reset diário': 'Sundial',
+    'reset diario': 'Sundial',
+    'sun': 'Sundial',
+    'sundial': 'Sundial',
+    // Composters
+    'basic composter': 'Compost Bin',
+    'compost bin': 'Compost Bin',
+    'turbo composter': 'Turbo Composter',
+    'premium composter': 'Premium Composter',
+    // Salt Farm
+    'salt farm': 'Salt',
+    'salina': 'Salt',
+    'sal': 'Salt',
   };
-  const resolvedName = aliases[name.toString().toLowerCase()] || name;
+  const cleanName = name.toString().replace(/\s*#\d+.*$/i, '').trim();
+  const lowerClean = cleanName.toLowerCase();
+  const resolvedName = aliases[lowerClean] || aliases[name.toString().toLowerCase()] || cleanName;
+
   if (window.SFL_IMAGES) {
     if (window.SFL_IMAGES[resolvedName]) return window.SFL_IMAGES[resolvedName];
     // Try case-insensitive match
-    const lowerName = resolvedName.toLowerCase();
-    const key = Object.keys(window.SFL_IMAGES).find(k => k.toLowerCase() === lowerName);
+    const lowerResolved = resolvedName.toLowerCase();
+    const key = Object.keys(window.SFL_IMAGES).find(k => k.toLowerCase() === lowerResolved);
     if (key) return window.SFL_IMAGES[key];
   }
   return `https://sfl.world/img/source/${encodeURIComponent(resolvedName)}.png`;

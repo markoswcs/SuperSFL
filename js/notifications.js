@@ -5,6 +5,41 @@
  */
 window.__app = window.__app || {};
 
+window.getImgUrl = window.getImgUrl || function(name) {
+  if (!name) return 'https://sfl.world/img/source/Sunflower.png';
+  const aliases = {
+    'tree': 'Wood', 'madeira': 'Wood', 'árvore': 'Wood', 'arvore': 'Wood',
+    'árvore (madeira)': 'Wood', 'arvore (madeira)': 'Wood',
+    'colmeia (mel)': 'Honey', 'colmeia': 'Honey', 'mel': 'Honey',
+    'stone rock': 'Stone', 'pedra': 'Stone',
+    'iron rock': 'Iron', 'ferro': 'Iron',
+    'gold rock': 'Gold', 'ouro': 'Gold',
+    'crimstone rock': 'Crimstone', 'sunstone rock': 'Sunstone',
+    'mushroom': 'Wild Mushroom', 'wild mushroom': 'Wild Mushroom', 'cogumelo': 'Wild Mushroom',
+    'oil reserve': 'Oil', 'oil': 'Oil', 'petróleo': 'Oil', 'petroleo': 'Oil',
+    'poço de óleo': 'Oil', 'poco de oleo': 'Oil',
+    'floating island': 'Heart Air Balloon', 'mystery island': 'Heart Air Balloon',
+    'ilha do coração': 'Heart Air Balloon', 'ilha do coracao': 'Heart Air Balloon',
+    'ilha do coração aberta': 'Heart Air Balloon', 'ilha do coracao aberta': 'Heart Air Balloon',
+    'daily reset': 'Sundial', 'reset diário': 'Sundial', 'reset diario': 'Sundial',
+    'sun': 'Sundial', 'sundial': 'Sundial',
+    'basic composter': 'Compost Bin', 'compost bin': 'Compost Bin',
+    'turbo composter': 'Turbo Composter', 'premium composter': 'Premium Composter',
+    'salt farm': 'Salt', 'salina': 'Salt', 'sal': 'Salt',
+  };
+  const cleanName = name.toString().replace(/\s*#\d+.*$/i, '').trim();
+  const lowerClean = cleanName.toLowerCase();
+  const resolvedName = aliases[lowerClean] || aliases[name.toString().toLowerCase()] || cleanName;
+
+  if (window.SFL_IMAGES) {
+    if (window.SFL_IMAGES[resolvedName]) return window.SFL_IMAGES[resolvedName];
+    const lowerResolved = resolvedName.toLowerCase();
+    const key = Object.keys(window.SFL_IMAGES).find(k => k.toLowerCase() === lowerResolved);
+    if (key) return window.SFL_IMAGES[key];
+  }
+  return `https://sfl.world/img/source/${encodeURIComponent(resolvedName)}.png`;
+};
+
 const DEFAULT_PREFS = {
   master: false,
   crops: true,
@@ -536,20 +571,26 @@ class NotificationEngine {
       (parsedFarm.crops || []).forEach((item) => addSchedule(`crop_${item.id}`, item.name, item.name, 'crops', item.readyAt, item.msLeft));
       (parsedFarm.fruits || []).forEach((item) => addSchedule(`fruit_${item.id}`, item.name, item.name, 'fruits', item.readyAt, item.msLeft));
       (parsedFarm.trees || []).forEach((item) => addSchedule(`tree_${item.id}`, 'Madeira', 'Wood', 'trees', item.readyAt, item.msLeft));
-      (parsedFarm.rocks || []).forEach((item) => addSchedule(`rock_${item.id}`, item.name, item.name, 'rocks', item.readyAt, item.msLeft));
-      (parsedFarm.mushrooms || []).forEach((item) => addSchedule(`mushroom_${item.id}`, item.name, 'Wild Mushroom', 'rocks', item.readyAt, item.msLeft));
-      (parsedFarm.animals || []).forEach((item) => addSchedule(`animal_${item.id}`, item.type || item.name, item.type || item.name, 'animals', item.readyAt, item.msLeft));
+      (parsedFarm.rocks || []).forEach((item) => {
+        const canonical = item.name.replace(/\s*Rock$/i, '').trim();
+        addSchedule(`rock_${item.id}`, item.name, canonical, 'rocks', item.readyAt, item.msLeft);
+      });
+      (parsedFarm.mushrooms || []).forEach((item) => addSchedule(`mushroom_${item.id}`, 'Cogumelo', 'Wild Mushroom', 'rocks', item.readyAt, item.msLeft));
+      (parsedFarm.animals || []).forEach((item) => {
+        const animalType = item.type || item.name.replace(/\s*#\d+.*$/i, '').trim();
+        addSchedule(`animal_${item.id}`, animalType, animalType, 'animals', item.readyAt, item.msLeft);
+      });
       (parsedFarm.beehives || []).forEach((item) => addSchedule(`hive_${item.id}`, 'Mel', 'Honey', 'beehives', item.readyAt, item.msLeft));
       (parsedFarm.flowers || []).forEach((item) => addSchedule(`flower_${item.id}`, item.name, item.name, 'flowers', item.readyAt, item.msLeft));
       (parsedFarm.composting || []).forEach((item) => addSchedule(`compost_${item.id}`, item.name, item.name, 'composting', item.readyAt, item.msLeft));
       (parsedFarm.cropMachine || []).forEach((item) => addSchedule(`crop-machine_${item.id}`, item.name, item.name, 'cropMachine', item.readyAt, item.msLeft));
-      (parsedFarm.oil || []).forEach((item) => addSchedule(`oil_${item.id}`, item.name, 'Oil Reserve', 'oil', item.readyAt, item.msLeft));
+      (parsedFarm.oil || []).forEach((item) => addSchedule(`oil_${item.id}`, 'Petróleo', 'Oil', 'oil', item.readyAt, item.msLeft));
       (parsedFarm.greenhouse || []).forEach((item) => addSchedule(`greenhouse_${item.id}`, item.name, item.name, 'greenhouse', item.readyAt, item.msLeft));
       (parsedFarm.buildings || []).forEach((item) => addSchedule(`building_${item.id}`, item.cooking || item.name, item.cooking || item.name, 'buildings', item.readyAt, item.msLeft));
       (parsedFarm.crabTraps || []).forEach((item) => addSchedule(`crab-trap_${item.id}`, item.name, item.name, 'crabTraps', item.readyAt, item.msLeft));
       (parsedFarm.shrines || []).forEach((item) => addSchedule(`shrine_${item.id}`, item.name, item.name, 'shrines', item.readyAt, item.msLeft));
       (parsedFarm.agingShed || []).forEach((item) => addSchedule(`aging_${item.id}`, item.name, item.name, 'agingShed', item.readyAt, item.msLeft));
-      (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, item.name, 'Salt', 'saltFarm', item.readyAt, item.msLeft));
+      (parsedFarm.saltFarm || []).forEach((item) => addSchedule(`salt_${item.id}`, 'Sal', 'Salt', 'saltFarm', item.readyAt, item.msLeft));
       (parsedFarm.deliveries || []).forEach((item) => addSchedule(`delivery_${item.id}`, item.name, item.name, 'deliveries', item.readyAt, item.msLeft));
 
       // Floating Island (Mystery Island / Love Island) openings from API
@@ -628,7 +669,7 @@ class NotificationEngine {
       schedules.push({
         farm_id: farmId,
         item_id: itemIds[0],
-        item_name: itemName,
+        item_name: imageItemName || itemName,
         item_category: category,
         ready_at: new Date(readyAtMs).toISOString(),
         notification_sent: false,
@@ -744,7 +785,7 @@ class NotificationEngine {
     const alreadyScheduledKey = `sfl_daily_reset_scheduled_${nextReset.toISOString().split('T')[0]}`;
     if (localStorage.getItem(alreadyScheduledKey)) return;
 
-    const sunImg = window.getImgUrl ? window.getImgUrl('Sun') : 'https://sfl.world/img/source/Sun.png';
+    const sunImg = window.getImgUrl ? window.getImgUrl('Sundial') : 'https://raw.githubusercontent.com/sunflower-land/sunflower-land/main/src/assets/sfts/sundial.webp';
     local.schedule({
       notifications: [{
         id: notifId,

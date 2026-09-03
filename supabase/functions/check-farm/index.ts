@@ -100,8 +100,32 @@ serve(async () => {
         if (bodyText.length > 120) bodyText = bodyText.substring(0, 117) + '...';
 
         const firstName = allowedItems[0].item_name;
+        const canonicalImages: Record<string, string> = {
+          'Madeira': 'Wood',
+          'Mel': 'Honey',
+          'Stone Rock': 'Stone',
+          'Iron Rock': 'Iron',
+          'Gold Rock': 'Gold',
+          'Crimstone Rock': 'Crimstone',
+          'Sunstone Rock': 'Sunstone',
+          'Poço de Óleo': 'Oil',
+          'Oil Reserve': 'Oil',
+          'Petróleo': 'Oil',
+          'Petroleo': 'Oil',
+          'Ilha do Coração Aberta': 'Heart Air Balloon',
+          'Ilha do Coração': 'Heart Air Balloon',
+          'Ilha do Coracao': 'Heart Air Balloon',
+          'Reset Diário': 'Sundial',
+          'Reset Diario': 'Sundial',
+          'Sun': 'Sundial',
+          'Cogumelo': 'Wild Mushroom',
+          'Cogumelos': 'Wild Mushroom',
+          'Sal': 'Salt',
+        };
+        const cleanFirst = firstName.replace(/\s*#\d+.*$/i, '').trim();
+        const canonicalImg = canonicalImages[cleanFirst] || canonicalImages[firstName] || cleanFirst;
         // Accurate image URL for the specific mature item
-        const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(firstName)}.png`;
+        const iconUrl = `https://sfl.world/img/source/${encodeURIComponent(canonicalImg)}.png`;
         
         const titleStr = allowedItems.length === 1 ? `${firstName} pronto!` : `${allowedItems.length} itens prontos!`;
 

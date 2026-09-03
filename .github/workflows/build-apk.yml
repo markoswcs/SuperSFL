@@ -30,7 +30,7 @@ jobs:
 
     - name: Prepare WWW Folder
       run: |
-        mkdir www
+        mkdir -p www
         cp -r css js images manifest.json index.html sw.js package.json capacitor.config.json www/ 2>/dev/null || true
 
     - name: Install dependencies

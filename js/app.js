@@ -81,7 +81,7 @@ async function init() {
       const farmId = input ? input.value.trim() : '';
       
       const apiKeyInput = document.getElementById('input-api-key');
-      if (apiKeyInput) {
+      if (apiKeyInput && apiKeyInput.value.trim()) {
         Storage.saveSettings({ communityApiKey: apiKeyInput.value.trim() });
       }
 
@@ -394,7 +394,7 @@ async function refreshData(force = false) {
   if (btn) btn.classList.add('loading');
 
   try {
-    const { exchange, prices, landInfo, farmData, nfts, errors } = await API.refreshAll(State.farmId, force);
+    const { exchange, prices, landInfo, farmData, nfts, profile, errors } = await API.refreshAll(State.farmId, force);
 
     State.exchange = exchange;
     State.prices   = prices;
@@ -502,17 +502,15 @@ async function refreshData(force = false) {
       } catch(salesErr) {
         console.warn('[Sales] Tracking error:', salesErr);
       }
-    } else if (landInfo) {
-      if (!State.parsedFarm || State.parsedFarm.isPartial) {
-        State.rawFarm = landInfo;
-        State.parsedFarm = Farm.parseLandInfo(landInfo);
-        if (State.parsedFarm) {
-          State.parsedFarm.isPartial = true;
-        }
+    } else if (landInfo || profile) {
+      State.rawFarm = landInfo || profile;
+      State.parsedFarm = Farm.parseLandInfo(landInfo, profile);
+      if (State.parsedFarm) {
+        State.parsedFarm.isPartial = true;
+        State.parsedFarm.farmId = State.farmId;
       }
     } else {
       // Do not wipe State.parsedFarm on temporary network failures
-      // State.parsedFarm = null;
     }
 
     if (State.parsedFarm && window.__app.Notifications) {

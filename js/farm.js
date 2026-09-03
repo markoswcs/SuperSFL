@@ -870,18 +870,24 @@ function parseChores(farm) {
  * Shape: { land: { type, level, coins, balance, gem, marks, vip, taxResource, ... }, bumpkin: { level, experience, skills } }
  * This is the fallback when no community API key is configured.
  */
-function parseLandInfo(landInfo) {
-  if (!landInfo || !landInfo.land) return null;
-  const { land, bumpkin: bk } = landInfo;
+function parseLandInfo(landInfo, profile = null) {
+  if (!landInfo && !profile) return null;
+  const land = landInfo?.land || {};
+  const bk = landInfo?.bumpkin || null;
 
   const xp = bk?.experience ?? 0;
   const bumpkinData = bk ? (() => {
     const { level, progress } = xpProgress(xp, bk?.level);
     const skillsList = bk.skills ? (Array.isArray(bk.skills) ? bk.skills : Object.keys(bk.skills)) : [];
     return { level, xp, xpProgress: progress, skills: skillsList };
-  })() : null;
+  })() : (profile?.level ? { level: profile.level, xp: 0, xpProgress: 0, skills: [] } : null);
+
+  const farmId = landInfo?.id || profile?.id || 0;
+  const username = profile?.username || '';
 
   return {
+    farmId,
+    username,
     balance:     parseFloat(land.balance) || 0,
     coins:       parseFloat(land.coins) || 0,
     gems:        land.gem ?? 0,
@@ -903,7 +909,7 @@ function parseLandInfo(landInfo) {
     vipLifetime: land.vip_info?.lifetime ?? false,
     vipDaysLeft: land.vip_info?.left ? Math.floor(land.vip_info.left / 86400) : 0,
     islandType:  land.type ?? 'basic',
-    level:       parseInt(land.level) || 1,
+    level:       parseInt(land.level) || profile?.level || 1,
     bumpkin:     bumpkinData,
     skills:      bumpkinData?.skills ?? [],
     crops:       [],
@@ -921,6 +927,7 @@ function parseLandInfo(landInfo) {
     rawInventory: {},
     inventory:   { crops: [], resources: [], tools: [], food: [], special: [] },
     chores:      { active: [], skipped: 0, completed: 0 },
+    tradeListings: profile?.listings || {},
     _isLandInfoOnly: true,
   };
 }

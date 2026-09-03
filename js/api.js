@@ -33,56 +33,61 @@ const isLocal = host === 'localhost' || host === '127.0.0.1';
 
 const PROXIES = [];
 
-// Somente tenta o proxy local (start.bat) se estiver rodando no localhost
-// Isso evita erros de mixed-content e timeouts longos no celular (GitHub Pages)
 if (isLocal) {
   PROXIES.push((url) => `http://${host}:3001/?url=${encodeURIComponent(url)}`);
 }
 
 PROXIES.push(
-  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
-  (url) => url // Direct fallback just in case CORS is disabled
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url) => url
 );
 
 async function fetchJson(url, options = {}) {
   const isPrivate = !!options.headers && !!options.headers['x-api-key'];
   let lastError = new Error(`Failed to fetch: ${url}`);
   
-  // Official Sunflower Land API supports CORS natively with x-api-key header!
-  // Always try direct fetch first so proxies don't strip headers or rate-limit.
-  if (url.includes('api.sunflower-land.com')) {
-    try {
-      const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-      const res = await fetch(urlWithCacheBust, {
-        signal: AbortSignal.timeout(10000),
-        cache: 'no-cache',
-        ...options,
-      });
-      if (res.ok) {
-        return await res.json();
+  // 1. ALWAYS try direct fetch first!
+  // In Capacitor Android (with CapacitorHttp enabled) this handles all origins natively with zero CORS.
+  // Sunflower Land community API also supports CORS natively.
+  try {
+    const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    const res = await fetch(urlWithCacheBust, {
+      signal: AbortSignal.timeout(8000),
+      cache: 'no-cache',
+      ...options,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object' && data.error && !data.land && !data.sfl && !data.data) {
+        throw new Error(data.error);
       }
-      if (res.status === 401 || res.status === 403) {
-        throw new Error('Invalid API Key or unauthorized.');
-      }
-    } catch (e) {
-      if (e.message?.includes('unauthorized')) throw e;
+      return data;
+    }
+    if (res.status === 401 || res.status === 403) {
+      if (isPrivate) throw new Error('Invalid API Key or unauthorized.');
+    }
+    lastError = new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    lastError = err;
+    if (err.message?.includes('unauthorized') || err.message?.includes('API Key')) {
+      throw err;
     }
   }
 
+  // 2. Only if direct fetch failed (e.g. standard browser on web PWA without CORS headers), try proxies
   for (const proxy of PROXIES) {
     try {
       const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
       const proxyUrl = proxy(urlWithCacheBust);
       const res = await fetch(proxyUrl, {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(8000),
         cache: 'no-cache',
         ...options,
       });
       
       if (res.ok) {
         const data = await res.json();
-        if (data && typeof data === 'object' && data.error && !data.land && !data.sfl) {
+        if (data && typeof data === 'object' && data.error && !data.land && !data.sfl && !data.data) {
           throw new Error(data.error);
         }
         return data;
@@ -110,7 +115,16 @@ async function getExchange(forceRefresh = false) {
     const cached = Storage.getCache(CACHE_KEY);
     if (cached) return cached;
   }
-  const data = await fetchJson(ENDPOINTS.EXCHANGE);
+  let data = null;
+  try {
+    data = await fetchJson(ENDPOINTS.EXCHANGE);
+  } catch (e) {
+    console.warn('getExchange live fetch failed, using fallback/cache:', e.message);
+    data = Storage.getCache(CACHE_KEY, true);
+    if (!data) {
+      data = { sfl: { usd: 0.048, brl: 0.27 }, pol: { usd: 0.38 }, gem: { usd: 0.10 }, coins: { usd: 0.0001 } };
+    }
+  }
 
   // Fetch USD to BRL real-time rate
   try {
@@ -124,7 +138,7 @@ async function getExchange(forceRefresh = false) {
     console.warn('Failed to fetch BRL exchange rate', e);
   }
 
-  Storage.setCache(CACHE_KEY, data, 120_000); // 2min TTL
+  if (data) Storage.setCache(CACHE_KEY, data, 120_000); // 2min TTL
   return data;
 }
 
@@ -234,6 +248,7 @@ async function refreshAll(farmId, forceRefresh = false) {
     farmId ? getLandInfo(farmId, forceRefresh) : Promise.resolve(null),
     farmId ? getFarmData(farmId, forceRefresh) : Promise.resolve(null),
     getNFTs(forceRefresh),
+    farmId ? getMarketplaceProfile(farmId) : Promise.resolve(null),
   ]);
 
   return {
@@ -242,6 +257,7 @@ async function refreshAll(farmId, forceRefresh = false) {
     landInfo:  results[2].status === 'fulfilled' ? results[2].value : null,
     farmData:  results[3].status === 'fulfilled' ? results[3].value : null,
     nfts:      results[4].status === 'fulfilled' ? results[4].value : null,
+    profile:   results[5].status === 'fulfilled' ? results[5].value : null,
     errors:    results.filter(r => r.status === 'rejected').map(r => r.reason?.message),
   };
 }

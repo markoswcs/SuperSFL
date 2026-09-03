@@ -10,5 +10,10 @@
   },
   "android": {
     "appendUserAgent": "SFLProApp"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }

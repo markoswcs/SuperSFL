@@ -69,6 +69,9 @@ const Storage = (() => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEYS.SETTINGS) || '{}');
       const merged = { ...DEFAULT_SETTINGS, ...saved };
+      if (!merged.communityApiKey || typeof merged.communityApiKey !== 'string' || merged.communityApiKey.trim() === '') {
+        merged.communityApiKey = DEFAULT_SETTINGS.communityApiKey;
+      }
       return merged;
     } catch { return { ...DEFAULT_SETTINGS }; }
   }

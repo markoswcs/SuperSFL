@@ -406,16 +406,14 @@ async function refreshData(force = false) {
     State.p2p = normalizePrices(prices);
     State.nftFloors = normalizeNftFloors(nfts);
     
-    const hasKeyError = errors.some(e => e?.includes('API Key') || e?.includes('unauthorized'));
+    // Only flag key error if farmData is missing AND the API explicitly responded with Invalid API Key
+    const hasKeyError = !farmData && errors.some(e => e?.includes('Invalid API Key'));
     State.hasKeyError = hasKeyError;
     const settings = Storage.getSettings();
 
-    if (errors.length > 0) {
-      console.warn('API partial failures:', errors);
-      if (hasKeyError) {
-        UI.showToast('Chave de API Inválida ou Expirada!', 'error');
-        State.lastErrorMessage = 'API Key invalid/expired';
-      }
+    if (hasKeyError && force) {
+      UI.showToast('Chave de API Inválida ou Expirada!', 'error');
+      State.lastErrorMessage = 'API Key invalid/expired';
     }
 
     // Track completed sales and purchases by comparing state before and after

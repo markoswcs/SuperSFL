@@ -29,8 +29,10 @@ const ENDPOINTS = {
 };
 
 async function fetchJson(url, options = {}) {
+  const isPrivate = !!(options.headers && options.headers['x-api-key']);
   let lastError = new Error(`Failed to fetch: ${url}`);
-  
+
+  // Stage 1: Direct fetch (works natively in Capacitor Android via OkHttp, bypassing CORS)
   try {
     const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
     const res = await fetch(urlWithCacheBust, {
@@ -38,7 +40,7 @@ async function fetchJson(url, options = {}) {
       cache: 'no-cache',
       ...options,
     });
-    
+
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object' && data.error && !data.farm && !data.id && !data.land && !data.sfl && !data.data) {
@@ -47,15 +49,32 @@ async function fetchJson(url, options = {}) {
       return data;
     }
 
-    if (res.status === 401 && url.includes('sunflower-land.com')) {
-      throw new Error('Invalid API Key');
+    if (res.status === 401 || res.status === 403) {
+      if (isPrivate) throw new Error('Invalid API Key or unauthorized.');
     }
 
     lastError = new Error(`HTTP ${res.status}`);
   } catch (err) {
     lastError = err;
-    if (err.message?.includes('Invalid API Key')) {
+    if (err.message?.includes('unauthorized') || err.message?.includes('API Key')) {
       throw err;
+    }
+  }
+
+  // Stage 2: allorigins.win CORS proxy fallback (for web browser — public endpoints only)
+  if (!isPrivate) {
+    try {
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now())}`;
+      const res = await fetch(proxyUrl, {
+        signal: AbortSignal.timeout(10000),
+        cache: 'no-cache',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object' && !data.error) return data;
+      }
+    } catch (e) {
+      // proxy also failed — fall through to throw lastError
     }
   }
 

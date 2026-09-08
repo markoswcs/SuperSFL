@@ -270,7 +270,4 @@ serve(async (req) => {
     console.error('Fatal error:', error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-});// trigger deploy
-// v4 action test
-// trigger 2
-// trigger 3
+});

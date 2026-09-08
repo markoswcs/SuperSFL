@@ -27,7 +27,9 @@ jobs:
       - name: Deploy check-farm function
         run: |
           supabase functions deploy check-farm --project-ref $PROJECT_ID --no-verify-jwt --debug > deploy.log 2>&1 || true
-          echo "### Supabase Deploy Log" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat deploy.log >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -B deploy-debug-branch
+          git add deploy.log
+          git commit -m "debug: supabase deploy log"
+          git push origin deploy-debug-branch --force

@@ -24,4 +24,4 @@ jobs:
           version: latest
 
       - name: Deploy check-farm function
-        run: supabase functions deploy check-farm --project-ref $PROJECT_ID
+        run: supabase functions deploy check-farm --project-ref $PROJECT_ID --no-verify-jwt

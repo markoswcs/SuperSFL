@@ -27,10 +27,7 @@ jobs:
       - name: Deploy check-farm function
         run: |
           supabase functions deploy check-farm --project-ref $PROJECT_ID --no-verify-jwt --debug > deploy.log 2>&1 || true
-          cat deploy.log
-
-      - name: Upload deploy log
-        uses: actions/upload-artifact@v4
-        with:
-          name: supabase-deploy-log
-          path: deploy.log
+          echo "### Supabase Deploy Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat deploy.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

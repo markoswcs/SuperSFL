@@ -10,13 +10,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions: write-all
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_ID: ykbpkhsrxtnnisnorwhd
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -29,7 +30,7 @@ jobs:
           cat deploy.log
 
       - name: Upload deploy log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: supabase-deploy-log
           path: deploy.log

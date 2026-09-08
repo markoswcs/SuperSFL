@@ -24,12 +24,59 @@ try {
   console.error("Error parsing FIREBASE_SERVICE_ACCOUNT:", e.message);
 }
 
-serve(async () => {
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, cache-control',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+}
+
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
+    const reqUrl = new URL(req.url)
+    const proxyTarget = reqUrl.searchParams.get('url')
+
+    // ── PROXY MODE: Forwards requests to Sunflower Land API or sfl.world with CORS ──
+    if (proxyTarget) {
+      const headers: Record<string, string> = {
+        'User-Agent': 'SunflowerSuperApp/1.0',
+        'Accept': 'application/json',
+      }
+      const apiKey = req.headers.get('x-api-key') || reqUrl.searchParams.get('key')
+      if (apiKey) {
+        headers['x-api-key'] = apiKey
+      }
+
+      const res = await fetch(proxyTarget, {
+        method: req.method === 'POST' ? 'POST' : 'GET',
+        headers,
+        body: req.method === 'POST' ? await req.text() : undefined,
+      })
+
+      const contentType = res.headers.get('content-type') || 'application/json'
+      const body = await res.text()
+
+      return new Response(body, {
+        status: res.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=15',
+        },
+      })
+    }
+
+    // ── NOTIFICATION CHECKER MODE ──
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || "";
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || "";
     if (!supabaseUrl || !supabaseKey) {
-      return new Response(JSON.stringify({ error: "Missing Supabase env vars" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Missing Supabase env vars" }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);

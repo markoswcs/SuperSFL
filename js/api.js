@@ -31,56 +31,55 @@ const ENDPOINTS = {
 const host = window.location.hostname || 'localhost';
 const isLocal = host === 'localhost' || host === '127.0.0.1';
 
-const PROXIES = [];
+const SUPABASE_PROXY = 'https://ykbpkhsrxtnnisnorwhd.supabase.co/functions/v1/check-farm?url=';
 
-if (isLocal) {
-  PROXIES.push((url) => `http://${host}:3001/?url=${encodeURIComponent(url)}`);
-}
-
-PROXIES.push(
+const PROXIES = [
+  (url) => `${SUPABASE_PROXY}${encodeURIComponent(url)}`,
   (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url) => url
-);
+];
 
 async function fetchJson(url, options = {}) {
   const isPrivate = !!options.headers && !!options.headers['x-api-key'];
+  const isNative = Boolean(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   let lastError = new Error(`Failed to fetch: ${url}`);
   
-  // 1. ALWAYS try direct fetch first!
-  // In Capacitor Android (with CapacitorHttp enabled) this handles all origins natively with zero CORS.
-  // Sunflower Land community API also supports CORS natively.
-  try {
-    const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    const res = await fetch(urlWithCacheBust, {
-      signal: AbortSignal.timeout(8000),
-      cache: 'no-cache',
-      ...options,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data === 'object' && data.error && !data.land && !data.sfl && !data.data) {
-        throw new Error(data.error);
+  // 1. In native Android Capacitor APK, direct fetch works natively with CapacitorHttp (bypasses browser CORS)
+  if (isNative) {
+    try {
+      const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      const res = await fetch(urlWithCacheBust, {
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-cache',
+        ...options,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object' && data.error && !data.land && !data.sfl && !data.data) {
+          throw new Error(data.error);
+        }
+        return data;
       }
-      return data;
-    }
-    if (res.status === 401 || res.status === 403) {
-      if (isPrivate) throw new Error('Invalid API Key or unauthorized.');
-    }
-    lastError = new Error(`HTTP ${res.status}`);
-  } catch (err) {
-    lastError = err;
-    if (err.message?.includes('unauthorized') || err.message?.includes('API Key')) {
-      throw err;
+      if (res.status === 401 || res.status === 403) {
+        if (isPrivate) throw new Error('Invalid API Key or unauthorized.');
+      }
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err;
+      if (err.message?.includes('unauthorized') || err.message?.includes('API Key')) {
+        throw err;
+      }
     }
   }
 
-  // 2. Only if direct fetch failed (e.g. standard browser on web PWA without CORS headers), try proxies
+  // 2. In Web Browser / GitHub Pages (or fallback if direct failed):
+  // Route through our Supabase Edge Function proxy (handles CORS and forwards x-api-key)
   for (const proxy of PROXIES) {
     try {
       const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
       const proxyUrl = proxy(urlWithCacheBust);
       const res = await fetch(proxyUrl, {
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(9000),
         cache: 'no-cache',
         ...options,
       });
@@ -100,8 +99,26 @@ async function fetchJson(url, options = {}) {
       lastError = new Error(`HTTP ${res.status}`);
     } catch (e) {
       lastError = e;
-      if (e.message?.toLowerCase().includes('api key')) break;
+      if (e.message?.toLowerCase().includes('api key') || e.message?.toLowerCase().includes('unauthorized')) {
+        throw e;
+      }
     }
+  }
+
+  // 3. Last fallback: try direct fetch on web if proxy had issues
+  if (!isNative) {
+    try {
+      const urlWithCacheBust = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      const res = await fetch(urlWithCacheBust, {
+        signal: AbortSignal.timeout(6000),
+        cache: 'no-cache',
+        ...options,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && !data.error) return data;
+      }
+    } catch (e) {}
   }
   
   throw lastError;

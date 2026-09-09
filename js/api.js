@@ -183,6 +183,9 @@ async function getLandInfo(farmId, forceRefresh = false) {
   return data;
 }
 
+// Supabase edge function acts as CORS proxy for api.sunflower-land.com (which blocks browser CORS)
+const SUPABASE_PROXY = 'https://ykbpkhsrxtnnisnorwhd.supabase.co/functions/v1/check-farm';
+
 // --- Farm Data via official community API ---
 // REQUIRES: user's own API key from in-game Settings > Developer Options > API Key
 // Response shape: full game state with crops, animals, buildings, inventory, etc.
@@ -198,21 +201,64 @@ async function getFarmData(farmId, forceRefresh = false) {
     if (cached) return cached;
   }
 
+  const targetUrl = ENDPOINTS.FARM_DATA(targetId);
+
+  // Stage 1: Direct fetch (works in Capacitor Android via OkHttp)
   try {
-    const data = await fetchJson(ENDPOINTS.FARM_DATA(targetId), {
-      headers: {
-        'x-api-key': apiKey,
-      },
+    const urlWithCacheBust = targetUrl + '?_t=' + Date.now();
+    const res = await fetch(urlWithCacheBust, {
+      signal: AbortSignal.timeout(9000),
+      cache: 'no-cache',
+      headers: { 'x-api-key': apiKey },
     });
-    if (data && (data.farm || data.id)) {
-      Storage.setCache(CACHE_KEY, data, 60_000); // 1min TTL
-      return data;
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.farm || data.id)) {
+        Storage.setCache(CACHE_KEY, data, 60_000);
+        return data;
+      }
+    }
+    if (res.status === 401 || res.status === 403) {
+      console.warn('[Community API] Invalid API Key (direct fetch 401/403)');
+      return null;
     }
   } catch (err) {
-    console.warn('[Community API] getFarmData live fetch error:', err.message);
+    if (err.message?.includes('API Key') || err.message?.includes('unauthorized')) {
+      console.warn('[Community API] Auth error:', err.message);
+      return null;
+    }
+    // CORS or network error — fall through to Supabase proxy
+    console.warn('[Community API] Direct fetch failed (likely CORS), trying Supabase proxy:', err.message);
   }
+
+  // Stage 2: Supabase edge function as CORS proxy (for web browser)
+  // The check-farm function accepts ?url= and forwards x-api-key to the target
+  try {
+    const proxyUrl = `${SUPABASE_PROXY}?url=${encodeURIComponent(targetUrl + '?_t=' + Date.now())}`;
+    const res = await fetch(proxyUrl, {
+      signal: AbortSignal.timeout(12000),
+      cache: 'no-cache',
+      headers: { 'x-api-key': apiKey },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.farm || data.id)) {
+        Storage.setCache(CACHE_KEY, data, 60_000);
+        return data;
+      }
+    }
+    if (res.status === 401 || res.status === 403) {
+      console.warn('[Community API] Invalid API Key (Supabase proxy 401/403)');
+      return null;
+    }
+    console.warn('[Community API] Supabase proxy returned HTTP', res.status);
+  } catch (err) {
+    console.warn('[Community API] Supabase proxy also failed:', err.message);
+  }
+
   return null;
 }
+
 
 // --- Combined refresh (all data at once, non-blocking on individual failures) ---
 async function refreshAll(farmId, forceRefresh = false) {
